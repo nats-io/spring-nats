@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.rabbit.integration;
+package org.springframework.cloud.stream.binder.nats.integration;
 
 import org.junit.After;
 import org.junit.Test;
