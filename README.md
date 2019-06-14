@@ -1,2 +1,3 @@
-# spring-cloud-binder-nats
-A NATS Spring Cloud Binder
+# The NATS Spring Cloud Binder
+
+Spring Cloud Stream Binder implementation for NATS

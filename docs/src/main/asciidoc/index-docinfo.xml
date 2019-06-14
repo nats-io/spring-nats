@@ -1,0 +1,14 @@
+<productname>Spring Cloud Stream NATS Binder</productname>
+<releaseinfo>{spring-cloud-stream-binder-nats-version}</releaseinfo>
+<copyright>
+	<year>2019</year>
+	<holder>CNCF, The NATS Authors.</holder>
+</copyright>
+<legalnotice>
+	<para>
+		Copies of this document may be made for your own use and for distribution to
+		others, provided that you do not charge any fee for such copies and further
+		provided that each copy contains this Copyright Notice, whether distributed in
+		print or electronically.
+	</para>
+</legalnotice>
