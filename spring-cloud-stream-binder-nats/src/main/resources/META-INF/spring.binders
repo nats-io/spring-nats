@@ -1,2 +1,0 @@
-nats:\
-org.springframework.cloud.stream.binder.nats.config.NatsServiceAutoConfiguration
