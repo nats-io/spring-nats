@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.test;
+package org.springframework.cloud.stream.binder.nats;
 
 import java.util.Collections;
 import java.util.function.Consumer;
@@ -25,8 +25,8 @@ import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
-import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationConsumerDestination;
-import org.springframework.cloud.stream.binder.test.TestChannelBinderProvisioner.SpringIntegrationProducerDestination;
+import org.springframework.cloud.stream.binder.nats.NatsChannelBinderProvisioner.SpringIntegrationConsumerDestination;
+import org.springframework.cloud.stream.binder.nats.NatsChannelBinderProvisioner.SpringIntegrationProducerDestination;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.core.AttributeAccessor;
@@ -51,58 +51,8 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-/**
- * Implementation of {@link Binder} backed by Spring Integration framework. It is useful
- * for localized demos and testing.
- * <p>
- * This binder extends from the same base class ({@link AbstractMessageChannelBinder}) as
- * other binders (i.e., Rabbit, Kafka etc). Interaction with this binder is done via
- * source and target destination which emulate real binder's destinations (i.e., Kafka
- * topic) <br>
- * The destination classes are
- * <ul>
- * <li>{@link InputDestination}</li>
- * <li>{@link OutputDestination}</li>
- * </ul>
- * Simply autowire them in your your application and send/receive messages.
- * </p>
- * You must also add {@link TestChannelBinderConfiguration} to your configuration. Below
- * is the example using Spring Boot test. <pre class="code">
- *
- * &#064;RunWith(SpringJUnit4ClassRunner.class)
- * &#064;SpringBootTest(classes = {SpringIntegrationBinderConfiguration.class, TestWithSIBinder.MyProcessor.class})
- * public class TestWithSIBinder {
- *     &#064;Autowired
- *     private SourceDestination sourceDestination;
- *
- *     &#064;Autowired
- *     private TargetDestination targetDestination;
- *
- *     &#064;Test
- *     public void testWiring() {
- *         sourceDestination.send(new GenericMessage&lt;String&gt;("Hello"));
- *         assertEquals("Hello world",
- *             new String((byte[])targetDestination.receive().getPayload(), StandardCharsets.UTF_8));
- *     }
- *
- *     &#064;SpringBootApplication
- *     &#064;EnableBinding(Processor.class)
- *     public static class MyProcessor {
- *         &#064;StreamListener(Processor.INPUT)
- *         &#064;SendTo(Processor.OUTPUT)
- *         public String transform(String in) {
- *             return in + " world";
- *         }
- *     }
- * }
- * </pre>
- *
- * @author Oleg Zhurakousky
- * @author Gary Russell
- *
- */
-public class TestChannelBinder extends
-		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, TestChannelBinderProvisioner> {
+public class NatsChannelBinder extends
+		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, NatsChannelBinderProvisioner> {
 
 	@Autowired
 	private BeanFactory beanFactory;
@@ -113,7 +63,7 @@ public class TestChannelBinder extends
 			"polled data",
 			Collections.singletonMap(MessageHeaders.CONTENT_TYPE, "text/plain"));
 
-	public TestChannelBinder(TestChannelBinderProvisioner provisioningProvider) {
+	public NatsChannelBinder(NatsChannelBinderProvisioner provisioningProvider) {
 		super(new String[] {}, provisioningProvider);
 	}
 
