@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
+import io.nats.client.Connection;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,47 +39,13 @@ import org.springframework.integration.config.EnableIntegration;
 @ConditionalOnMissingBean(Binder.class)
 @EnableIntegration
 public class NatsChannelBinderConfiguration<T> {
-
-	public static final String NAME = "integration";
-
-	/**
-	 * Utility operation to return an array of configuration classes defined in
-	 * {@link EnableBinding} annotation. Typically used for tests that do not rely on
-	 * creating an SCSt boot application annotated with {@link EnableBinding}, yet require
-	 * full {@link Binder} configuration.
-	 * @param additionalConfigurationClasses config classes to be added to the default
-	 * config
-	 * @return an array of configuration classes defined in {@link EnableBinding}
-	 * annotation
-	 */
-	public static Class<?>[] getCompleteConfiguration(
-			Class<?>... additionalConfigurationClasses) {
-		List<Class<?>> configClasses = new ArrayList<>();
-		configClasses.add(NatsChannelBinderConfiguration.class);
-		Import annotation = AnnotationUtils.getAnnotation(EnableBinding.class,
-				Import.class);
-		Map<String, Object> annotationAttributes = AnnotationUtils
-				.getAnnotationAttributes(annotation);
-		configClasses
-				.addAll(Arrays.asList((Class<?>[]) annotationAttributes.get("value")));
-		configClasses.add(BindingServiceConfiguration.class);
-		if (additionalConfigurationClasses != null) {
-			configClasses.addAll(Arrays.asList(additionalConfigurationClasses));
-		}
-		return configClasses.toArray(new Class<?>[] {});
-	}
-
-	@SuppressWarnings("unchecked")
 	@Bean
-	public Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties> springIntegrationChannelBinder(
-			NatsChannelBinderProvisioner provisioner) {
-		return (Binder<T, ? extends ConsumerProperties, ? extends ProducerProperties>) new NatsChannelBinder(
-				provisioner);
+	public NatsChannelProvisioner natsChannelProvisioner(Connection nc) {
+		return new NatsChannelProvisioner(nc);
 	}
 
 	@Bean
-	public NatsChannelBinderProvisioner springIntegrationProvisioner() {
-		return new NatsChannelBinderProvisioner();
+	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) {
+		return new NatsChannelBinder(natsProvisioner);
 	}
-
 }
