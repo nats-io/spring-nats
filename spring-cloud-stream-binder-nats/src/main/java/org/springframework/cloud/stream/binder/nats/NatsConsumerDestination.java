@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- package org.springframework.cloud.stream.binder.nats;
+package org.springframework.cloud.stream.binder.nats;
 
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 

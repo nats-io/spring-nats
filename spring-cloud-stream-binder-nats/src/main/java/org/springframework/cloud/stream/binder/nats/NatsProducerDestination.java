@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
- package org.springframework.cloud.stream.binder.nats;
+package org.springframework.cloud.stream.binder.nats;
 
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 
@@ -30,7 +30,7 @@ public class NatsProducerDestination implements ProducerDestination {
 	public String getName() {
 		return this.name;
 	}
-	
+
 	@Override
 	public String getNameForPartition(int partition) {
 		return this.name + "-" + partition;

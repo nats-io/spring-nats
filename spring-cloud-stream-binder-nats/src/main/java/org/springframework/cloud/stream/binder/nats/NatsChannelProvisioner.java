@@ -16,8 +16,8 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
-import io.nats.client.NUID;
 import io.nats.client.Connection;
+import io.nats.client.NUID;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -47,7 +47,8 @@ public class NatsChannelProvisioner implements ProvisioningProvider<ConsumerProp
 
 		if (group != null || group.length() > 0) {
 			subscriptionName = subject + "#" + group;
-		} else {
+		}
+		else {
 			subscriptionName = "anonymous#" + subject + "#" + NUID.nextGlobal();
 		}
 
