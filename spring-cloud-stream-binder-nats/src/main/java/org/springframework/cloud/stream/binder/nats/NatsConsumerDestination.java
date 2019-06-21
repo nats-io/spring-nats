@@ -30,4 +30,28 @@ public class NatsConsumerDestination implements ConsumerDestination {
 	public String getName() {
 		return this.name;
 	}
+
+	public String getSubject() {
+		String[] parts = this.name.split("#");
+
+		if (parts.length > 2) {
+			return parts[1];
+		}
+		else {
+			return parts[0];
+		}
+	}
+
+	public String getQueueGroup() {
+		String[] parts = this.name.split("#");
+
+		if (parts.length > 2) {
+			return parts[2];
+		}
+		else if (parts.length > 1) {
+			return parts[1];
+		}
+
+		return "";
+	}
 }

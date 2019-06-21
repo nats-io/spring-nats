@@ -38,32 +38,19 @@ public class NatsChannelBinder extends
 	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			ProducerProperties producerProperties, MessageChannel errorChannel) {
-		/* TODO PubSubMessageHandler messageHandler = new PubSubMessageHandler(this.pubSubTemplate, destination.getName());
-		messageHandler.setBeanFactory(getBeanFactory());
-		return messageHandler; */
-		return null;
+		return new NatsMessageHandler(destination.getName(), provisioner.getConnection());
 	}
 
 	@Override
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
 			ConsumerProperties properties) {
-
-		// TODO return new PubSubInboundChannelAdapter(this.pubSubTemplate, destination.getName());
-		return null;
-	}
-
-	@Override
-	protected void afterUnbindConsumer(ConsumerDestination destination, String group,
-			ConsumerProperties consumerProperties) {
-		super.afterUnbindConsumer(destination, group, consumerProperties);
-		// TODO clean up
+		return new NatsMessageProducer((NatsConsumerDestination) destination, provisioner.getConnection());
 	}
 
 	@Override
 	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
 			ConsumerDestination destination, ConsumerProperties consumerProperties) {
-		/* return new PolledConsumerResources(new PubSubMessageSource(this.pubSubTemplate, destination.getName()),
-				registerErrorInfrastructure(destination, group, consumerProperties, true)); */
-		return null;
+		return new PolledConsumerResources(new NatsMessageSource((NatsConsumerDestination) destination, provisioner.getConnection()),
+				registerErrorInfrastructure(destination, group, consumerProperties, true));
 	}
 }

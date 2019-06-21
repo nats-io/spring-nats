@@ -28,10 +28,14 @@ import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 
 public class NatsChannelProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
 
-	private final Connection nc;
+	private final Connection connection;
 
 	public NatsChannelProvisioner(Connection nc) {
-		this.nc = nc;
+		this.connection = nc;
+	}
+
+	public Connection getConnection() {
+		return this.connection;
 	}
 
 	@Override

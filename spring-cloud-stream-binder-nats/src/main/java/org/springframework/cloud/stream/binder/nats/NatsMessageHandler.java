@@ -16,7 +16,11 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 import io.nats.client.Connection;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -61,13 +65,24 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 	@Override
 	protected void handleMessageInternal(Message<?> message) {
 		Object payload = message.getPayload();
+		byte[] bytes = null;
 
-		if (!(payload instanceof byte[])) {
-			logger.warn("NATS handler only supports byte array messages");
-			return;
+		if (payload instanceof byte[]) {
+			bytes = (byte[]) payload;
+		}
+		else if (payload instanceof ByteBuffer) {
+			ByteBuffer buf = ((ByteBuffer) payload);
+			bytes = new byte[buf.remaining()];
+			buf.get(bytes);
+		}
+		else if (payload instanceof String) {
+			bytes = ((String) payload).getBytes(StandardCharsets.UTF_8);
 		}
 
-		byte[] bytes = (byte[]) payload;
+		if (bytes == null) {
+			logger.warn("NATS handler only supports byte array, byte buffer and string messages");
+			return;
+		}
 
 		if (this.connection != null && this.subject != null && this.subject.length() > 0) {
 			this.connection.publish(this.subject, bytes);
