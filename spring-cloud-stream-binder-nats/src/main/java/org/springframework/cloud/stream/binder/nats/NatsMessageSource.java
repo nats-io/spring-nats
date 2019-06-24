@@ -21,14 +21,11 @@ import java.time.Duration;
 import io.nats.client.Connection;
 import io.nats.client.Message;
 import io.nats.client.Subscription;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.Lifecycle;
-import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.endpoint.AbstractMessageSource;
-import org.springframework.messaging.MessageChannel;
 
 public class NatsMessageSource extends AbstractMessageSource<Object> implements Lifecycle {
 	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);

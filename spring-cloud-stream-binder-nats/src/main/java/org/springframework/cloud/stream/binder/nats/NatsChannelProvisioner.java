@@ -18,6 +18,8 @@ package org.springframework.cloud.stream.binder.nats;
 
 import io.nats.client.Connection;
 import io.nats.client.NUID;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -27,6 +29,7 @@ import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 
 public class NatsChannelProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
+	private static final Log logger = LogFactory.getLog(NatsChannelProvisioner.class);
 
 	private final Connection connection;
 
@@ -49,7 +52,7 @@ public class NatsChannelProvisioner implements ProvisioningProvider<ConsumerProp
 			throws ProvisioningException {
 		String subscriptionName;
 
-		if (group != null || group.length() > 0) {
+		if (group != null && group.length() > 0) {
 			subscriptionName = subject + "#" + group;
 		}
 		else {

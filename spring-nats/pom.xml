@@ -5,6 +5,7 @@
 
 	<artifactId>spring-nats</artifactId>
 	<description>NATS Implementation for Spring</description>
+	<version>0.0.1.BUILD-SNAPSHOT</version>
 	<organization>
 		<name>CNCF</name>
 		<url>https://www.nats.io</url>
@@ -14,8 +15,8 @@
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-nats-parent</artifactId>
 		<version>0.0.1.BUILD-SNAPSHOT</version>
+        <relativePath>..</relativePath>
 	</parent>
-	
 	
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>

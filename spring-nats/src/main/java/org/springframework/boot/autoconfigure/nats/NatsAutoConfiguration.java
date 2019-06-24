@@ -17,10 +17,11 @@
 package org.springframework.boot.autoconfigure.nats;
 
 import java.io.IOException;
-import java.lang.InterruptedException;
 
 import io.nats.client.Connection;
 import io.nats.client.Nats;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -35,11 +36,21 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnClass({ Connection.class })
 @EnableConfigurationProperties(NatsProperties.class)
 public class NatsAutoConfiguration {
+	private static final Log logger = LogFactory.getLog(NatsAutoConfiguration.class);
 
 	@Bean
 	@ConditionalOnMissingBean
 	public Connection natsConnection(NatsProperties properties) throws IOException, InterruptedException {
-		return Nats.connect(properties.toOptions());
+		Connection nc = null;
+
+		try {
+			nc = Nats.connect(properties.toOptions());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return nc;
 	}
 
 }

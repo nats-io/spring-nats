@@ -16,6 +16,9 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -25,8 +28,9 @@ import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
-public class NatsChannelBinder extends
-		AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, NatsChannelProvisioner> {
+public class NatsChannelBinder
+		extends AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, NatsChannelProvisioner> {
+	private static final Log logger = LogFactory.getLog(NatsChannelBinder.class);
 
 	private final NatsChannelProvisioner provisioner;
 
@@ -50,7 +54,8 @@ public class NatsChannelBinder extends
 	@Override
 	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
 			ConsumerDestination destination, ConsumerProperties consumerProperties) {
-		return new PolledConsumerResources(new NatsMessageSource((NatsConsumerDestination) destination, provisioner.getConnection()),
+		return new PolledConsumerResources(
+				new NatsMessageSource((NatsConsumerDestination) destination, provisioner.getConnection()),
 				registerErrorInfrastructure(destination, group, consumerProperties, true));
 	}
 }

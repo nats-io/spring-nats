@@ -16,9 +16,13 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 
 public class NatsConsumerDestination implements ConsumerDestination {
+	private static final Log logger = LogFactory.getLog(NatsConsumerDestination.class);
 
 	private String name;
 

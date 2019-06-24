@@ -18,7 +18,6 @@ package org.springframework.cloud.stream.binder.nats;
 
 import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
