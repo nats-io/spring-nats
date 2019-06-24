@@ -48,9 +48,8 @@ public class PollingSample {
 	public ApplicationRunner runner(PollableMessageSource input, MessageChannel output) {
 		return args -> {
 			exec.execute(() -> {
-				boolean result = false;
 				while (true) {
-					result = input.poll(message -> {
+					input.poll(message -> {
 						byte[] bytes = (byte[]) message.getPayload();
 						String val = new String(bytes, StandardCharsets.UTF_8);
 						logger.info("received message " + val);

@@ -16,14 +16,9 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 
 public class NatsProducerDestination implements ProducerDestination {
-	private static final Log logger = LogFactory.getLog(NatsProducerDestination.class);
-
 	private String name;
 
 	public NatsProducerDestination(String name) {

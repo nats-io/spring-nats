@@ -18,9 +18,6 @@ package org.springframework.cloud.stream.binder.nats;
 
 import java.nio.charset.StandardCharsets;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -28,8 +25,6 @@ import org.springframework.messaging.handler.annotation.SendTo;
 
 @EnableBinding(Processor.class)
 public class MultiBinderTransformer {
-	private static final Log logger = LogFactory.getLog(MultiBinderTransformer.class);
-
 	@StreamListener(Processor.INPUT)
 	@SendTo(Processor.OUTPUT)
 	public Object transform(Object message) {

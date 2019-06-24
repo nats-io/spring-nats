@@ -47,7 +47,7 @@ public class NatsAutoConfiguration {
 			nc = Nats.connect(properties.toOptions());
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			logger.info("error connecting to nats", e);
 			throw e;
 		}
 		return nc;
