@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        timedchannel:
+          destination: dataOut
+          binder: nats
