@@ -69,13 +69,15 @@ and include a dependency on the library:
 </dependency>
 ```
 
+See the [Spring Cloud Stream Documentation](https://spring.io/projects/spring-cloud-stream) for information about more complex configurations of the bindings.
+
 The NATS binder leverages the autoconfigure module, or manual configuration to build a NATS connection. Standard properties are used to specify inputs and outputs. Inputs, specified with a destination and group name are mapped to subjects and queue names, with the destination becoming the subject, and the group becoming the queue. Outputs are specified with a destination name that becomes the subject.
 
-The binder supports standard consumers through a dispatcher. Each consumer will create its own dispatcher in the core library, resulting in a thread per consumer.
+Consumers are implemented with a dispatcher. Each consumer will create its own dispatcher in the core library, resulting in a thread per consumer.
+
+Polled consumers are implemented with a subscription.
 
 > Currently the polling code will wait forever for a message and is not configurable.
-
-The binder supports polled consumers through subscriptions. These subscriptions do not use resources, and depend on the application to request the next message.
 
 Producers publish directly through the connection.
 
