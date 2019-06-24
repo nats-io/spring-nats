@@ -3,8 +3,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>spring-cloud-stream-binder-nats</artifactId>
-	<description>Spring Cloud Stream Binder for NATS</description>
+	<artifactId>spring-nats</artifactId>
+	<description>NATS Implementation for Spring</description>
 	<version>0.0.1.BUILD-SNAPSHOT</version>
 	<organization>
 		<name>CNCF</name>
@@ -18,7 +18,6 @@
         <relativePath>..</relativePath>
 	</parent>
 	
-	
 	<properties>
 		<main.basedir>${basedir}/..</main.basedir>
 	</properties>
@@ -30,24 +29,12 @@
 			<version>2.5.2</version>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-nats</artifactId>
-			<version>0.0.1.BUILD-SNAPSHOT</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-test-support-internal</artifactId>
-			<scope>test</scope>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-autoconfigure</artifactId>
 		</dependency>
 	</dependencies>
 </project>

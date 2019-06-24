@@ -1,36 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>spring-cloud-stream-binder-nats-parent</artifactId>
+	
+	<artifactId>spring-nats-parent</artifactId>
 	<version>0.0.1.BUILD-SNAPSHOT</version>
 	<packaging>pom</packaging>
+	
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>spring-cloud-build</artifactId>
-		<version>2.1.4.BUILD-SNAPSHOT</version>
-		<relativePath />
+		<version>2.1.4.RELEASE</version>
+		<relativePath/>
 	</parent>
+	
 	<properties>
-		<spring-cloud-stream.version>2.2.0.BUILD-SNAPSHOT</spring-cloud-stream.version>
-		<spring-boot.version>2.1.4.RELEASE</spring-boot.version>
+		<spring-boot.version>2.1.6.RELEASE</spring-boot.version>
+		<spring-cloud-stream.version>2.2.0.RELEASE</spring-cloud-stream.version>
 		<java.version>1.8</java.version>
-		<maven-checkstyle-plugin.failsOnError>true</maven-checkstyle-plugin.failsOnError>
-        <maven-checkstyle-plugin.failsOnViolation>true
-        </maven-checkstyle-plugin.failsOnViolation>
-        <maven-checkstyle-plugin.includeTestSourceDirectory>true
-        </maven-checkstyle-plugin.includeTestSourceDirectory>
 	</properties>
+
+	<modules>
+		<module>spring-nats</module>
+		<module>spring-cloud-stream-binder-nats</module>
+		<module>nats-samples</module>
+	</modules>
+
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-stream-binder-nats</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
 				<artifactId>spring-cloud-stream</artifactId>
 				<version>${spring-cloud-stream.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-nats</artifactId>
-				<version>${project.version}</version>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot</artifactId>
+				<version>${spring-boot.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-autoconfigure</artifactId>
+				<version>${spring-boot.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.cloud</groupId>
@@ -44,21 +59,9 @@
 				<version>${spring-cloud-stream.version}</version>
 				<scope>test</scope>
 			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-stream-binder-nats-test-support</artifactId>
-				<version>${project.version}</version>
-				<scope>test</scope>
-			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	<modules>
-		<module>spring-cloud-stream-binder-nats-core</module>
-		<module>spring-cloud-stream-binder-nats</module>
-		<module>spring-cloud-starter-stream-nats</module>
-		<module>spring-cloud-stream-binder-nats-test-support</module>
-		<module>docs</module>
-	</modules>
+    
 	<build>
 		<pluginManagement>
 			<plugins>
@@ -101,6 +104,7 @@
 			</plugin>
 		</plugins>
 	</build>
+
 	<reporting>
         <plugins>
             <plugin>
@@ -109,6 +113,7 @@
             </plugin>
         </plugins>
     </reporting>
+
 	<profiles>
 		<profile>
 			<id>spring</id>

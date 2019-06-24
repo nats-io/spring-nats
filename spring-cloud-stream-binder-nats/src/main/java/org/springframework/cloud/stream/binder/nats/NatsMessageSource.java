@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,105 +16,82 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
+import java.time.Duration;
+
 import io.nats.client.Connection;
-import io.nats.client.Nats;
+import io.nats.client.Message;
 import io.nats.client.Subscription;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
-import org.springframework.cloud.stream.binder.nats.properties.NatsConsumerProperties;
+import org.springframework.context.Lifecycle;
 import org.springframework.integration.endpoint.AbstractMessageSource;
-import org.springframework.integration.support.AbstractIntegrationMessageBuilder;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.util.Assert;
 
+public class NatsMessageSource extends AbstractMessageSource<Object> implements Lifecycle {
+	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
 
-/**
- * A pollable {@link org.springframework.integration.core.MessageSource} for NATS.
- */
-public class NatsMessageSource extends AbstractMessageSource<Object> {
-	private final String subject;
-	private final String group;
+	private NatsConsumerDestination destination;
 	private Connection connection;
-	private Subscription subscription;
-	private ExtendedConsumerProperties<NatsConsumerProperties> properties;
+	private Subscription sub;
 
-	public NatsMessageSource(String subject, String group, ExtendedConsumerProperties<NatsConsumerProperties> properties) {
-		Assert.notNull(subject, "'queue' cannot be null");
-		this.subject = subject;
-		this.group = group;
-		this.properties = properties;
+	public NatsMessageSource(NatsConsumerDestination destination, Connection nc) {
+		this.destination = destination;
+		this.connection = nc;
+	}
 
-		// FIXME - parse options from the config
-		try {
-			this.connection = Nats.connect("localhost");
+	@Override
+	protected Object doReceive() {
+		if (this.sub == null) {
+			return null;
 		}
-		catch (Exception ex) {
-			// TODO = log?
+
+		try {
+			Message m = this.sub.nextMessage(Duration.ZERO);
+
+			if (m != null) {
+				return m.getData();
+			}
+		}
+		catch (InterruptedException exp) {
+			logger.info("wait for message interrupted");
+		}
+
+		return null;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return this.sub != null;
+	}
+
+	@Override
+	public void start() {
+		if (this.sub != null) {
+			return;
+		}
+
+		String sub = this.destination.getSubject();
+		String queue = this.destination.getQueueGroup();
+
+		if (queue != null && queue.length() > 0) {
+			this.sub = this.connection.subscribe(sub, queue);
+		}
+		else {
+			this.sub = this.connection.subscribe(sub);
 		}
 	}
 
+	@Override
+	public void stop() {
+		if (this.sub == null) {
+			return;
+		}
+
+		this.sub.unsubscribe();
+	}
 
 	@Override
 	public String getComponentType() {
 		return "nats:message-source";
 	}
-
-	@Override
-	protected AbstractIntegrationMessageBuilder<Object> doReceive() {
-
-		// TODO:  Get NATS message (from where?), finish this...
-		io.nats.client.Message msg = null;
-
-		String replySubject = msg.getReplyTo();
-		byte[] payload = null;
-		AbstractIntegrationMessageBuilder<Object> builder = getMessageBuilderFactory().withPayload((Object) payload)
-					.setHeader(MessageHeaders.REPLY_CHANNEL, replySubject);
-		return builder;
-
-		//
-		// TODO - get NATS messages  E.g. Rabbit Code for this...
-		//
-		// subscription.NextMessage();
-		/*
-		try {
-			Message resp = channel.basicGet(this.queue, false);
-			if (resp == null) {
-				RabbitUtils.closeChannel(channel);
-				RabbitUtils.closeConnection(connection);
-				return null;
-			}
-			AcknowledgmentCallback callback = this.ackCallbackFactory
-					.createCallback(new AmqpAckInfo(connection, channel, this.transacted, resp));
-			MessageProperties messageProperties = this.propertiesConverter.toMessageProperties(resp.getProps(),
-					resp.getEnvelope(), StandardCharsets.UTF_8.name());
-			messageProperties.setConsumerQueue(this.queue);
-			Map<String, Object> headers = this.headerMapper.toHeadersFromRequest(messageProperties);
-			org.springframework.amqp.core.Message amqpMessage = new org.springframework.amqp.core.Message(resp.getBody(), messageProperties);
-			Object payload;
-			if (this.batchingStrategy.canDebatch(messageProperties)) {
-				List<Object> payloads = new ArrayList<>();
-				this.batchingStrategy.deBatch(amqpMessage, fragment -> payloads
-						.add(this.messageConverter.fromMessage(fragment)));
-				payload = payloads;
-			}
-			else {
-				payload = this.messageConverter.fromMessage(amqpMessage);
-			}
-			AbstractIntegrationMessageBuilder<Object> builder = getMessageBuilderFactory().withPayload(payload)
-					.copyHeaders(headers)
-					.setHeader(IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK, callback);
-			if (this.rawMessageHeader) {
-				builder.setHeader(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE, amqpMessage);
-				builder.setHeader(IntegrationMessageHeaderAccessor.SOURCE_DATA, amqpMessage);
-			}
-			return builder;
-		}
-		catch (IOException e) {
-			RabbitUtils.closeChannel(channel);
-			RabbitUtils.closeConnection(connection);
-			throw RabbitExceptionTranslator.convertRabbitAccessException(e);
-		}
-		*/
-	}
 }
-

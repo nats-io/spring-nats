@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2019 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,75 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
-import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
-import org.springframework.cloud.stream.binder.nats.properties.NatsProducerProperties;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
+import io.nats.client.Connection;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.MessagingException;
 
-
-// import io.nats.client.Connection;
-// import io.nats.client.Nats;
-// import io.nats.client.Subscription;
-
-// import org.springframework.integration.IntegrationMessageHeaderAccessor;
-// import org.springframework.integration.acks.AcknowledgmentCallback;
-// import org.springframework.integration.acks.AcknowledgmentCallbackFactory;
-// import org.springframework.cloud.stream.binder.nats.properties.NatsConsumerProperties;
-// import org.springframework.integration.endpoint.AbstractMessageSource;
-// import org.springframework.integration.support.AbstractIntegrationMessageBuilder;
-// import org.springframework.util.Assert;
-
-/**
- * A Message handler for NATS.
- */
-public class NatsMessageHandler implements MessageHandler {
+public class NatsMessageHandler extends AbstractMessageHandler {
+	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
 
 	private String subject;
-	private ExtendedProducerProperties<NatsProducerProperties> properties;
+	private Connection connection;
 
-	// TODO
-	public NatsMessageHandler(String subject, ExtendedProducerProperties<NatsProducerProperties> properties) {
+	public NatsMessageHandler() {
+	}
+
+	public NatsMessageHandler(String subject, Connection nc) {
 		this.subject = subject;
-		this.properties = properties;
+		this.connection = nc;
+	}
+
+	public String getSubject() {
+		return this.subject;
+	}
+
+	public void setSubject(String subject) {
+		this.subject = subject;
+	}
+
+	public Connection getConnection() {
+		return this.connection;
+	}
+
+	public void setConnection(Connection nc) {
+		this.connection = nc;
+	}
+
+	public NatsMessageHandler subject(String subject) {
+		this.subject = subject;
+		return this;
 	}
 
 	@Override
-	public void handleMessage(Message<?> message)
-			throws MessagingException {
-			// TODO...  Publish?  Where to get connection?  Check out other implemtnations.
+	protected void handleMessageInternal(Message<?> message) {
+		Object payload = message.getPayload();
+		byte[] bytes = null;
+
+		if (payload instanceof byte[]) {
+			bytes = (byte[]) payload;
+		}
+		else if (payload instanceof ByteBuffer) {
+			ByteBuffer buf = ((ByteBuffer) payload);
+			bytes = new byte[buf.remaining()];
+			buf.get(bytes);
+		}
+		else if (payload instanceof String) {
+			bytes = ((String) payload).getBytes(StandardCharsets.UTF_8);
+		}
+
+		if (bytes == null) {
+			logger.warn("NATS handler only supports byte array, byte buffer and string messages");
+			return;
+		}
+
+		if (this.connection != null && this.subject != null && this.subject.length() > 0) {
+			this.connection.publish(this.subject, bytes);
+		}
 	}
 }
-
