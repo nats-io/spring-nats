@@ -16,12 +16,11 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
-import io.nats.client.Connection;
-import io.nats.client.Dispatcher;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import io.nats.client.Connection;
+import io.nats.client.Dispatcher;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -31,9 +30,16 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 public class NatsMessageProducer implements MessageProducer, Lifecycle {
-	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
+	private static final Log logger = LogFactory.getLog(NatsMessageProducer.class);
 
+	/**
+	 * The NATS subject for incoming message is stored in the SUBJECT header.
+	 */
 	public static final String SUBJECT = "subject";
+
+	/**
+	 * If an incoming message has a reply to subject, that will be stored in the REPLY_TO header for propogation to the NatsMessageSource.
+	 */
 	public static final String REPLY_TO = "reply_to";
 
 	private NatsConsumerDestination destination;
