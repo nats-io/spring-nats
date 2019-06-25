@@ -1,4 +1,4 @@
-![NATS](logos/large-logo.png)
+![NATS](images/large-logo.png)
 
 # NATS Spring Support
 
