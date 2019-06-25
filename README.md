@@ -7,7 +7,7 @@
 * [Using the NATS Modules](#using)
   * [Multiple NATS Connections](#multi)
 * [Using the Binder](#binder)
-  * [Reqquest-Reply](#reqreply)
+  * [Request-Reply](#reqreply)
 * [Configuration](#configure)
 * [Samples](#samples)
 * [Building This Project](#build)
@@ -97,6 +97,8 @@ By default, properties are configured using the `spring.nats` prefix:
 ## Samples <a name="samples"></a>
 
 This repo provides samples for the major use-cases implemented by the core code:
+
+* [autoconfigure-sample](./nats-samples/autoconfigure-sample) a simple command line runner with spring boot that uses the auto-configured nats connection from an application.properties file.
 
 * [listener-sample](./nats-samples/listener-sample) uses the binder to listen to a single subject and print messages it receives. The configuration in application.yml specifies a single subject `dataIn`.
 
