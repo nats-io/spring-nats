@@ -41,7 +41,9 @@ This module defines and exports an auto-configuration for NATS Connection object
 
 ### Multiple NATS Connections <a name="multi"></a>
 
-By default the autoconfigure modules will create a single NATS connection which is shared by any binders/dependencies.
+By default the autoconfigure modules will create a single NATS connection and the binders will create a second one.
+
+> An example multi-binder-sample is in progress, but is not working currently. The named binders are not getting configured by their environments.
 
 ## Using the NATS Cloud Stream Binder <a name="binder"></a>
 
