@@ -16,6 +16,14 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
+import java.io.IOException;
+
+import javax.annotation.PostConstruct;
+
+import io.nats.client.Connection;
+import io.nats.client.Nats;
+
+import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -25,32 +33,46 @@ import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
+
 public class NatsChannelBinder
 		extends AbstractMessageChannelBinder<ConsumerProperties, ProducerProperties, NatsChannelProvisioner> {
-	private final NatsChannelProvisioner provisioner;
+	private final NatsProperties properties;
+	private Connection connection;
 
-	public NatsChannelBinder(NatsChannelProvisioner provisioningProvider) {
+	public NatsChannelBinder(NatsProperties natsProperties, NatsChannelProvisioner provisioningProvider) {
 		super(null, provisioningProvider);
-		this.provisioner = provisioningProvider;
+		this.properties = natsProperties;
+	}
+
+	@PostConstruct
+	private void initConnection() throws IOException, InterruptedException {
+		try {
+			System.out.println("#### Connecting to nats " + this.properties);
+			this.connection = Nats.connect(properties.toOptions());
+		}
+		catch (Exception e) {
+			logger.info("error connecting to nats", e);
+			throw e;
+		}
 	}
 
 	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			ProducerProperties producerProperties, MessageChannel errorChannel) {
-		return new NatsMessageHandler(destination.getName(), provisioner.getConnection());
+		return new NatsMessageHandler(destination.getName(), this.connection);
 	}
 
 	@Override
 	protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
 			ConsumerProperties properties) {
-		return new NatsMessageProducer((NatsConsumerDestination) destination, provisioner.getConnection());
+		return new NatsMessageProducer((NatsConsumerDestination) destination, this.connection);
 	}
 
 	@Override
 	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
 			ConsumerDestination destination, ConsumerProperties consumerProperties) {
 		return new PolledConsumerResources(
-				new NatsMessageSource((NatsConsumerDestination) destination, provisioner.getConnection()),
+				new NatsMessageSource((NatsConsumerDestination) destination, this.connection),
 				registerErrorInfrastructure(destination, group, consumerProperties, true));
 	}
 }

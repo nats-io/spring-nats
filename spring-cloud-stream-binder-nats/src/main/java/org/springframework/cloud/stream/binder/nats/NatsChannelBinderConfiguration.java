@@ -16,25 +16,35 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
-import io.nats.client.Connection;
+import java.io.IOException;
+import java.util.Collections;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.nats.NatsProperties;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.cloud.stream.binder.Binder;
+import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.config.EnableIntegration;
 
 @Configuration
 @ConditionalOnMissingBean(Binder.class)
-@EnableIntegration
-public class NatsChannelBinderConfiguration<T> {
+public class NatsChannelBinderConfiguration {
 	@Bean
-	public NatsChannelProvisioner natsChannelProvisioner(Connection nc) {
-		return new NatsChannelProvisioner(nc);
+	public NatsChannelProvisioner natsChannelProvisioner() {
+		return new NatsChannelProvisioner();
 	}
 
 	@Bean
-	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) {
-		return new NatsChannelBinder(natsProvisioner);
+	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner, NatsProperties properties) throws IOException, InterruptedException {
+		NatsChannelBinder binder = new NatsChannelBinder(properties, natsProvisioner);
+		return binder;
+	}
+
+	@Bean
+	public MappingsProvider natsExtendedPropertiesDefaultMappingsProvider() {
+		return () -> Collections.singletonMap(
+				ConfigurationPropertyName.of("spring.cloud.stream.nats.bindings"),
+				ConfigurationPropertyName.of("spring.cloud.stream.nats.default"));
 	}
 }

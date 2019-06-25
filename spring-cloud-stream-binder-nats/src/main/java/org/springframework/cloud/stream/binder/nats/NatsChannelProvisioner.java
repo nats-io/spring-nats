@@ -16,10 +16,7 @@
 
 package org.springframework.cloud.stream.binder.nats;
 
-import io.nats.client.Connection;
 import io.nats.client.NUID;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import org.springframework.cloud.stream.binder.ConsumerProperties;
 import org.springframework.cloud.stream.binder.ProducerProperties;
@@ -29,16 +26,7 @@ import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 
 public class NatsChannelProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
-	private static final Log logger = LogFactory.getLog(NatsChannelProvisioner.class);
-
-	private final Connection connection;
-
-	public NatsChannelProvisioner(Connection nc) {
-		this.connection = nc;
-	}
-
-	public Connection getConnection() {
-		return this.connection;
+	public NatsChannelProvisioner() {
 	}
 
 	@Override

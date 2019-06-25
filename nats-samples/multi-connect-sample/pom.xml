@@ -1,35 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
-	<artifactId>nats-samples</artifactId>
+
+	<artifactId>multi-connect-sample</artifactId>
 	<version>0.0.1.BUILD-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	
+	<packaging>jar</packaging>
+	<name>multi-connect-sample</name>
+	<description>A simple sample for the nats cloud stream binder</description>
+
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-nats-parent</artifactId>
+		<artifactId>nats-samples</artifactId>
 		<version>0.0.1.BUILD-SNAPSHOT</version>
         <relativePath>..</relativePath>
 	</parent>
-	
+
 	<properties>
-		<spring-boot.version>2.1.6.RELEASE</spring-boot.version>
-		<spring-cloud-stream.version>2.2.0.RELEASE</spring-cloud-stream.version>
-		<java.version>1.8</java.version>
+		<main.basedir>${basedir}/..</main.basedir>
 	</properties>
 
-	<modules>
-		<module>multi-binder-sample</module>
-		<module>listener-sample</module>
-		<module>polling-sample</module>
-		<module>source-sample</module>
-		<module>multi-connect-sample</module>
-	</modules>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-binder-nats</artifactId>
+		</dependency>
+	</dependencies>
 
-	<dependencyManagement>
-	</dependencyManagement>
-    
 	<build>
 		<plugins>
 			<plugin>

@@ -1,0 +1,23 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: dataIn
+          binder: nats1
+        output:
+          destination: dataOut
+          binder: nats2
+      binders:
+        nats1:
+         type: nats
+         environment:
+           spring:
+             nats:
+              server: nats://localhost:4222
+        nats2:
+         type: nats
+         environment:
+           spring:
+             nats:
+              server: nats://localhost:4222

@@ -32,7 +32,6 @@ import org.springframework.context.annotation.Bean;
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for NATS.
  */
-//@Configuration(proxyBeanMethods = false)
 @ConditionalOnClass({ Connection.class })
 @EnableConfigurationProperties(NatsProperties.class)
 public class NatsAutoConfiguration {
@@ -44,6 +43,7 @@ public class NatsAutoConfiguration {
 		Connection nc = null;
 
 		try {
+			System.out.println("#### Autoconnect to nats " + properties);
 			nc = Nats.connect(properties.toOptions());
 		}
 		catch (Exception e) {
