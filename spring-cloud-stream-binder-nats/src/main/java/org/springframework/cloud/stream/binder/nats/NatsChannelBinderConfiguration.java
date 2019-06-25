@@ -19,16 +19,18 @@ package org.springframework.cloud.stream.binder.nats;
 import java.io.IOException;
 import java.util.Collections;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.nats.NatsAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
-import org.springframework.cloud.stream.binder.Binder;
 import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
 @Configuration
-@ConditionalOnMissingBean(Binder.class)
+@Import({ NatsAutoConfiguration.class })
+@EnableConfigurationProperties({ NatsProperties.class })
 public class NatsChannelBinderConfiguration {
 	@Bean
 	public NatsChannelProvisioner natsChannelProvisioner() {

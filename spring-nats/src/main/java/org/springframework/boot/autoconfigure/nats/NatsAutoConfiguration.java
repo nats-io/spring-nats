@@ -41,6 +41,12 @@ public class NatsAutoConfiguration {
 	@ConditionalOnMissingBean
 	public Connection natsConnection(NatsProperties properties) throws IOException, InterruptedException {
 		Connection nc = null;
+		String serverProp = (properties != null) ? properties.getServer() : null;
+
+		if (serverProp == null || serverProp.length() == 0) {
+			System.out.println("#### Autoconnect failed, no server in properties.");
+			return null;
+		}
 
 		try {
 			System.out.println("#### Autoconnect to nats " + properties);
