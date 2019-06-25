@@ -7,6 +7,7 @@
 * [Using the NATS Modules](#using)
   * [Multiple NATS Connections](#multi)
 * [Using the Binder](#binder)
+  * [Reqquest-Reply](#reqreply)
 * [Configuration](#configure)
 * [Samples](#samples)
 * [Building This Project](#build)
@@ -83,6 +84,10 @@ Polled consumers are implemented with a subscription.
 
 Producers publish directly through the connection.
 
+### Request-Reply <a name="reqreply"></a>
+
+The binder uses message header propagation to support NATS-style request-reply. The reply-to subject is passed as a header when a message is received. That reply to header is used as the outgoing subject if it is present when a message is sent. This system by-passes the configured producer destination.
+
 ## Configuration <a name="configure"></a>
 
 By default, properties are configured using the `spring.nats` prefix:
@@ -95,11 +100,15 @@ This repo provides samples for the major use-cases implemented by the core code:
 
 * [listener-sample](./nats-samples/listener-sample) uses the binder to listen to a single subject and print messages it receives. The configuration in application.yml specifies a single subject `dataIn`.
 
-* [multi-binder-sample](./nats-samples/multi-binder-sample) creates a source and sink. The example listens to the subject `dataIn` and sends to the subject `dataOut`. If the message contains a UTF-8 string, it is converted to all CAPS before being sent.
+* [multi-binding-sample](./nats-samples/multi-binding-sample) creates a processor. The example listens to the subject `dataIn` and sends to the subject `dataOut`. If the message contains a UTF-8 string, it is converted to all CAPS before being sent.
 
 * [polling-sample](./nats-samples/polling-sample) is similar to the listener sample, but uses polling.
 
 * [source-sample](./nats-samples/source-sample) generates messages on a timer and sends them to a NATS endpoint. In order to leverage this pattern you need to create a named source. See the `application.yml` for details.
+
+* [queue-sample](./nats-samples/queue-sample) listens on a subject and queue group, run multiple copies of the sample to see how messages are load balanced.
+
+* [multi-connect-sample](./nats-samples/multi-connect-sample) copy of the multi-binding-sample that uses 2 nats connections. **This sample is not working, something is broken with multi-binder support**
 
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
@@ -116,7 +125,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/multi-binder-sample/target/multi-binder-sample-0.0.1.BUILD-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/multi-binding-sample/target/multi-binding-sample-0.0.1.BUILD-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
 ...
 
 ```

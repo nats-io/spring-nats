@@ -17,6 +17,8 @@
 package org.springframework.cloud.stream.binder.nats;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.nats.client.Connection;
 import io.nats.client.Message;
@@ -26,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.endpoint.AbstractMessageSource;
+import org.springframework.messaging.support.GenericMessage;
 
 public class NatsMessageSource extends AbstractMessageSource<Object> implements Lifecycle {
 	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
@@ -49,7 +52,11 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 			Message m = this.sub.nextMessage(Duration.ZERO);
 
 			if (m != null) {
-				return m.getData();
+				Map<String, Object> headers = new HashMap<>();
+				headers.put(NatsMessageProducer.SUBJECT, m.getSubject());
+				headers.put(NatsMessageProducer.REPLY_TO, m.getReplyTo());
+				GenericMessage<byte[]> gm = new GenericMessage<byte[]>(m.getData(), headers);
+				return gm;
 			}
 		}
 		catch (InterruptedException exp) {
