@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>multi-binding-sample</artifactId>
-	<version>0.0.1.BUILD-SNAPSHOT</version>
+	<version>${revision}</version>
 	<packaging>jar</packaging>
 	<name>multi-binding-sample</name>
 	<description>A simple sample for the nats cloud stream binding with a processor</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>org.springframework.cloud</groupId>
 		<artifactId>nats-samples</artifactId>
-		<version>0.0.1.BUILD-SNAPSHOT</version>
+		<version>${revision}</version>
         <relativePath>..</relativePath>
 	</parent>
 

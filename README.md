@@ -34,7 +34,7 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-nats</artifactId>
-    <version>0.0.1.BUILD-SNAPSHOT</version>
+    <version>NNNN</version>
 </dependency>
 ```
 
@@ -115,7 +115,7 @@ This repo provides samples for the major use-cases implemented by the core code:
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-samples/listener-sample/target/listener-sample-0.0.1.BUILD-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/listener-sample/target/listener-sample-0.0.1-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -127,7 +127,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/multi-binding-sample/target/multi-binding-sample-0.0.1.BUILD-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/multi-binding-sample/target/multi-binding-sample-0.0.1.SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
 ...
 
 ```
@@ -149,6 +149,32 @@ Listening on [>]
 This project is built with maven. The `mvnw` helper is included in the root folder and its implementation is included in the `.mvn` folder. You should be able to compile using `./mvnw clean compile`, or package the jars with `./mvnw clean package`.
 
 Internally there are multiple pom files, one parent for the project, one parent for the samples, one for the autoconfigure code, one for the binder, and one each for the samples. When built, each will have its own artifacts.
+
+Signing and deploying requires that you set up your settings.xml file for maven:
+
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>ossrh</id>
+      <username>xxx</username>
+      <password>xxxxx</password>
+    </server>
+  </servers>
+  <profiles>
+        <profile>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <gpg.keyid>xxx</gpg.keyid>
+                <gpg.passphrase>xxxxx</gpg.passphrase>
+                <gpg.secretkeyring>xxxxx</gpg.secretkeyring>
+            </properties>
+        </profile>
+    </profiles>
+</settings>
+```
 
 ### Adding New Configuration Properties
 
