@@ -18,6 +18,10 @@ package org.springframework.cloud.stream.binder.nats;
 
 import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -28,6 +32,9 @@ import org.springframework.messaging.support.GenericMessage;
 
 public class NatsMessageProducer implements MessageProducer, Lifecycle {
 	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
+
+	public static final String SUBJECT = "subject";
+	public static final String REPLY_TO = "reply_to";
 
 	private NatsConsumerDestination destination;
 	private Connection connection;
@@ -81,7 +88,11 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 
 		this.dispatcher = this.connection.createDispatcher((msg) -> {
 			try {
-				this.output.send(new GenericMessage<byte[]>(msg.getData()));
+				Map<String, Object> headers = new HashMap<>();
+				headers.put(SUBJECT, msg.getSubject());
+				headers.put(REPLY_TO, msg.getReplyTo());
+				GenericMessage<byte[]> m = new GenericMessage<byte[]>(msg.getData(), headers);
+				this.output.send(m);
 			}
 			catch (Exception e) {
 				logger.warn("exception sending message to output channel", e);

@@ -45,9 +45,9 @@ public class NatsConsumerDestination implements ConsumerDestination {
 		String[] parts = this.name.split("#");
 
 		if (parts.length > 2) {
-			return parts[2];
+			return "";
 		}
-		else if (parts.length > 1) {
+		else if (parts.length == 2) {
 			return parts[1];
 		}
 

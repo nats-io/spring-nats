@@ -83,8 +83,12 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 			return;
 		}
 
-		if (this.connection != null && this.subject != null && this.subject.length() > 0) {
-			this.connection.publish(this.subject, bytes);
+		Object rt = message.getHeaders().get(NatsMessageProducer.REPLY_TO);
+		String replyTo = rt != null ? rt.toString() : null;
+		String subj = replyTo != null ? replyTo : this.subject;
+
+		if (this.connection != null && subj != null && subj.length() > 0) {
+			this.connection.publish(subj, bytes);
 		}
 	}
 }
