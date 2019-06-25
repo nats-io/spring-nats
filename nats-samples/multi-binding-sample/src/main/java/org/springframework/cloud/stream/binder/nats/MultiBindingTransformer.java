@@ -24,7 +24,7 @@ import org.springframework.cloud.stream.messaging.Processor;
 import org.springframework.messaging.handler.annotation.SendTo;
 
 @EnableBinding(Processor.class)
-public class MultiBinderTransformer {
+public class MultiBindingTransformer {
 	@StreamListener(Processor.INPUT)
 	@SendTo(Processor.OUTPUT)
 	public Object transform(Object message) {

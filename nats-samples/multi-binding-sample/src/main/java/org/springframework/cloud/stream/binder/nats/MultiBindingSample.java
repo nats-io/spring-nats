@@ -20,10 +20,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class MultiBinderSample {
+public class MultiBindingSample {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MultiBinderSample.class, args);
+		SpringApplication.run(MultiBindingSample.class, args);
 	}
 
 }
