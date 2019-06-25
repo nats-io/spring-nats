@@ -1,0 +1,8 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: dataIn
+          binder: nats
+          group: one
