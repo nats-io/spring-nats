@@ -51,6 +51,10 @@ public class NatsChannelBinder
 		}
 	}
 
+	public Connection getConnection() {
+		return this.connection;
+	}
+
 	@Override
 	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
 			ProducerProperties producerProperties, MessageChannel errorChannel) {

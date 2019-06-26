@@ -40,27 +40,6 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 		this.connection = nc;
 	}
 
-	public String getSubject() {
-		return this.subject;
-	}
-
-	public void setSubject(String subject) {
-		this.subject = subject;
-	}
-
-	public Connection getConnection() {
-		return this.connection;
-	}
-
-	public void setConnection(Connection nc) {
-		this.connection = nc;
-	}
-
-	public NatsMessageHandler subject(String subject) {
-		this.subject = subject;
-		return this;
-	}
-
 	@Override
 	protected void handleMessageInternal(Message<?> message) {
 		Object payload = message.getPayload();

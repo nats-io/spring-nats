@@ -55,22 +55,6 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 		this.connection = nc;
 	}
 
-	public NatsConsumerDestination getDestination() {
-		return this.destination;
-	}
-
-	public void setDestination(NatsConsumerDestination destination) {
-		this.destination = destination;
-	}
-
-	public Connection getConnection() {
-		return this.connection;
-	}
-
-	public void setConnection(Connection connection) {
-		this.connection = connection;
-	}
-
 	@Override
 	public void setOutputChannel(MessageChannel outputChannel) {
 		this.output = outputChannel;
@@ -93,6 +77,12 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 		}
 
 		this.dispatcher = this.connection.createDispatcher((msg) -> {
+
+			if (this.output == null) {
+				logger.warn("skipping message, no output channel set for " + this.destination.getName());
+				return;
+			}
+
 			try {
 				Map<String, Object> headers = new HashMap<>();
 				headers.put(SUBJECT, msg.getSubject());
