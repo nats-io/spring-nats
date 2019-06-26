@@ -44,12 +44,11 @@ public class NatsAutoConfiguration {
 		String serverProp = (properties != null) ? properties.getServer() : null;
 
 		if (serverProp == null || serverProp.length() == 0) {
-			System.out.println("#### Autoconnect failed, no server in properties.");
 			return null;
 		}
 
 		try {
-			System.out.println("#### Autoconnect to nats " + properties);
+			logger.info("autoconnecting to NATS with properties - " + properties);
 			nc = Nats.connect(properties.toOptions());
 		}
 		catch (Exception e) {

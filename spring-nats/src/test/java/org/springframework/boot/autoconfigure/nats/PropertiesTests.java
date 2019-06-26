@@ -52,4 +52,15 @@ public class PropertiesTests {
         assertEquals(server1, servers[0].toString());
         assertEquals(server2, servers[1].toString());
     }
+
+    @Test
+    public void testFluentProperties() {
+        String server = "nats://alphabet:4222";
+        NatsProperties props = new NatsProperties();
+
+        Options options = props.server(server).toOptions();
+        URI[] servers = options.getServers().toArray(new URI[0]);
+        assertEquals(1, servers.length);
+        assertEquals(server, servers[0].toString());
+    }
 }
