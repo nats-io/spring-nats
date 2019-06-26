@@ -18,8 +18,6 @@ package org.springframework.cloud.stream.binder.nats;
 
 import java.io.IOException;
 
-import javax.annotation.PostConstruct;
-
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 
@@ -39,13 +37,10 @@ public class NatsChannelBinder
 	private final NatsProperties properties;
 	private Connection connection;
 
-	public NatsChannelBinder(NatsProperties natsProperties, NatsChannelProvisioner provisioningProvider) {
+	public NatsChannelBinder(NatsProperties natsProperties, NatsChannelProvisioner provisioningProvider) throws IOException, InterruptedException {
 		super(null, provisioningProvider);
 		this.properties = natsProperties;
-	}
 
-	@PostConstruct
-	private void initConnection() throws IOException, InterruptedException {
 		try {
 			System.out.println("#### Connecting to nats " + this.properties);
 			this.connection = Nats.connect(properties.toOptions());
