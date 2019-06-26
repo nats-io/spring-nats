@@ -32,9 +32,6 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 	private String subject;
 	private Connection connection;
 
-	public NatsMessageHandler() {
-	}
-
 	public NatsMessageHandler(String subject, Connection nc) {
 		this.subject = subject;
 		this.connection = nc;

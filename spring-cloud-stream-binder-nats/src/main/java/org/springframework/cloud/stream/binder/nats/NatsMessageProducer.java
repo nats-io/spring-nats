@@ -47,9 +47,6 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 	private MessageChannel output;
 	private Dispatcher dispatcher;
 
-	public NatsMessageProducer() {
-	}
-
 	public NatsMessageProducer(NatsConsumerDestination destination, Connection nc) {
 		this.destination = destination;
 		this.connection = nc;
@@ -113,5 +110,6 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 		}
 
 		this.connection.closeDispatcher(this.dispatcher);
+		this.dispatcher = null;
 	}
 }

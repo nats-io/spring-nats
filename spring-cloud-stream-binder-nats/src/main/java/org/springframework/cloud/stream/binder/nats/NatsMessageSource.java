@@ -95,6 +95,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 		}
 
 		this.sub.unsubscribe();
+		this.sub = null;
 	}
 
 	@Override
