@@ -19,7 +19,12 @@ package org.springframework.boot.autoconfigure.nats;
 import java.io.IOException;
 
 import io.nats.client.Connection;
+import io.nats.client.ConnectionListener;
+import io.nats.client.Consumer;
+import io.nats.client.ErrorListener;
 import io.nats.client.Nats;
+import io.nats.client.Options;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -49,7 +54,32 @@ public class NatsAutoConfiguration {
 
 		try {
 			logger.info("autoconnecting to NATS with properties - " + properties);
-			nc = Nats.connect(properties.toOptions());
+			Options.Builder builder = properties.toOptionsBuilder();
+
+			builder = builder.connectionListener(new ConnectionListener() {
+				public void connectionEvent(Connection conn, Events type) {
+						logger.info("NATS connection status changed " + type);
+				}
+			});
+
+			builder = builder.errorListener(new ErrorListener() {
+				@Override
+				public void slowConsumerDetected(Connection conn, Consumer consumer) {
+					logger.info("NATS connection slow consumer detected");
+				}
+
+				@Override
+				public void exceptionOccurred(Connection conn, Exception exp) {
+					logger.info("NATS connection exception occurred", exp);
+				}
+
+				@Override
+				public void errorOccurred(Connection conn, String error) {
+					logger.info("NATS connection error occurred " + error);
+				}
+			});
+
+			nc = Nats.connect(builder.build());
 		}
 		catch (Exception e) {
 			logger.info("error connecting to nats", e);

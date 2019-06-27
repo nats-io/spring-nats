@@ -237,6 +237,10 @@ public class NatsProperties {
 	}
 
 	public Options toOptions() {
+		return toOptionsBuilder().build();
+	}
+
+	public Options.Builder toOptionsBuilder() {
 		Options.Builder builder = new Options.Builder();
 
 		builder = builder.server(this.server);
@@ -266,7 +270,7 @@ public class NatsProperties {
 			builder = builder.userInfo(this.username, this.password);
 		}
 
-		return builder.build();
+		return builder;
 	}
 
 	@Override
