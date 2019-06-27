@@ -17,26 +17,45 @@
 package org.springframework.cloud.stream.binder.nats;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import org.springframework.boot.autoconfigure.nats.NatsAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
+import org.springframework.cloud.stream.binder.nats.properties.NatsBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.nats.properties.NatsExtendedBindingProperties;
+import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
 @Import({ NatsAutoConfiguration.class })
-@EnableConfigurationProperties({ NatsProperties.class })
+@EnableConfigurationProperties(NatsExtendedBindingProperties.class)
 public class NatsChannelBinderConfiguration {
+	@Bean
+	NatsBinderConfigurationProperties configurationProperties(NatsProperties natsProperties) {
+		return new NatsBinderConfigurationProperties(natsProperties);
+	}
+
 	@Bean
 	public NatsChannelProvisioner natsChannelProvisioner() {
 		return new NatsChannelProvisioner();
 	}
 
 	@Bean
-	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner, NatsProperties properties) throws IOException, InterruptedException {
-		NatsChannelBinder binder = new NatsChannelBinder(properties, natsProvisioner);
+	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner,
+										NatsBinderConfigurationProperties properties,
+										NatsExtendedBindingProperties bindingProperties) throws IOException, InterruptedException {
+		NatsChannelBinder binder = new NatsChannelBinder(bindingProperties, properties, natsProvisioner);
 		return binder;
+	}
+
+	@Bean
+	public MappingsProvider natsExtendedPropertiesDefaultMappingsProvider() {
+		return () -> Collections.singletonMap(
+				ConfigurationPropertyName.of("spring.cloud.stream.nats"),
+				ConfigurationPropertyName.of("spring.cloud.stream.nats.default"));
 	}
 }
