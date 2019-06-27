@@ -24,7 +24,6 @@ import io.nats.client.Consumer;
 import io.nats.client.ErrorListener;
 import io.nats.client.Nats;
 import io.nats.client.Options;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
