@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -36,11 +37,13 @@ public class AutoconfigureTests {
     @Test
     public void testDefaultConnection() throws IOException, InterruptedException {
         try (NatsTestServer ts = new NatsTestServer()) {
-            this.contextRunner.withPropertyValues("spring.nats.server=" + ts.getURI()).run((context) -> {
+            this.contextRunner.withPropertyValues("spring.nats.server=" + ts.getURI(),
+                                                  "spring.nats.connectionTimeout=15s").run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
                 assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
                 assertEquals(ts.getURI(), conn.getConnectedUrl());
+                assertEquals(Duration.ofSeconds(15), conn.getOptions().getConnectionTimeout());
             });
         }
     }

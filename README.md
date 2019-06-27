@@ -21,6 +21,10 @@ This repository contains two core packages:
 
 A third package `nats-samples` is included to <a href="#samples">demonstrate</a> how the other two modules can be used.
 
+## Version Notes
+
+As of version 0.2.0 the properties used to [configure](#configure) the NATS connection are global you cannot make multiple connections to different servers.
+
 ## Using the NATS Modules <a name="using"></a>
 
 To depend on the autoconfigure module, simply add it as a dependency in your pom.xml:
@@ -93,6 +97,18 @@ The binder uses message header propagation to support NATS-style request-reply. 
 By default, properties are configured using the `spring.nats` prefix:
 
 * `spring.nats.server` specifies the NATS server url or a list of urls in a comma separated list
+* `spring.nats.connectionname` the connection name
+* `spring.nats.maxreconnect` the maximum reconnects attempts on a single disconnect before the connection closes
+* `spring.nats.reconnectwait` the time, as a duration like `4s`, to wait between trying to reconnect to the same server
+* `spring.nats.connectiontimeout` the time, as a duration like `4s`, to wait before cancelling the connection
+* `spring.nats.pinginterval` the time, as a duration like `4s`, between pings to the server
+* `spring.nats.reconnectbuffersize` the size in bytes for the reconnect buffer
+* `spring.nats.inboxprefix` a custom inbox prefix
+* `spring.nats.noecho` turn off echo from the server
+* `spring.nats.utf8support` enable UTF-8 subject names (warning this is an experimental feature, not all language clients will support it)
+* `spring.nats.username`, `spring.nats.password` the user name and password to authenticate with
+* `spring.nats.token` an authentication token, takes precedence over the username/password
+* `spring.nats.credentials` a path to a credentials file, takes precedence over the token and user/pass
 
 ## Samples <a name="samples"></a>
 

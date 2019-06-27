@@ -19,23 +19,80 @@ package org.springframework.boot.autoconfigure.nats;
 import io.nats.client.Options;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
+import java.time.Duration;
 
 import org.junit.Test;
 
 public class PropertiesTests {
+
     @Test
-    public void testServerProperty() {
+    public void testPropertySetters() {
         String server = "nats://alphabet:4222";
+        String connectionName = "alpha";
+        Duration dura = Duration.ofSeconds(7);
+        long size = 100;
         NatsProperties props = new NatsProperties();
 
         props.setServer(server);
+        props.setConnectionName(connectionName);
+        props.setInboxPrefix(connectionName);
+        props.setReconnectWait(dura);
+        props.setConnectionTimeout(dura);
+        props.setPingInterval(dura);
+        props.setMaxReconnect((int)size);
+        props.setReconnectBufferSize(size);
 
         Options options = props.toOptions();
         URI[] servers = options.getServers().toArray(new URI[0]);
         assertEquals(1, servers.length);
         assertEquals(server, servers[0].toString());
+        assertEquals(connectionName, options.getConnectionName());
+        assertEquals(connectionName + ".", options.getInboxPrefix());
+        assertEquals(dura, options.getReconnectWait());
+        assertEquals(dura, options.getConnectionTimeout());
+        assertEquals(dura, options.getPingInterval());
+        assertEquals(size, options.getReconnectBufferSize());
+        assertEquals((int)size, options.getMaxReconnect());
+        assertFalse(options.isNoEcho());
+        assertFalse(options.supportUTF8Subjects());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+
+        props.setNoEcho(true);
+        props.setUtf8Support(true);
+        options = props.toOptions();
+        assertTrue(options.isNoEcho());
+        assertTrue(options.supportUTF8Subjects());
+
+        // Test authorization waterfall
+        props.setUsername("user");
+        props.setPassword("pass");
+        options = props.toOptions();
+        assertEquals("user", options.getUsername());
+        assertEquals("pass", options.getPassword());
+        assertNull(options.getAuthHandler());
+        assertNull(options.getToken());
+
+        props.setToken("token");
+        options = props.toOptions();
+        assertEquals("token", options.getToken());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+        assertNull(options.getAuthHandler());
+
+        props.setCredentials("credentials");
+        options = props.toOptions();
+        assertNull(options.getToken());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+
+        assertNotNull(options.getAuthHandler());
     }
 
     @Test
@@ -56,11 +113,60 @@ public class PropertiesTests {
     @Test
     public void testFluentProperties() {
         String server = "nats://alphabet:4222";
+        String connectionName = "alpha";
+        Duration dura = Duration.ofSeconds(7);
+        long size = 100;
         NatsProperties props = new NatsProperties();
 
-        Options options = props.server(server).toOptions();
+        props = props.server(server);
+        props = props.connectionName(connectionName);
+        props = props.inboxPrefix(connectionName);
+        props = props.reconnectWait(dura);
+        props = props.connectionTimeout(dura);
+        props = props.pingInterval(dura);
+        props = props.maxReconnect((int)size);
+        props = props.reconnectBufferSize(size);
+        props = props.noEcho(true);
+        props = props.utf8Support(true);
+
+        Options options = props.toOptions();
         URI[] servers = options.getServers().toArray(new URI[0]);
         assertEquals(1, servers.length);
         assertEquals(server, servers[0].toString());
+        assertEquals(connectionName, options.getConnectionName());
+        assertEquals(connectionName + ".", options.getInboxPrefix());
+        assertEquals(dura, options.getReconnectWait());
+        assertEquals(dura, options.getConnectionTimeout());
+        assertEquals(dura, options.getPingInterval());
+        assertEquals(size, options.getReconnectBufferSize());
+        assertEquals((int)size, options.getMaxReconnect());
+        assertTrue(options.isNoEcho());
+        assertTrue(options.supportUTF8Subjects());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+
+        // Test authorization waterfall
+        props = props.username("user");
+        props = props.password("pass");
+        options = props.toOptions();
+        assertEquals("user", options.getUsername());
+        assertEquals("pass", options.getPassword());
+        assertNull(options.getAuthHandler());
+        assertNull(options.getToken());
+
+        props = props.token("token");
+        options = props.toOptions();
+        assertEquals("token", options.getToken());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+        assertNull(options.getAuthHandler());
+
+        props = props.credentials("credentials");
+        options = props.toOptions();
+        assertNull(options.getToken());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+
+        assertNotNull(options.getAuthHandler());
     }
 }
