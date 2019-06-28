@@ -19,7 +19,7 @@
 		<spring-cloud-stream.version>2.2.0.RELEASE</spring-cloud-stream.version>
 		<java.version>1.8</java.version>
 		<!-- Unique entry point for version number management --> 
-		<revision>0.2.0-SNAPSHOT</revision>
+		<revision>0.2.1-SNAPSHOT</revision>
 	</properties>
 
 	<modules>
