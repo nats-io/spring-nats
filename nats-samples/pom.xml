@@ -7,7 +7,7 @@
 	<packaging>pom</packaging>
 	
 	<parent>
-		<groupId>org.springframework.cloud</groupId>
+		<groupId>io.nats</groupId>
 		<artifactId>spring-nats-parent</artifactId>
 		<version>${revision}</version>
         <relativePath>..</relativePath>
@@ -17,7 +17,6 @@
 		<spring-boot.version>2.1.6.RELEASE</spring-boot.version>
 		<spring-cloud-stream.version>2.2.0.RELEASE</spring-cloud-stream.version>
 		<java.version>1.8</java.version>
-		<skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
 	</properties>
 
 	<modules>

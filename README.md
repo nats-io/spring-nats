@@ -36,9 +36,9 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
     <version>2.5.2</version>
 </dependency>
 <dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-nats</artifactId>
-    <version>NNNN</version>
+  <groupId>io.nats</groupId>
+  <artifactId>spring-nats</artifactId>
+  <version>0.2.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -71,8 +71,9 @@ and include a dependency on the library:
 
 ```xml
 <dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-stream-binder-nats</artifactId>
+  <groupId>io.nats</groupId>
+  <artifactId>spring-cloud-stream-binder-nats</artifactId>
+  <version>0.2.0-SNAPSHOT</version>
 </dependency>
 ```
 

@@ -9,7 +9,7 @@
 	<description>A simple sample for the nats cloud stream binding with a processor</description>
 
 	<parent>
-		<groupId>org.springframework.cloud</groupId>
+		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
 		<version>${revision}</version>
         <relativePath>..</relativePath>
@@ -21,7 +21,7 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
+			<groupId>io.nats</groupId>
 			<artifactId>spring-cloud-stream-binder-nats</artifactId>
 		</dependency>
 	</dependencies>

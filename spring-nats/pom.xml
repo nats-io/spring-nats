@@ -12,9 +12,9 @@
 	</organization>
 
 	<parent>
-		<groupId>org.springframework.cloud</groupId>
+		<groupId>io.nats</groupId>
 		<artifactId>spring-nats-parent</artifactId>
-	<version>${revision}</version>
+		<version>${revision}</version>
         <relativePath>..</relativePath>
 	</parent>
 	

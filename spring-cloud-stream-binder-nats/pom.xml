@@ -12,7 +12,7 @@
 	</organization>
 
 	<parent>
-		<groupId>org.springframework.cloud</groupId>
+		<groupId>io.nats</groupId>
 		<artifactId>spring-nats-parent</artifactId>
 		<version>${revision}</version>
         <relativePath>..</relativePath>
@@ -30,7 +30,7 @@
 			<version>2.5.2</version>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
+			<groupId>io.nats</groupId>
 			<artifactId>spring-nats</artifactId>
 			<version>${revision}</version>
 		</dependency>

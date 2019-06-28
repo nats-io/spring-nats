@@ -9,7 +9,7 @@
 	<description>A spring boot app that uses the autoconfigure NATS connection</description>
 
 	<parent>
-		<groupId>org.springframework.cloud</groupId>
+		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
 		<version>${revision}</version>
         <relativePath>..</relativePath>
@@ -21,7 +21,7 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework.cloud</groupId>
+			<groupId>io.nats</groupId>
 			<artifactId>spring-nats</artifactId>
 			<version>${revision}</version>
 		</dependency>
