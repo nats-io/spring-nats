@@ -18,25 +18,27 @@ package org.springframework.cloud.stream.binder.nats;
 
 import io.nats.client.NUID;
 
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
+import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
+import org.springframework.cloud.stream.binder.nats.properties.NatsConsumerProperties;
+import org.springframework.cloud.stream.binder.nats.properties.NatsProducerProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 
-public class NatsChannelProvisioner implements ProvisioningProvider<ConsumerProperties, ProducerProperties> {
+public class NatsChannelProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<NatsConsumerProperties>, ExtendedProducerProperties<NatsProducerProperties>> {
 	public NatsChannelProvisioner() {
 	}
 
 	@Override
-	public ProducerDestination provisionProducerDestination(String subject, ProducerProperties properties)
+	public ProducerDestination provisionProducerDestination(String subject, ExtendedProducerProperties<NatsProducerProperties> properties)
 			throws ProvisioningException {
 		return new NatsProducerDestination(subject);
 	}
 
 	@Override
-	public ConsumerDestination provisionConsumerDestination(String subject, String group, ConsumerProperties properties)
+	public ConsumerDestination provisionConsumerDestination(String subject, String group, ExtendedConsumerProperties<NatsConsumerProperties> properties)
 			throws ProvisioningException {
 		String subscriptionName;
 

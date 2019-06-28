@@ -17,26 +17,73 @@
 package org.springframework.cloud.stream.binder.nats;
 
 import java.io.IOException;
+import java.util.Collections;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.nats.NatsAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
+import org.springframework.cloud.stream.binder.nats.properties.NatsBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.nats.properties.NatsExtendedBindingProperties;
+import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
 @Import({ NatsAutoConfiguration.class })
-@EnableConfigurationProperties({ NatsProperties.class })
+@EnableConfigurationProperties({NatsExtendedBindingProperties.class, NatsBinderConfigurationProperties.class})
 public class NatsChannelBinderConfiguration {
+
+	@Autowired
+	private NatsProperties natsProperties;
+
+	@Autowired
+	private NatsBinderConfigurationProperties natsBinderConfigurationProperties;
+
+	@Autowired
+	private NatsExtendedBindingProperties natsExtendedBindingProperties;
+
+	public NatsBinderConfigurationProperties getNatsBinderConfigurationProperties() {
+		return this.natsBinderConfigurationProperties;
+	}
+
+	public void setNatsBinderConfigurationProperties(NatsBinderConfigurationProperties natsBinderConfigurationProperties) {
+		this.natsBinderConfigurationProperties = natsBinderConfigurationProperties;
+	}
+
+	public NatsExtendedBindingProperties getNatsExtendedBindingProperties() {
+		return this.natsExtendedBindingProperties;
+	}
+
+	public void setNatsExtendedBindingProperties(NatsExtendedBindingProperties natsExtendedBindingProperties) {
+		this.natsExtendedBindingProperties = natsExtendedBindingProperties;
+	}
+
+	public NatsProperties getNatsProperties() {
+		return this.natsProperties;
+	}
+
+	public void setNatsProperties(NatsProperties natsProperties) {
+		this.natsProperties = natsProperties;
+	}
+
 	@Bean
 	public NatsChannelProvisioner natsChannelProvisioner() {
 		return new NatsChannelProvisioner();
 	}
 
 	@Bean
-	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner, NatsProperties properties) throws IOException, InterruptedException {
-		NatsChannelBinder binder = new NatsChannelBinder(properties, natsProvisioner);
+	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) throws IOException, InterruptedException {
+		NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties, this.natsBinderConfigurationProperties, this.natsProperties, natsProvisioner);
 		return binder;
+	}
+
+	@Bean
+	public MappingsProvider natsExtendedPropertiesDefaultMappingsProvider() {
+		return () -> Collections.singletonMap(
+				ConfigurationPropertyName.of("spring.cloud.stream.nats"),
+				ConfigurationPropertyName.of("spring.cloud.stream.nats.default"));
 	}
 }

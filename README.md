@@ -119,7 +119,7 @@ This repo provides samples for the major use-cases implemented by the core code:
 
 * [listener-sample](./nats-samples/listener-sample) uses the binder to listen to a single subject and print messages it receives. The configuration in application.yml specifies a single subject `dataIn`.
 
-* [multi-binding-sample](./nats-samples/multi-binding-sample) creates a processor. The example listens to the subject `dataIn` and sends to the subject `dataOut`. If the message contains a UTF-8 string, it is converted to all CAPS before being sent.
+* [processor-sample](./nats-samples/processor-sample) creates a processor. The example listens to the subject `dataIn` and sends to the subject `dataOut`. If the message contains a UTF-8 string, it is converted to all CAPS before being sent.
 
 * [polling-sample](./nats-samples/polling-sample) is similar to the listener sample, but uses polling.
 
@@ -127,12 +127,12 @@ This repo provides samples for the major use-cases implemented by the core code:
 
 * [queue-sample](./nats-samples/queue-sample) listens on a subject and queue group, run multiple copies of the sample to see how messages are load balanced.
 
-* [multi-connect-sample](./nats-samples/multi-connect-sample) copy of the multi-binding-sample that uses 2 nats connections. **This sample is not working, something is broken with multi-binder support**
+* [multi-connect-sample](./nats-samples/multi-connect-sample) copy of the processor-sample that uses 2 nats connections. **This sample is not working, something is broken with multi-binder support**
 
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-samples/listener-sample/target/listener-sample-0.0.1-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/listener-sample/target/listener-sample-0.2.0-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -144,7 +144,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/multi-binding-sample/target/multi-binding-sample-0.0.1.SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/processor-sample/target/processor-sample-0.2.0-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
 ...
 
 ```

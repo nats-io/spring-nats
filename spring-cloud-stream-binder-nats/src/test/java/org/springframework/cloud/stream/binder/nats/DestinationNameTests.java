@@ -19,8 +19,6 @@ package org.springframework.cloud.stream.binder.nats;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.ProducerProperties;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 
 public class DestinationNameTests {
@@ -28,8 +26,7 @@ public class DestinationNameTests {
     public void testProducerNames() {
         String subject = "alpha";
         NatsChannelProvisioner provisioner = new NatsChannelProvisioner();
-        ProducerProperties props = new ProducerProperties();
-        ProducerDestination dest = provisioner.provisionProducerDestination(subject, props);
+        ProducerDestination dest = provisioner.provisionProducerDestination(subject, null);
 
         assertEquals(subject, dest.getName());
         assertEquals(subject + "-1", dest.getNameForPartition(1));
@@ -40,13 +37,12 @@ public class DestinationNameTests {
         String subject = "alpha";
         String group = "beta";
         NatsChannelProvisioner provisioner = new NatsChannelProvisioner();
-        ConsumerProperties props = new ConsumerProperties();
-        NatsConsumerDestination dest = (NatsConsumerDestination) provisioner.provisionConsumerDestination(subject, group, props);
+        NatsConsumerDestination dest = (NatsConsumerDestination) provisioner.provisionConsumerDestination(subject, group, null);
 
         assertEquals(subject, dest.getSubject());
         assertEquals(group, dest.getQueueGroup());
 
-        dest = (NatsConsumerDestination) provisioner.provisionConsumerDestination(subject, null, props);
+        dest = (NatsConsumerDestination) provisioner.provisionConsumerDestination(subject, null, null);
 
         assertEquals(subject, dest.getSubject());
         assertEquals("", dest.getQueueGroup());

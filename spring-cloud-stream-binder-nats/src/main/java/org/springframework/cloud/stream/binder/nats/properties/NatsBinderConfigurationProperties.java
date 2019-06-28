@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.binder.nats;
+package org.springframework.cloud.stream.binder.nats.properties;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@SpringBootApplication
-public class MultiBindingSample {
-
-	public static void main(String[] args) {
-		SpringApplication.run(MultiBindingSample.class, args);
+@ConfigurationProperties(prefix = "spring.cloud.stream.nats.binder")
+public class NatsBinderConfigurationProperties {
+	public NatsBinderConfigurationProperties() {
 	}
-
 }

@@ -35,8 +35,8 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.nats.NatsAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.cloud.stream.binder.ConsumerProperties;
-import org.springframework.cloud.stream.binder.ProducerProperties;
+import org.springframework.cloud.stream.binder.nats.properties.NatsBinderConfigurationProperties;
+import org.springframework.cloud.stream.binder.nats.properties.NatsExtendedBindingProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.integration.channel.DirectChannel;
@@ -48,288 +48,283 @@ import io.nats.client.Message;
 import io.nats.client.Subscription;
 
 public class BinderTests {
-	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-			.withConfiguration(AutoConfigurations.of(NatsAutoConfiguration.class));
+    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(NatsAutoConfiguration.class));
 
-	@Test
-	public void testMessageProducer() throws IOException, InterruptedException {
-		try (NatsTestServer ts = new NatsTestServer()) {
-			this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI(),
-												"spring.nats.connectionTimeout=10s").run((context) -> {
-				Connection conn = (Connection) context.getBean(Connection.class);
-				assertNotNull(conn);
-				assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
+    @Test
+    public void testMessageProducer() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
+                Connection conn = (Connection) context.getBean(Connection.class);
+                assertNotNull(conn);
+                assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
 
-				NatsProperties props = new NatsProperties();
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
-				props.setServer(ts.getURI());
+                String theMessage = "hello world";
+                String in = "in";
 
-				NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
-				NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-				NatsChannelBinder binder = config.natsBinder(provisioner, props);
+                ConsumerDestination from = provisioner.provisionConsumerDestination(in, "", null);
+                NatsMessageProducer producer = (NatsMessageProducer) binder.createConsumerEndpoint(from, "", null);
 
-				String theMessage = "hello world";
-				String in = "in";
+                CompletableFuture<String> received = new CompletableFuture<>();
+                DirectChannel output = new DirectChannel();
+                output.subscribe(msg -> {
+                    Object payload = msg.getPayload();
 
-				ConsumerProperties cprops = new ConsumerProperties();
-				ConsumerDestination from = provisioner.provisionConsumerDestination(in, "", cprops);
-				NatsMessageProducer producer = (NatsMessageProducer) binder.createConsumerEndpoint(from, "", cprops);
+                    if (payload instanceof byte[]) {
+                        received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
+                    } else {
+                        received.complete(payload.toString());
+                    }
+                });
+                producer.setOutputChannel(output);
 
-				CompletableFuture<String> received = new CompletableFuture<>();
-				DirectChannel output = new DirectChannel();
-				output.subscribe(msg -> {
-					Object payload = msg.getPayload();
+                assertTrue(producer.getOutputChannel() == output);
 
-					if (payload instanceof byte[]) {
-						received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
-					} else {
-						received.complete(payload.toString());
-					}
-				});
-				producer.setOutputChannel(output);
+                assertFalse(producer.isRunning());
+                producer.start();
+                assertTrue(producer.isRunning());
 
-				assertTrue(producer.getOutputChannel() == output);
+                conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                conn.flush(Duration.ofSeconds(5));
 
-				assertFalse(producer.isRunning());
-				producer.start();
-				assertTrue(producer.isRunning());
+                String result = received.get(5, TimeUnit.SECONDS);
 
-				conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
-				conn.flush(Duration.ofSeconds(10));
+                assertEquals(theMessage, result);
 
-				String result = received.get(5, TimeUnit.SECONDS);
+                producer.stop();
+            });
+        }
+    }
 
-				assertEquals(theMessage, result);
+    @Test
+    public void testMessageProducerWithGroup() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
+                Connection conn = (Connection) context.getBean(Connection.class);
+                assertNotNull(conn);
+                assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
 
-				producer.stop();
-			});
-		}
-	}
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
-	@Test
-	public void testMessageProducerWithGroup() throws IOException, InterruptedException {
-		try (NatsTestServer ts = new NatsTestServer()) {
-			this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI(),
-													"spring.nats.connectionTimeout=10s").run((context) -> {
-				Connection conn = (Connection) context.getBean(Connection.class);
-				assertNotNull(conn);
-				assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
+                String theMessage = "hello world";
+                String in = "in";
+                String group = "group";
 
-				NatsProperties props = new NatsProperties();
+                ConsumerDestination from = provisioner.provisionConsumerDestination(in, group, null);
+                
+                AtomicInteger counter = new AtomicInteger(0);
+                
+                NatsMessageProducer producer = (NatsMessageProducer) binder.createConsumerEndpoint(from, group, null);
+                DirectChannel output = new DirectChannel();
+                output.subscribe(msg -> {
+                    counter.incrementAndGet();
+                });
+                producer.setOutputChannel(output);
+                
+                NatsMessageProducer producer2 = (NatsMessageProducer) binder.createConsumerEndpoint(from, group, null);
+                DirectChannel output2 = new DirectChannel();
+                output2.subscribe(msg -> {
+                    counter.incrementAndGet();
+                });
+                producer2.setOutputChannel(output2);
 
-				props.setServer(ts.getURI());
+                producer.start();
+                producer2.start();
 
-				NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
-				NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-				NatsChannelBinder binder = config.natsBinder(provisioner, props);
+                int total = 100;
 
-				String theMessage = "hello world";
-				String in = "in";
-				String group = "group";
+                for (int i=0; i<total; i++) {
+                    conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                }
+                conn.flush(Duration.ofSeconds(5));
+                
+                // make sure the messages get through
+                try {
+                    Thread.sleep(2000);
+                } catch (Exception exp) {
 
-				ConsumerProperties cprops = new ConsumerProperties();
-				ConsumerDestination from = provisioner.provisionConsumerDestination(in, group, cprops);
-				
-				AtomicInteger counter = new AtomicInteger(0);
-				
-				NatsMessageProducer producer = (NatsMessageProducer) binder.createConsumerEndpoint(from, group, cprops);
-				DirectChannel output = new DirectChannel();
-				output.subscribe(msg -> {
-					counter.incrementAndGet();
-				});
-				producer.setOutputChannel(output);
-				
-				NatsMessageProducer producer2 = (NatsMessageProducer) binder.createConsumerEndpoint(from, group, cprops);
-				DirectChannel output2 = new DirectChannel();
-				output2.subscribe(msg -> {
-					counter.incrementAndGet();
-				});
-				producer2.setOutputChannel(output2);
+                }
 
-				producer.start();
-				producer2.start();
+                assertEquals(total, counter.get());
 
-				int total = 100;
+                producer.stop();
+                producer2.stop();
+            });
+        }
+    }
 
-				for (int i=0; i<total; i++) {
-					conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
-				}
-				conn.flush(Duration.ofSeconds(10));
-				
-				// make sure the messages get through
-				try {
-					Thread.sleep(2000);
-				} catch (Exception exp) {
+    @Test
+    public void testMessageSource() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
+                Connection conn = (Connection) context.getBean(Connection.class);
+                assertNotNull(conn);
+                assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
 
-				}
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
-				assertEquals(total, counter.get());
+                String theMessage = "hello world";
+                String in = "in";
 
-				producer.stop();
-				producer2.stop();
-			});
-		}
-	}
+                NatsConsumerDestination from = (NatsConsumerDestination) provisioner.provisionConsumerDestination(in, "", null);
+                NatsMessageSource src = new NatsMessageSource(from, binder.getConnection());
 
-	@Test
-	public void testMessageSource() throws IOException, InterruptedException {
-		try (NatsTestServer ts = new NatsTestServer()) {
-			this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI(),
-													"spring.nats.connectionTimeout=10s").run((context) -> {
-				Connection conn = (Connection) context.getBean(Connection.class);
-				assertNotNull(conn);
-				assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
+                assertFalse(src.isRunning());
+                src.start();
+                assertTrue(src.isRunning());
+                
+                CompletableFuture<String> received = new CompletableFuture<>();
 
-				NatsProperties props = new NatsProperties();
+                Thread t = new Thread(() -> {
+                    org.springframework.messaging.Message<Object> msg = src.receive();
+                    Object payload = msg.getPayload();
 
-				props.setServer(ts.getURI());
+                    if (payload instanceof byte[]) {
+                        received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
+                    } else {
+                        received.complete(payload.toString());
+                    }
+                });
+                t.start();
 
-				NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
-				NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-				NatsChannelBinder binder = config.natsBinder(provisioner, props);
+                conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                conn.flush(Duration.ofSeconds(5));
 
-				String theMessage = "hello world";
-				String in = "in";
+                String result = received.get(5, TimeUnit.SECONDS);
 
-				ConsumerProperties cprops = new ConsumerProperties();
-				NatsConsumerDestination from = (NatsConsumerDestination) provisioner.provisionConsumerDestination(in, "", cprops);
-				NatsMessageSource src = new NatsMessageSource(from, binder.getConnection());
+                assertEquals(theMessage, result);
 
-				assertFalse(src.isRunning());
-				src.start();
-				assertTrue(src.isRunning());
-				
-				CompletableFuture<String> received = new CompletableFuture<>();
+                src.stop();
+            });
+        }
+    }
 
-				Thread t = new Thread(() -> {
-					org.springframework.messaging.Message<Object> msg = src.receive();
-					Object payload = msg.getPayload();
+    @Test
+    public void testMessageSourceWithQueue() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
+                Connection conn = (Connection) context.getBean(Connection.class);
+                assertNotNull(conn);
+                assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
 
-					if (payload instanceof byte[]) {
-						received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
-					} else {
-						received.complete(payload.toString());
-					}
-				});
-				t.start();
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
-				conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
-				conn.flush(Duration.ofSeconds(10));
+                String theMessage = "hello world";
+                String in = "in";
+                String group = "group";
 
-				String result = received.get(5, TimeUnit.SECONDS);
+                NatsConsumerDestination from = (NatsConsumerDestination) provisioner.provisionConsumerDestination(in, group, null);
+                NatsMessageSource src = new NatsMessageSource(from, binder.getConnection());
 
-				assertEquals(theMessage, result);
+                assertFalse(src.isRunning());
+                src.start();
+                assertTrue(src.isRunning());
+                
+                CompletableFuture<String> received = new CompletableFuture<>();
 
-				src.stop();
-			});
-		}
-	}
+                Thread t = new Thread(() -> {
+                    org.springframework.messaging.Message<Object> msg = src.receive();
+                    Object payload = msg.getPayload();
 
-	@Test
-	public void testMessageSourceWithQueue() throws IOException, InterruptedException {
-		try (NatsTestServer ts = new NatsTestServer()) {
-			this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI(),
-													"spring.nats.connectionTimeout=10s").run((context) -> {
-				Connection conn = (Connection) context.getBean(Connection.class);
-				assertNotNull(conn);
-				assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
+                    if (payload instanceof byte[]) {
+                        received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
+                    } else {
+                        received.complete(payload.toString());
+                    }
+                });
+                t.start();
 
-				NatsProperties props = new NatsProperties();
+                conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                conn.flush(Duration.ofSeconds(5));
 
-				props.setServer(ts.getURI());
+                String result = received.get(5, TimeUnit.SECONDS);
 
-				NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
-				NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-				NatsChannelBinder binder = config.natsBinder(provisioner, props);
+                assertEquals(theMessage, result);
 
-				String theMessage = "hello world";
-				String in = "in";
-				String group = "group";
+                src.stop();
+            });
+        }
+    }
 
-				ConsumerProperties cprops = new ConsumerProperties();
-				NatsConsumerDestination from = (NatsConsumerDestination) provisioner.provisionConsumerDestination(in, group, cprops);
-				NatsMessageSource src = new NatsMessageSource(from, binder.getConnection());
+    @Test
+    public void testMessageHandler() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
+                Connection conn = (Connection) context.getBean(Connection.class);
+                assertNotNull(conn);
+                assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
 
-				assertFalse(src.isRunning());
-				src.start();
-				assertTrue(src.isRunning());
-				
-				CompletableFuture<String> received = new CompletableFuture<>();
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
-				Thread t = new Thread(() -> {
-					org.springframework.messaging.Message<Object> msg = src.receive();
-					Object payload = msg.getPayload();
+                String theMessage = "hello world";
+                String out = "out";
+                ProducerDestination to = provisioner.provisionProducerDestination(out, null);
+                MessageHandler mh = binder.createProducerMessageHandler(to, null, null);
 
-					if (payload instanceof byte[]) {
-						received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
-					} else {
-						received.complete(payload.toString());
-					}
-				});
-				t.start();
+                Subscription sub = conn.subscribe(out);
+                conn.flush(Duration.ofSeconds(5));
 
-				conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
-				conn.flush(Duration.ofSeconds(10));
+                // send a byte array
+                mh.handleMessage(new GenericMessage<byte[]>(theMessage.getBytes(StandardCharsets.UTF_8)));
+                Message msg = sub.nextMessage(Duration.ofSeconds(5));
+                String result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
+                assertEquals(theMessage, result);
 
-				String result = received.get(5, TimeUnit.SECONDS);
+                // send a byte buffer
+                ByteBuffer buffer = ByteBuffer.wrap(theMessage.getBytes(StandardCharsets.UTF_8));
+                mh.handleMessage(new GenericMessage<ByteBuffer>(buffer));
+                msg = sub.nextMessage(Duration.ofSeconds(5));
+                result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
+                assertEquals(theMessage, result);
 
-				assertEquals(theMessage, result);
+                // send a string
+                mh.handleMessage(new GenericMessage<String>(theMessage));
+                msg = sub.nextMessage(Duration.ofSeconds(5));
+                result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
+                assertEquals(theMessage, result);
 
-				src.stop();
-			});
-		}
-	}
-
-	@Test
-	public void testMessageHandler() throws IOException, InterruptedException {
-		try (NatsTestServer ts = new NatsTestServer()) {
-			this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI(),
-													 "spring.nats.connectionTimeout=10s").run((context) -> {
-				Connection conn = (Connection) context.getBean(Connection.class);
-				assertNotNull(conn);
-				assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
-
-				NatsProperties props = new NatsProperties();
-
-				props.setServer(ts.getURI());
-
-				NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
-				NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-				NatsChannelBinder binder = config.natsBinder(provisioner, props);
-
-				String theMessage = "hello world";
-				String out = "out";
-				ProducerProperties pprops = new ProducerProperties();
-				ProducerDestination to = provisioner.provisionProducerDestination(out, pprops);
-				MessageHandler mh = binder.createProducerMessageHandler(to, pprops, null);
-
-				Subscription sub = conn.subscribe(out);
-				conn.flush(Duration.ofSeconds(10));
-
-				// send a byte array
-				mh.handleMessage(new GenericMessage<byte[]>(theMessage.getBytes(StandardCharsets.UTF_8)));
-				Message msg = sub.nextMessage(Duration.ofSeconds(10));
-				String result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
-				assertEquals(theMessage, result);
-
-				// send a byte buffer
-				ByteBuffer buffer = ByteBuffer.wrap(theMessage.getBytes(StandardCharsets.UTF_8));
-				mh.handleMessage(new GenericMessage<ByteBuffer>(buffer));
-				msg = sub.nextMessage(Duration.ofSeconds(10));
-				result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
-				assertEquals(theMessage, result);
-
-				// send a string
-				mh.handleMessage(new GenericMessage<String>(theMessage));
-				msg = sub.nextMessage(Duration.ofSeconds(10));
-				result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
-				assertEquals(theMessage, result);
-
-				// send an unknown type
-				mh.handleMessage(new GenericMessage<Integer>(new Integer(2)));
-				msg = sub.nextMessage(Duration.ofSeconds(10));
-				assertNull(msg);
-			});
-		}
-	}
+                // send an unknown type
+                mh.handleMessage(new GenericMessage<Integer>(new Integer(2)));
+                msg = sub.nextMessage(Duration.ofSeconds(5));
+                assertNull(msg);
+            });
+        }
+    }
 }
