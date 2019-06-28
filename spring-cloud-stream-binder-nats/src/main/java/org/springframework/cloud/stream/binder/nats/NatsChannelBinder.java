@@ -60,9 +60,23 @@ public class NatsChannelBinder extends
 		this.natsProperties = natsProperties;
 
 		try {
-			logger.info("binder connecting to nats " + this.natsProperties);
+			Options.Builder builder = null;
+			String bindingServer = (properties != null) ? properties.getServer() : null;
+			String globalServer = (natsProperties != null) ? natsProperties.getServer() : null;
 
-			Options.Builder builder = natsProperties.toOptionsBuilder();
+			// Use the binder properties first, if they don't have a server, try the global
+			if (bindingServer != null && bindingServer.length() > 0) {
+				logger.info("binder connecting to nats " + this.properties);
+				builder = properties.toOptionsBuilder();
+			}
+			else if (globalServer != null && globalServer.length() > 0) {
+				builder = natsProperties.toOptionsBuilder();
+			}
+			else {
+				this.connection = null;
+				logger.info("unable to connect from binder to NATS no server properties where found");
+				return;
+			}
 
 			builder = builder.connectionListener(new ConnectionListener() {
 				public void connectionEvent(Connection conn, Events type) {
@@ -95,7 +109,7 @@ public class NatsChannelBinder extends
 		}
 
 		if (this.connection == null) {
-			throw new IllegalArgumentException("connection cannot be null for a NatsChannelBinder");
+			logger.info("unable to connect from binder to NATS");
 		}
 	}
 

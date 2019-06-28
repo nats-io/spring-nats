@@ -63,7 +63,7 @@ public class BinderTests {
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
                 NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
-                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
                 NatsChannelBinder binder = config.natsBinder(provisioner);
@@ -117,7 +117,7 @@ public class BinderTests {
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
                 NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
-                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
                 NatsChannelBinder binder = config.natsBinder(provisioner);
@@ -181,7 +181,7 @@ public class BinderTests {
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
                 NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
-                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
                 NatsChannelBinder binder = config.natsBinder(provisioner);
@@ -234,7 +234,7 @@ public class BinderTests {
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
                 NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
-                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
                 NatsChannelBinder binder = config.natsBinder(provisioner);
@@ -288,7 +288,7 @@ public class BinderTests {
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
                 NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
-                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
                 NatsChannelBinder binder = config.natsBinder(provisioner);
