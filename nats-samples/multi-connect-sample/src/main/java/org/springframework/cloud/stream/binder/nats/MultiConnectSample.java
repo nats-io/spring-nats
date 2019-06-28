@@ -24,5 +24,4 @@ public class MultiConnectSample {
 	public static void main(String[] args) {
 		SpringApplication.run(MultiConnectSample.class, args);
 	}
-
 }

@@ -23,7 +23,16 @@ A third package `nats-samples` is included to <a href="#samples">demonstrate</a>
 
 ## Version Notes
 
-As of version 0.2.0 the properties used to [configure](#configure) the NATS connection are global you cannot make multiple connections to different servers.
+As of version 0.2.0 the properties used to [configure](#configure) can be in YAML or properties if you pass in the NATS properties externally. If you want the application file to contain connection info it should be a properties file and not YAML. In other words:
+
+```yaml
+spring.cloud.stream.bindings.input.destination=dataIn
+spring.cloud.stream.bindings.input.binder=nats1
+spring.cloud.stream.binders.nats1.type=nats
+spring.cloud.stream.binders.nats1.environment.spring.cloud.stream.nats.binder.server=nats://localhost:4222
+```
+
+works while the YAML equivalent will not.
 
 ## Using the NATS Modules <a name="using"></a>
 

@@ -37,7 +37,7 @@ public class PropertiesTests {
         String connectionName = "alpha";
         Duration dura = Duration.ofSeconds(7);
         long size = 100;
-        NatsProperties props = new NatsProperties();
+        NatsConnectionProperties props = new NatsConnectionProperties();
 
         props.setServer(server);
         props.setConnectionName(connectionName);
@@ -99,7 +99,7 @@ public class PropertiesTests {
     public void testCommaListOfServers() {
         String server1 = "nats://alphabet:4222";
         String server2 = "nats://tebahpla:4222";
-        NatsProperties props = new NatsProperties();
+        NatsConnectionProperties props = new NatsConnectionProperties();
 
         props.setServer(server1 + "," + server2);
 
@@ -116,7 +116,7 @@ public class PropertiesTests {
         String connectionName = "alpha";
         Duration dura = Duration.ofSeconds(7);
         long size = 100;
-        NatsProperties props = new NatsProperties();
+        NatsConnectionProperties props = new NatsConnectionProperties();
 
         props = props.server(server);
         props = props.connectionName(connectionName);

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@Import({ NatsAutoConfiguration.class })
+@Import({ NatsAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
 @EnableConfigurationProperties({NatsExtendedBindingProperties.class, NatsBinderConfigurationProperties.class})
 public class NatsChannelBinderConfiguration {
 
@@ -77,7 +78,7 @@ public class NatsChannelBinderConfiguration {
 	@Bean
 	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) throws IOException, InterruptedException {
 		NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties, this.natsBinderConfigurationProperties, this.natsProperties, natsProvisioner);
-		return binder;
+		return binder.getConnection() != null ? binder : null;
 	}
 
 	@Bean
