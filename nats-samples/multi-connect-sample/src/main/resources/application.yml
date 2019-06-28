@@ -12,8 +12,12 @@ spring:
       nats1:
         type: nats
         environment:
-          spring.nats.server: nats://localhost:4222
+          spring.cloud.stream.nats.binder.server: nats://localhost:4222
+          spring:
+            nats:
+              server: nats://localhost:4222
       nats2:
         type: nats
         environment:
+          spring.cloud.stream.nats.binder.server: nats://localhost:4222
           spring.nats.server: nats://localhost:4222

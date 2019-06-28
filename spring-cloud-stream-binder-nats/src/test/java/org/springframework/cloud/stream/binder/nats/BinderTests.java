@@ -53,7 +53,7 @@ public class BinderTests {
 
     @Test
     public void testMessageProducer() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
@@ -62,10 +62,11 @@ public class BinderTests {
                 NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-
-                NatsProperties natsProps = new NatsProperties().server(ts.getURI());
-                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties(natsProps);
-                NatsChannelBinder binder = config.natsBinder(provisioner, binderProps, props);
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
                 String theMessage = "hello world";
                 String in = "in";
@@ -106,7 +107,7 @@ public class BinderTests {
 
     @Test
     public void testMessageProducerWithGroup() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
@@ -115,9 +116,11 @@ public class BinderTests {
                 NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-                NatsProperties natsProps = new NatsProperties().server(ts.getURI());
-                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties(natsProps);
-                NatsChannelBinder binder = config.natsBinder(provisioner, binderProps, props);
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
                 String theMessage = "hello world";
                 String in = "in";
@@ -168,7 +171,7 @@ public class BinderTests {
 
     @Test
     public void testMessageSource() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
@@ -177,9 +180,11 @@ public class BinderTests {
                 NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-                NatsProperties natsProps = new NatsProperties().server(ts.getURI());
-                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties(natsProps);
-                NatsChannelBinder binder = config.natsBinder(provisioner, binderProps, props);
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
                 String theMessage = "hello world";
                 String in = "in";
@@ -219,7 +224,7 @@ public class BinderTests {
 
     @Test
     public void testMessageSourceWithQueue() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
@@ -228,9 +233,11 @@ public class BinderTests {
                 NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-                NatsProperties natsProps = new NatsProperties().server(ts.getURI());
-                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties(natsProps);
-                NatsChannelBinder binder = config.natsBinder(provisioner, binderProps, props);
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
                 String theMessage = "hello world";
                 String in = "in";
@@ -271,7 +278,7 @@ public class BinderTests {
 
     @Test
     public void testMessageHandler() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
@@ -280,9 +287,11 @@ public class BinderTests {
                 NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-                NatsProperties natsProps = new NatsProperties().server(ts.getURI());
-                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties(natsProps);
-                NatsChannelBinder binder = config.natsBinder(provisioner, binderProps, props);
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                NatsChannelBinder binder = config.natsBinder(provisioner);
 
                 String theMessage = "hello world";
                 String out = "out";

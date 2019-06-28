@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.binder.nats;
 import java.io.IOException;
 import java.util.Collections;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.nats.NatsAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -32,11 +33,40 @@ import org.springframework.context.annotation.Import;
 
 @Configuration
 @Import({ NatsAutoConfiguration.class })
-@EnableConfigurationProperties(NatsExtendedBindingProperties.class)
+@EnableConfigurationProperties({NatsExtendedBindingProperties.class, NatsBinderConfigurationProperties.class})
 public class NatsChannelBinderConfiguration {
-	@Bean
-	NatsBinderConfigurationProperties configurationProperties(NatsProperties natsProperties) {
-		return new NatsBinderConfigurationProperties(natsProperties);
+
+	@Autowired
+	private NatsProperties natsProperties;
+
+	@Autowired
+	private NatsBinderConfigurationProperties natsBinderConfigurationProperties;
+
+	@Autowired
+	private NatsExtendedBindingProperties natsExtendedBindingProperties;
+
+	public NatsBinderConfigurationProperties getNatsBinderConfigurationProperties() {
+		return this.natsBinderConfigurationProperties;
+	}
+
+	public void setNatsBinderConfigurationProperties(NatsBinderConfigurationProperties natsBinderConfigurationProperties) {
+		this.natsBinderConfigurationProperties = natsBinderConfigurationProperties;
+	}
+
+	public NatsExtendedBindingProperties getNatsExtendedBindingProperties() {
+		return this.natsExtendedBindingProperties;
+	}
+
+	public void setNatsExtendedBindingProperties(NatsExtendedBindingProperties natsExtendedBindingProperties) {
+		this.natsExtendedBindingProperties = natsExtendedBindingProperties;
+	}
+
+	public NatsProperties getNatsProperties() {
+		return this.natsProperties;
+	}
+
+	public void setNatsProperties(NatsProperties natsProperties) {
+		this.natsProperties = natsProperties;
 	}
 
 	@Bean
@@ -45,10 +75,8 @@ public class NatsChannelBinderConfiguration {
 	}
 
 	@Bean
-	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner,
-										NatsBinderConfigurationProperties properties,
-										NatsExtendedBindingProperties bindingProperties) throws IOException, InterruptedException {
-		NatsChannelBinder binder = new NatsChannelBinder(bindingProperties, properties, natsProvisioner);
+	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) throws IOException, InterruptedException {
+		NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties, this.natsBinderConfigurationProperties, this.natsProperties, natsProvisioner);
 		return binder;
 	}
 

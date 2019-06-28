@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 /**
  * Class to run gnatds for tests. Highly based on the 1.0 client's NatsServer code.
  */
-public class NatsTestServer implements AutoCloseable {
+public class NatsBinderTestServer implements AutoCloseable {
 
     private static final String NATS_SERVER = "gnatsd";
 
@@ -50,7 +50,7 @@ public class NatsTestServer implements AutoCloseable {
         String server_path = System.getenv("nats_server_path");
 
         if(server_path == null){
-            server_path = NatsTestServer.NATS_SERVER;
+            server_path = NatsBinderTestServer.NATS_SERVER;
         }
 
         cmd.add(server_path);
@@ -79,35 +79,35 @@ public class NatsTestServer implements AutoCloseable {
     }
 
     public static int nextPort() {
-        return NatsTestServer.portCounter.incrementAndGet();
+        return NatsBinderTestServer.portCounter.incrementAndGet();
     }
 
     public static int currentPort() {
-        return NatsTestServer.portCounter.get();
+        return NatsBinderTestServer.portCounter.get();
     }
 
-    public NatsTestServer() {
+    public NatsBinderTestServer() {
         this(false);
     }
 
-    public NatsTestServer(boolean debug) {
-        this(NatsTestServer.nextPort(), debug);
+    public NatsBinderTestServer(boolean debug) {
+        this(NatsBinderTestServer.nextPort(), debug);
     }
 
-    public NatsTestServer(int port, boolean debug) {
+    public NatsBinderTestServer(int port, boolean debug) {
         this.port = port;
         this.debug = debug;
         start();
     }
 
-    public NatsTestServer(String configFilePath, boolean debug) {
+    public NatsBinderTestServer(String configFilePath, boolean debug) {
         this.configFilePath = configFilePath;
         this.debug = debug;
         this.port = nextPort();
         start();
     }
 
-    public NatsTestServer(String configFilePath, String[] inserts, int port, boolean debug) {
+    public NatsBinderTestServer(String configFilePath, String[] inserts, int port, boolean debug) {
         this.configFilePath = configFilePath;
         this.configInserts = inserts;
         this.debug = debug;
@@ -115,22 +115,22 @@ public class NatsTestServer implements AutoCloseable {
         start();
     }
 
-    public NatsTestServer(String configFilePath, int port, boolean debug) {
+    public NatsBinderTestServer(String configFilePath, int port, boolean debug) {
         this.configFilePath = configFilePath;
         this.debug = debug;
         this.port = port;
         start();
     }
 
-    public NatsTestServer(String[] customArgs, boolean debug) {
-        this.port = NatsTestServer.nextPort();
+    public NatsBinderTestServer(String[] customArgs, boolean debug) {
+        this.port = NatsBinderTestServer.nextPort();
         this.debug = debug;
         this.customArgs = customArgs;
         start();
     }
 
-    public NatsTestServer(String[] customArgs, int port, boolean debug) {
-        this.port = port;
+    public NatsBinderTestServer(String[] customArgs, int port, boolean debug) {
+        this.port = NatsBinderTestServer.nextPort();
         this.debug = debug;
         this.customArgs = customArgs;
         start();
@@ -142,7 +142,7 @@ public class NatsTestServer implements AutoCloseable {
         String server_path = System.getenv("nats_server_path");
 
         if(server_path == null){
-            server_path = NatsTestServer.NATS_SERVER;
+            server_path = NatsBinderTestServer.NATS_SERVER;
         }
 
         cmd.add(server_path);

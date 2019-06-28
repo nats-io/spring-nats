@@ -16,35 +16,10 @@
 
 package org.springframework.cloud.stream.binder.nats.properties;
 
-import io.nats.client.Options;
-
-import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "spring.cloud.stream.nats.binder")
 public class NatsBinderConfigurationProperties {
-
-	private final NatsProperties natsProperties;
-
-	public NatsBinderConfigurationProperties(NatsProperties natsProperties) {
-
-		if (natsProperties == null) {
-			throw new IllegalArgumentException("nats properties cannot be null for a binder");
-		}
-
-		this.natsProperties = natsProperties;
-	}
-
-	public Options.Builder toOptionsBuilder() {
-		return this.natsProperties.toOptionsBuilder();
-	}
-
-	public Options toOptions() {
-		return this.natsProperties.toOptions();
-	}
-
-	@Override
-	public String toString() {
-		return this.natsProperties.toString();
+	public NatsBinderConfigurationProperties() {
 	}
 }

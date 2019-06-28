@@ -25,6 +25,7 @@ import io.nats.client.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.autoconfigure.nats.NatsProperties;
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -46,18 +47,22 @@ public class NatsChannelBinder extends
 			private static final Log logger = LogFactory.getLog(NatsChannelBinder.class);
 	private final NatsExtendedBindingProperties bindingProperties;
 	private NatsBinderConfigurationProperties properties;
+	private NatsProperties natsProperties;
 	private Connection connection;
 
 	public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
 			NatsBinderConfigurationProperties properties,
+			NatsProperties natsProperties,
 			NatsChannelProvisioner provisioningProvider) {
 		super(null, provisioningProvider); // null for headers to embed
 		this.bindingProperties = bindingProperties;
 		this.properties = properties;
+		this.natsProperties = natsProperties;
 
 		try {
-			System.out.println("#### Connecting to nats " + this.properties);
-			Options.Builder builder = properties.toOptionsBuilder();
+			logger.info("binder connecting to nats " + this.natsProperties);
+
+			Options.Builder builder = natsProperties.toOptionsBuilder();
 
 			builder = builder.connectionListener(new ConnectionListener() {
 				public void connectionEvent(Connection conn, Events type) {
