@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>multi-connect-sample</artifactId>
-	<version>${revision}</version>
+	<version>0.2.3</version>
 	<packaging>jar</packaging>
 	<name>multi-connect-sample</name>
 	<description>A simple sample for the nats cloud stream binder</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
-		<version>${revision}</version>
+		<version>0.2.3</version>
         <relativePath>..</relativePath>
 	</parent>
 

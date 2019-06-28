@@ -23,7 +23,7 @@ A third package `nats-samples` is included to <a href="#samples">demonstrate</a>
 
 ## Version Notes
 
-As of version 0.2.2 the properties used to [configure](#configure) can be in YAML or properties if you pass in the NATS properties externally. If you want the application file to contain connection info it should be a properties file and not YAML. In other words:
+As of version 0.2.3 the properties used to [configure](#configure) can be in YAML or properties if you pass in the NATS properties externally. If you want the application file to contain connection info it should be a properties file and not YAML. In other words:
 
 ```yaml
 spring.cloud.stream.bindings.input.destination=dataIn
@@ -47,7 +47,7 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
   <groupId>io.nats</groupId>
   <artifactId>spring-nats</artifactId>
-  <version>0.2.2-SNAPSHOT</version>
+  <version>0.2.3-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -82,7 +82,7 @@ and include a dependency on the library:
 <dependency>
   <groupId>io.nats</groupId>
   <artifactId>spring-cloud-stream-binder-nats</artifactId>
-  <version>0.2.2-SNAPSHOT</version>
+  <version>0.2.3-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -141,7 +141,7 @@ This repo provides samples for the major use-cases implemented by the core code:
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-samples/listener-sample/target/listener-sample-0.2.2-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/listener-sample/target/listener-sample-0.2.3-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -153,7 +153,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/processor-sample/target/processor-sample-0.2.2-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/processor-sample/target/processor-sample-0.2.3-SNAPSHOT.jar --spring.nats.server="nats://localhost:4222"
 ...
 
 ```
