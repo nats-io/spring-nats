@@ -20,7 +20,7 @@
 	</properties>
 
 	<modules>
-		<module>multi-binding-sample</module>
+		<module>processor-sample</module>
 		<module>listener-sample</module>
 		<module>polling-sample</module>
 		<module>source-sample</module>
