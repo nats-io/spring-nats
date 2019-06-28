@@ -35,6 +35,10 @@ public class NatsBinderConfigurationProperties {
 		this.natsProperties = natsProperties;
 	}
 
+	public Options.Builder toOptionsBuilder() {
+		return this.natsProperties.toOptionsBuilder();
+	}
+
 	public Options toOptions() {
 		return this.natsProperties.toOptions();
 	}

@@ -21,10 +21,7 @@ import io.nats.client.ConnectionListener;
 import io.nats.client.Consumer;
 import io.nats.client.ErrorListener;
 import io.nats.client.Nats;
-<<<<<<< HEAD
 import io.nats.client.Options;
-=======
->>>>>>> Initial checkin with extended properties
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
