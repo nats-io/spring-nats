@@ -34,7 +34,7 @@ public class NatsBinderTestServer implements AutoCloseable {
     private static final String NATS_SERVER = "gnatsd";
 
     // Use a new port each time, we increment and get so start at the normal port
-    private static AtomicInteger portCounter = new AtomicInteger(6222);
+    private static AtomicInteger portCounter = new AtomicInteger(7222);
 
     private int port;
     private boolean debug;
