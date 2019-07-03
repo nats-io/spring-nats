@@ -52,6 +52,57 @@ public class BinderTests {
             .withConfiguration(AutoConfigurations.of(NatsAutoConfiguration.class));
 
     @Test
+    public void createBinderFromGlobalProperties() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues().run((context) -> {
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                
+                config.natsBinder(provisioner);
+            });
+        }
+    }
+
+    @Test
+    public void createBinderFromBinderProperties() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues().run((context) -> {
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties());
+                config.setNatsBinderConfigurationProperties((NatsBinderConfigurationProperties) binderProps.server(ts.getURI()));
+                config.setNatsExtendedBindingProperties(props);
+                
+                config.natsBinder(provisioner);
+            });
+        }
+    }
+
+    @Test
+    public void createBinderWithoutServerProperties() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues().run((context) -> {
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties(new NatsProperties());
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                
+                assertNull(config.natsBinder(provisioner));
+            });
+        }
+    }
+        
+    @Test
     public void testMessageProducer() throws IOException, InterruptedException {
         try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("spring.nats.server:" + ts.getURI()).run((context) -> {
