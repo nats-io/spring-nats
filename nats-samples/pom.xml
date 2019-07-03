@@ -27,6 +27,7 @@
 		<module>queue-sample</module>
 		<module>multi-connect-sample</module>
 		<module>autoconfigure-sample</module>
+		<module>connect-error-sample</module>
 	</modules>
 
 	<dependencyManagement>

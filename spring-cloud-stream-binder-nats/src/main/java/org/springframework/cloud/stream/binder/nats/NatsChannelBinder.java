@@ -53,7 +53,9 @@ public class NatsChannelBinder extends
 	public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
 			NatsBinderConfigurationProperties properties,
 			NatsProperties natsProperties,
-			NatsChannelProvisioner provisioningProvider) {
+			NatsChannelProvisioner provisioningProvider,
+			ConnectionListener connectionListener,
+			ErrorListener errorListener) {
 		super(null, provisioningProvider); // null for headers to embed
 		this.bindingProperties = bindingProperties;
 		this.properties = properties;
@@ -79,28 +81,38 @@ public class NatsChannelBinder extends
 				return;
 			}
 
-			builder = builder.connectionListener(new ConnectionListener() {
-				public void connectionEvent(Connection conn, Events type) {
-						logger.info("NATS connection status changed " + type);
-				}
-			});
+			if (connectionListener != null) {
+				builder = builder.connectionListener(connectionListener);
+			}
+			else {
+				builder = builder.connectionListener(new ConnectionListener() {
+					public void connectionEvent(Connection conn, Events type) {
+							logger.info("NATS connection status changed " + type);
+					}
+				});
+			}
 
-			builder = builder.errorListener(new ErrorListener() {
-				@Override
-				public void slowConsumerDetected(Connection conn, Consumer consumer) {
-					logger.info("NATS connection slow consumer detected");
-				}
+			if (errorListener != null) {
+				builder = builder.errorListener(errorListener);
+			}
+			else {
+				builder = builder.errorListener(new ErrorListener() {
+					@Override
+					public void slowConsumerDetected(Connection conn, Consumer consumer) {
+						logger.info("NATS connection slow consumer detected");
+					}
 
-				@Override
-				public void exceptionOccurred(Connection conn, Exception exp) {
-					logger.info("NATS connection exception occurred", exp);
-				}
+					@Override
+					public void exceptionOccurred(Connection conn, Exception exp) {
+						logger.info("NATS connection exception occurred", exp);
+					}
 
-				@Override
-				public void errorOccurred(Connection conn, String error) {
-					logger.info("NATS connection error occurred " + error);
-				}
-			});
+					@Override
+					public void errorOccurred(Connection conn, String error) {
+						logger.info("NATS connection error occurred " + error);
+					}
+				});
+			}
 
 			this.connection = Nats.connect(builder.build());
 		}

@@ -9,6 +9,7 @@
 * [Using the Binder](#binder)
   * [Request-Reply](#reqreply)
 * [Configuration](#configure)
+  * [Custom Listeners](#listener)
 * [Samples](#samples)
 * [Building This Project](#build)
 * [External Resources](#resources)
@@ -131,6 +132,26 @@ TLS can be configured several ways. Set up a default context using system proper
 
 The keyStorePath and trustStorePath must be non-empty to trigger the creation of an SSL context.
 
+### Custom Listeners <a name="listeners"></a>
+
+Custom ConnectionListener and ErrorListeners can be provided by a bean factory. For example, you can implement:
+
+```java
+@Bean
+public ConnectionListener createConnectionListener() {
+  return new ConnectionListener() {
+    @Override
+    public void connectionEvent(Connection conn, Events type) {
+        System.out.println("## Custom status change " + type);
+        }
+  };
+}
+```
+
+to create a custom connection listener. The [connect-error-sample](./nats-samples/connect-error-sample) has an example for both types of listener.
+
+If no custom listeners are provided, a default one is used which will log errors and connection events.
+
 ## Samples <a name="samples"></a>
 
 This repo contains two types of samples. First there is a [stand-alone demo](demo/README.md) that can be used as starter code, for a POM at least. Second there is a collection of samples showing the major use-cases implemented by the core code:
@@ -147,7 +168,9 @@ This repo contains two types of samples. First there is a [stand-alone demo](dem
 
 * [queue-sample](./nats-samples/queue-sample) listens on a subject and queue group, run multiple copies of the sample to see how messages are load balanced.
 
-* [multi-connect-sample](./nats-samples/multi-connect-sample) copy of the processor-sample that uses 2 nats connections. **This sample is not working, something is broken with multi-binder support**
+* [multi-connect-sample](./nats-samples/multi-connect-sample) copy of the processor-sample that uses 2 nats connections.
+
+* [connect-error-sample](./nats-samples/connect-error-sample) demonstrates how to set up a custom connection and error handler.
 
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 

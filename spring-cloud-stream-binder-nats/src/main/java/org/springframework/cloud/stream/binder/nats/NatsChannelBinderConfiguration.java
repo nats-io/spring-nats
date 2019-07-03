@@ -19,6 +19,9 @@ package org.springframework.cloud.stream.binder.nats;
 import java.io.IOException;
 import java.util.Collections;
 
+import io.nats.client.ConnectionListener;
+import io.nats.client.ErrorListener;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.nats.NatsAutoConfiguration;
@@ -36,6 +39,12 @@ import org.springframework.context.annotation.Import;
 @Import({ NatsAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
 @EnableConfigurationProperties({NatsExtendedBindingProperties.class, NatsBinderConfigurationProperties.class})
 public class NatsChannelBinderConfiguration {
+
+	@Autowired
+	private ConnectionListener connectionListener;
+
+	@Autowired
+	private ErrorListener errorListener;
 
 	@Autowired
 	private NatsProperties natsProperties;
@@ -77,7 +86,11 @@ public class NatsChannelBinderConfiguration {
 
 	@Bean
 	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) throws IOException, InterruptedException {
-		NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties, this.natsBinderConfigurationProperties, this.natsProperties, natsProvisioner);
+		NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties,
+										this.natsBinderConfigurationProperties,
+										this.natsProperties, natsProvisioner,
+										this.connectionListener,
+										this.errorListener);
 		return binder.getConnection() != null ? binder : null;
 	}
 
