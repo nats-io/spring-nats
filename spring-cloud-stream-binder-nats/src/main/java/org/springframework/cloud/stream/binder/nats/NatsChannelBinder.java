@@ -61,16 +61,17 @@ public class NatsChannelBinder extends
 
 		try {
 			Options.Builder builder = null;
-			String bindingServer = (properties != null) ? properties.getServer() : null;
-			String globalServer = (natsProperties != null) ? natsProperties.getServer() : null;
+			String bindingServer = (this.properties != null) ? this.properties.getServer() : null;
+			String globalServer = (this.natsProperties != null) ? this.natsProperties.getServer() : null;
 
 			// Use the binder properties first, if they don't have a server, try the global
 			if (bindingServer != null && bindingServer.length() > 0) {
-				logger.info("binder connecting to nats " + this.properties);
-				builder = properties.toOptionsBuilder();
+				logger.info("binder connecting to nats with named properties " + this.properties);
+				builder = this.properties.toOptionsBuilder();
 			}
 			else if (globalServer != null && globalServer.length() > 0) {
-				builder = natsProperties.toOptionsBuilder();
+				logger.info("binder connecting to nats with global properties " + this.natsProperties);
+				builder = this.natsProperties.toOptionsBuilder();
 			}
 			else {
 				this.connection = null;
