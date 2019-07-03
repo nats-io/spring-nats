@@ -122,7 +122,7 @@ By default, properties are configured using the `spring.nats` prefix:
 
 ## Samples <a name="samples"></a>
 
-This repo provides samples for the major use-cases implemented by the core code:
+This repo contains two types of samples. First there is a [stand-alone demo](demo/README.md) that can be used as starter code, for a POM at least. Second there is a collection of samples showing the major use-cases implemented by the core code:
 
 * [autoconfigure-sample](./nats-samples/autoconfigure-sample) a simple command line runner with spring boot that uses the auto-configured nats connection from an application.properties file.
 
