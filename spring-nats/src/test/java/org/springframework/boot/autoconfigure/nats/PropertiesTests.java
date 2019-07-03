@@ -32,7 +32,7 @@ import org.junit.Test;
 public class PropertiesTests {
 
     @Test
-    public void testPropertySetters() {
+    public void testPropertySetters() throws Exception {
         String server = "nats://alphabet:4222";
         String connectionName = "alpha";
         Duration dura = Duration.ofSeconds(7);
@@ -93,10 +93,19 @@ public class PropertiesTests {
         assertNull(options.getPassword());
 
         assertNotNull(options.getAuthHandler());
+
+        props.setKeyStorePassword("password".toCharArray());
+        props.setKeyStorePath("src/test/resources/keystore.jks");
+        props.setKeyStoreType("SunX509");
+        props.setTrustStorePassword("password".toCharArray());
+        props.setTrustStorePath("src/test/resources/cacerts");
+        props.setTrustStoreType("SunX509");
+        options = props.toOptions();
+        assertNotNull(options.getSslContext());
     }
 
     @Test
-    public void testCommaListOfServers() {
+    public void testCommaListOfServers() throws Exception {
         String server1 = "nats://alphabet:4222";
         String server2 = "nats://tebahpla:4222";
         NatsConnectionProperties props = new NatsConnectionProperties();
@@ -111,7 +120,7 @@ public class PropertiesTests {
     }
 
     @Test
-    public void testFluentProperties() {
+    public void testFluentProperties() throws Exception {
         String server = "nats://alphabet:4222";
         String connectionName = "alpha";
         Duration dura = Duration.ofSeconds(7);
@@ -168,5 +177,14 @@ public class PropertiesTests {
         assertNull(options.getPassword());
 
         assertNotNull(options.getAuthHandler());
+
+        props = props.keyStorePassword("password".toCharArray());
+        props = props.keyStorePath("src/test/resources/keystore.jks");
+        props = props.keyStoreType("SunX509");
+        props = props.trustStorePassword("password".toCharArray());
+        props = props.trustStorePath("src/test/resources/cacerts");
+        props = props.trustStoreType("SunX509");
+        options = props.toOptions();
+        assertNotNull(options.getSslContext());
     }
 }

@@ -38,7 +38,25 @@ public class AutoconfigureTests {
     public void testDefaultConnection() throws IOException, InterruptedException {
         try (NatsTestServer ts = new NatsTestServer()) {
             this.contextRunner.withPropertyValues("spring.nats.server=" + ts.getURI(),
-                                                  "spring.nats.connectionTimeout=15s").run((context) -> {
+                                                    "spring.nats.connectionTimeout=15s").run((context) -> {
+                Connection conn = (Connection) context.getBean(Connection.class);
+                assertNotNull(conn);
+                assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
+                assertEquals(ts.getURI(), conn.getConnectedUrl());
+                assertEquals(Duration.ofSeconds(15), conn.getOptions().getConnectionTimeout());
+            });
+        }
+    }
+    
+    @Test
+    public void testSSLConnection() throws IOException, InterruptedException {
+        try (NatsTestServer ts = new NatsTestServer("src/test/resources/tls.conf", false)) {
+            this.contextRunner.withPropertyValues("spring.nats.server=" + ts.getURI(),
+                                                    "spring.nats.connectionTimeout=15s",
+                                                    "spring.nats.keystorepath=src/test/resources/keystore.jks",
+                                                    "spring.nats.keystorepassword=password",
+                                                    "spring.nats.truststorepath=src/test/resources/cacerts",
+                                                    "spring.nats.truststorepassword=password").run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
                 assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());

@@ -17,6 +17,7 @@
 package org.springframework.boot.autoconfigure.nats;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 import io.nats.client.Connection;
 import io.nats.client.ConnectionListener;
@@ -43,7 +44,7 @@ public class NatsAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	public Connection natsConnection(NatsProperties properties) throws IOException, InterruptedException {
+	public Connection natsConnection(NatsProperties properties) throws IOException, InterruptedException, GeneralSecurityException {
 		Connection nc = null;
 		String serverProp = (properties != null) ? properties.getServer() : null;
 

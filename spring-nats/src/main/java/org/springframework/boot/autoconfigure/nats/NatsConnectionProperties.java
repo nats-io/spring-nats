@@ -16,7 +16,19 @@
 
 package org.springframework.boot.autoconfigure.nats;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.time.Duration;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 import io.nats.client.Nats;
 import io.nats.client.Options;
@@ -40,6 +52,13 @@ public class NatsConnectionProperties {
 	private String password;
 	private String token;
 	private String credentials;
+
+	private String keyStorePath;
+	private char[] keyStorePassword;
+	private String keyStoreType;
+	private String trustStorePath;
+	private char[] trustStorePassword;
+	private String trustStoreType;
 
 	public NatsConnectionProperties() {
 	}
@@ -169,6 +188,54 @@ public class NatsConnectionProperties {
 		this.credentials = credentials;
 	}
 
+	public String getKeyStorePath() {
+		return this.keyStorePath;
+	}
+
+	public void setKeyStorePath(String keyStorePath) {
+		this.keyStorePath = keyStorePath;
+	}
+
+	public char[] getKeyStorePassword() {
+		return this.keyStorePassword;
+	}
+
+	public void setKeyStorePassword(char[] keyStorePassword) {
+		this.keyStorePassword = keyStorePassword;
+	}
+
+	public String getKeyStoreType() {
+		return this.keyStoreType;
+	}
+
+	public void setKeyStoreType(String keyStoreType) {
+		this.keyStoreType = keyStoreType;
+	}
+
+	public String getTrustStorePath() {
+		return this.trustStorePath;
+	}
+
+	public void setTrustStorePath(String trustStorePath) {
+		this.trustStorePath = trustStorePath;
+	}
+
+	public char[] getTrustStorePassword() {
+		return this.trustStorePassword;
+	}
+
+	public void setTrustStorePassword(char[] trustStorePassword) {
+		this.trustStorePassword = trustStorePassword;
+	}
+
+	public String getTrustStoreType() {
+		return this.trustStoreType;
+	}
+
+	public void setTrustStoreType(String trustStoreType) {
+		this.trustStoreType = trustStoreType;
+	}
+
 	public NatsConnectionProperties connectionName(String connectionName) {
 		this.connectionName = connectionName;
 		return this;
@@ -234,11 +301,88 @@ public class NatsConnectionProperties {
 		return this;
 	}
 
-	public Options toOptions() {
+	public NatsConnectionProperties keyStorePath(String keyStorePath) {
+		this.keyStorePath = keyStorePath;
+		return this;
+	}
+
+	public NatsConnectionProperties keyStorePassword(char[] keyStorePassword) {
+		this.keyStorePassword = keyStorePassword;
+		return this;
+	}
+
+	public NatsConnectionProperties keyStoreType(String keyStoreType) {
+		this.keyStoreType = keyStoreType;
+		return this;
+	}
+
+	public NatsConnectionProperties trustStorePath(String trustStorePath) {
+		this.trustStorePath = trustStorePath;
+		return this;
+	}
+
+	public NatsConnectionProperties trustStorePassword(char[] trustStorePassword) {
+		this.trustStorePassword = trustStorePassword;
+		return this;
+	}
+
+	public NatsConnectionProperties trustStoreType(String trustStoreType) {
+		this.trustStoreType = trustStoreType;
+		return this;
+	}
+
+	protected KeyStore loadKeystore(String path, char[] password) throws IOException, GeneralSecurityException {
+		KeyStore store = KeyStore.getInstance("JKS");
+
+		try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(path))) {
+			store.load(in, password);
+		}
+
+		return store;
+	}
+
+	protected KeyManager[] createKeyManagers(String path, char[] password, String type) throws IOException, GeneralSecurityException {
+		if (type == null || type.length() == 0) {
+			type = "SunX509";
+		}
+
+		if (password == null || password.length == 0) {
+			password = new char[0];
+		}
+
+		KeyStore store = this.loadKeystore(path, password);
+		KeyManagerFactory factory = KeyManagerFactory.getInstance(type);
+		factory.init(store, password);
+		return factory.getKeyManagers();
+	}
+
+	protected TrustManager[] createTrustManagers(String path, char[] password, String type) throws IOException, GeneralSecurityException {
+		if (type == null || type.length() == 0) {
+			type = "SunX509";
+		}
+
+		if (password == null || password.length == 0) {
+			password = new char[0];
+		}
+
+		KeyStore store = loadKeystore(path, password);
+		TrustManagerFactory factory = TrustManagerFactory.getInstance(type);
+		factory.init(store);
+		return factory.getTrustManagers();
+	}
+
+	protected SSLContext createSSLContext() throws IOException, GeneralSecurityException  {
+		SSLContext ctx = SSLContext.getInstance(Options.DEFAULT_SSL_PROTOCOL);
+		ctx.init(this.createKeyManagers(this.keyStorePath, this.keyStorePassword, this.keyStoreType),
+					this.createTrustManagers(this.trustStorePath, this.trustStorePassword, this.trustStoreType), new SecureRandom());
+		return ctx;
+	}
+
+	public Options toOptions()  throws IOException, GeneralSecurityException  {
 		return toOptionsBuilder().build();
 	}
 
-	public Options.Builder toOptionsBuilder() {
+	public Options.Builder toOptionsBuilder()  throws IOException, GeneralSecurityException  {
 		Options.Builder builder = new Options.Builder();
 
 		builder = builder.server(this.server);
@@ -266,6 +410,11 @@ public class NatsConnectionProperties {
 		}
 		else if (this.username != null && this.username.length() > 0) {
 			builder = builder.userInfo(this.username, this.password);
+		}
+
+		if (this.keyStorePath != null && this.keyStorePath.length() > 0 &&
+			this.trustStorePath != null && this.trustStorePath.length() > 0) {
+			builder.sslContext(this.createSSLContext());
 		}
 
 		return builder;

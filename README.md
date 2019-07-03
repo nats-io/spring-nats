@@ -120,6 +120,17 @@ By default, properties are configured using the `spring.nats` prefix:
 * `spring.nats.token` an authentication token, takes precedence over the username/password
 * `spring.nats.credentials` a path to a credentials file, takes precedence over the token and user/pass
 
+TLS can be configured several ways. Set up a default context using system properties like `javax.net.ssl.keyStore`, set a default SSLContext in the main method before running the spring application, or by setting several properties:
+
+* `spring.nats.keystorepath` the path to the key store file
+* `spring.nats.keystorepassword` the password for the key store, defaults to ""
+* `spring.nats.keystoretype` (optional) the format of the key store, defaults to "SunX509"
+* `spring.nats.truststorepath` the path to the trust store file
+* `spring.nats.truststorepassword` the password for the trust store, defaults to ""
+* `spring.nats.truststoretype` (optional) the format of the trust store, defaults to "SunX509"
+
+The keyStorePath and trustStorePath must be non-empty to trigger the creation of an SSL context.
+
 ## Samples <a name="samples"></a>
 
 This repo contains two types of samples. First there is a [stand-alone demo](demo/README.md) that can be used as starter code, for a POM at least. Second there is a collection of samples showing the major use-cases implemented by the core code:
