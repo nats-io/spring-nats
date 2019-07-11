@@ -35,6 +35,25 @@ spring.cloud.stream.binders.nats1.environment.spring.cloud.stream.nats.binder.se
 
 works while the YAML equivalent will not.
 
+Snapshots are hosted on `oss.sonatype.org`, to access these within maven update your settings to include:
+
+```xml
+<profiles>
+  <profile>
+     <id>allow-snapshots</id>
+        <activation><activeByDefault>true</activeByDefault></activation>
+     <repositories>
+       <repository>
+         <id>snapshots-repo</id>
+         <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+         <releases><enabled>false</enabled></releases>
+         <snapshots><enabled>true</enabled></snapshots>
+       </repository>
+     </repositories>
+   </profile>
+</profiles>
+```
+
 ## Using the NATS Modules <a name="using"></a>
 
 To depend on the autoconfigure module, simply add it as a dependency in your pom.xml:
