@@ -101,6 +101,28 @@ public class BinderTests {
             });
         }
     }
+
+    @Test
+    public void createTLSBinderFromGlobalProperties() throws IOException, InterruptedException {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer("src/test/resources/tls.conf", false)) {
+            this.contextRunner.withPropertyValues("spring.nats.server=" + ts.getURI(),
+                                                    "spring.nats.connectionTimeout=15s",
+                                                    "spring.nats.keystorepath=src/test/resources/keystore.jks",
+                                                    "spring.nats.keystorepassword=password",
+                                                    "spring.nats.truststorepath=src/test/resources/cacerts",
+                                                    "spring.nats.truststorepassword=password").run((context) -> {
+                NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                
+                config.natsBinder(provisioner);
+            });
+        }
+    }
         
     @Test
     public void testMessageProducer() throws IOException, InterruptedException {
