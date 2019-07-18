@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>connect-error-sample</artifactId>
-	<version>0.2.4-SNAPSHOT</version>
+	<version>0.3.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>connect-error-sample</name>
 	<description>A sample that sets up a custom connection and error listener for the NATS binder</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
-		<version>0.2.4-SNAPSHOT</version>
+		<version>0.3.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
 	</parent>
 
