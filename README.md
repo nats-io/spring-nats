@@ -8,6 +8,7 @@
   * [Multiple NATS Connections](#multi)
 * [Using the Binder](#binder)
   * [Request-Reply](#reqreply)
+  * [Partitions](#partition)
 * [Configuration](#configure)
   * [Custom Listeners](#listener)
 * [Samples](#samples)
@@ -77,7 +78,7 @@ This module defines and exports an auto-configuration for NATS Connection object
 
 By default the autoconfigure modules will create a single NATS connection and the binders will create a second one.
 
-> An example multi-binder-sample is in progress, but is not working currently. The named binders are not getting configured by their environments.
+> An example multi-binder-sample demonstrates how to have multiple named binders.
 
 ## Using the NATS Cloud Stream Binder <a name="binder"></a>
 
@@ -121,6 +122,10 @@ Producers publish directly through the connection.
 ### Request-Reply <a name="reqreply"></a>
 
 The binder uses message header propagation to support NATS-style request-reply. The reply-to subject is passed as a header when a message is received. That reply to header is used as the outgoing subject if it is present when a message is sent. This system by-passes the configured producer destination.
+
+### Partitions <a name="partition"></a>
+
+NATS does not use the concept of partitions. The binder supports the API for partitions as far as required, but no underlying messaging is associated with that change beyond the name of the destination.
 
 ## Configuration <a name="configure"></a>
 
