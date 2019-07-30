@@ -55,6 +55,18 @@ Snapshots are hosted on `oss.sonatype.org`, to access these within maven update 
 </profiles>
 ```
 
+The released version should be available at:
+
+```xml
+<repository>
+  <id>oss-sonatype</id>
+  <name>oss-sonatype</name>
+  <url>https://oss.sonatype.org/content/repositories/</url>
+</repository>
+```
+
+and ultimately at maven central.
+
 ## Using the NATS Modules <a name="using"></a>
 
 To depend on the autoconfigure module, simply add it as a dependency in your pom.xml:
