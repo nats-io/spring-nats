@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>queue-sample</artifactId>
-	<version>0.3.0</version>
+	<version>0.3.1</version>
 	<packaging>jar</packaging>
 	<name>queue-sample</name>
 	<description>A queue listener using the nats binder</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
-		<version>0.3.0</version>
+		<version>0.3.1</version>
         <relativePath>..</relativePath>
 	</parent>
 

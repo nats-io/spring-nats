@@ -40,10 +40,10 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties({NatsExtendedBindingProperties.class, NatsBinderConfigurationProperties.class})
 public class NatsChannelBinderConfiguration {
 
-	@Autowired
+	@Autowired(required = false)
 	private ConnectionListener connectionListener;
 
-	@Autowired
+	@Autowired(required = false)
 	private ErrorListener errorListener;
 
 	@Autowired
