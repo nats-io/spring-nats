@@ -267,7 +267,7 @@ All of the configuration properties are injected into the NatsProperties class i
 ## External Resources <a name="resources"></a>
 
 * [NATS](https://nats.io/)
-* [NATS server](https://github.com/nats-io/gnatsd)
+* [NATS server](https://github.com/nats-io/nats-server)
 * [NATS Java Client](https://github.com/nats-io/nats.java)
 * [Spring Cloud Stream](https://spring.io/projects/spring-cloud-stream)
 
