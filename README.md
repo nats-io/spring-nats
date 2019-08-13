@@ -18,8 +18,8 @@
 
 This repository contains two core packages:
 
-* `spring-nats` an implementation of the autoconfigure pattern for a NATS connection using the core [NATS Java Client](https://github.com/nats-io/nats.java)
-* `spring-cloud-stream-binder-nats` a spring cloud binder for NATS
+* `nats-spring` an implementation of the autoconfigure pattern for a NATS connection using the core [NATS Java Client](https://github.com/nats-io/nats.java)
+* `nats-spring-cloud-stream-binder` a spring cloud binder for NATS
 
 A third package `nats-samples` is included to <a href="#samples">demonstrate</a> how the other two modules can be used.
 
@@ -31,7 +31,7 @@ As of version 0.3.x the properties used to [configure](#configure) can be in YAM
 spring.cloud.stream.bindings.input.destination=dataIn
 spring.cloud.stream.bindings.input.binder=nats1
 spring.cloud.stream.binders.nats1.type=nats
-spring.cloud.stream.binders.nats1.environment.spring.cloud.stream.nats.binder.server=nats://localhost:4222
+spring.cloud.stream.binders.nats1.environment.nats.spring.cloud.stream.binder.server=nats://localhost:4222
 ```
 
 works while the YAML equivalent will not.
@@ -79,8 +79,8 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 </dependency>
 <dependency>
   <groupId>io.nats</groupId>
-  <artifactId>spring-nats</artifactId>
-  <version>0.3.2</version>
+  <artifactId>nats-spring</artifactId>
+  <version>0.4.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -114,8 +114,8 @@ and include a dependency on the library:
 ```xml
 <dependency>
   <groupId>io.nats</groupId>
-  <artifactId>spring-cloud-stream-binder-nats</artifactId>
-  <version>0.3.2</version>
+  <artifactId>nats-spring-cloud-stream-binder</artifactId>
+  <version>0.4.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -141,30 +141,30 @@ NATS does not use the concept of partitions. The binder supports the API for par
 
 ## Configuration <a name="configure"></a>
 
-By default, properties are configured using the `spring.nats` prefix:
+By default, properties are configured using the `nats.spring` prefix:
 
-* `spring.nats.server` specifies the NATS server url or a list of urls in a comma separated list
-* `spring.nats.connectionname` the connection name
-* `spring.nats.maxreconnect` the maximum reconnects attempts on a single disconnect before the connection closes
-* `spring.nats.reconnectwait` the time, as a duration like `4s`, to wait between trying to reconnect to the same server
-* `spring.nats.connectiontimeout` the time, as a duration like `4s`, to wait before cancelling the connection
-* `spring.nats.pinginterval` the time, as a duration like `4s`, between pings to the server
-* `spring.nats.reconnectbuffersize` the size in bytes for the reconnect buffer
-* `spring.nats.inboxprefix` a custom inbox prefix
-* `spring.nats.noecho` turn off echo from the server
-* `spring.nats.utf8support` enable UTF-8 subject names (warning this is an experimental feature, not all language clients will support it)
-* `spring.nats.username`, `spring.nats.password` the user name and password to authenticate with
-* `spring.nats.token` an authentication token, takes precedence over the username/password
-* `spring.nats.credentials` a path to a credentials file, takes precedence over the token and user/pass
+* `nats.spring.server` specifies the NATS server url or a list of urls in a comma separated list
+* `nats.spring.connectionname` the connection name
+* `nats.spring.maxreconnect` the maximum reconnects attempts on a single disconnect before the connection closes
+* `nats.spring.reconnectwait` the time, as a duration like `4s`, to wait between trying to reconnect to the same server
+* `nats.spring.connectiontimeout` the time, as a duration like `4s`, to wait before cancelling the connection
+* `nats.spring.pinginterval` the time, as a duration like `4s`, between pings to the server
+* `nats.spring.reconnectbuffersize` the size in bytes for the reconnect buffer
+* `nats.spring.inboxprefix` a custom inbox prefix
+* `nats.spring.noecho` turn off echo from the server
+* `nats.spring.utf8support` enable UTF-8 subject names (warning this is an experimental feature, not all language clients will support it)
+* `nats.spring.username`, `nats.spring.password` the user name and password to authenticate with
+* `nats.spring.token` an authentication token, takes precedence over the username/password
+* `nats.spring.credentials` a path to a credentials file, takes precedence over the token and user/pass
 
 TLS can be configured several ways. Set up a default context using system properties like `javax.net.ssl.keyStore`, set a default SSLContext in the main method before running the spring application, or by setting several properties:
 
-* `spring.nats.keystorepath` the path to the key store file
-* `spring.nats.keystorepassword` the password for the key store, defaults to ""
-* `spring.nats.keystoretype` (optional) the format of the key store, defaults to "SunX509"
-* `spring.nats.truststorepath` the path to the trust store file
-* `spring.nats.truststorepassword` the password for the trust store, defaults to ""
-* `spring.nats.truststoretype` (optional) the format of the trust store, defaults to "SunX509"
+* `nats.spring.keystorepath` the path to the key store file
+* `nats.spring.keystorepassword` the password for the key store, defaults to ""
+* `nats.spring.keystoretype` (optional) the format of the key store, defaults to "SunX509"
+* `nats.spring.truststorepath` the path to the trust store file
+* `nats.spring.truststorepassword` the password for the trust store, defaults to ""
+* `nats.spring.truststoretype` (optional) the format of the trust store, defaults to "SunX509"
 
 The keyStorePath and trustStorePath must be non-empty to trigger the creation of an SSL context.
 
@@ -211,7 +211,7 @@ This repo contains two types of samples. First there is a [stand-alone demo](dem
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-samples/listener-sample/target/listener-sample-0.3.2.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/listener-sample/target/listener-sample-0.4.0-SNAPSHOT.jar --nats.spring.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -223,7 +223,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/processor-sample/target/processor-sample-0.3.2.jar --spring.nats.server="nats://localhost:4222"
+% java -jar nats-samples/processor-sample/target/processor-sample-0.4.0-SNAPSHOT.jar --nats.spring.server="nats://localhost:4222"
 ...
 
 ```

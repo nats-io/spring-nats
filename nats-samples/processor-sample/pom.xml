@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>processor-sample</artifactId>
-	<version>0.3.2</version>
+	<version>0.4.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>processor-sample</name>
 	<description>A simple sample for the nats cloud stream binding with a processor</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
-		<version>0.3.2</version>
+		<version>0.4.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
 	</parent>
 
@@ -22,7 +22,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>io.nats</groupId>
-			<artifactId>spring-cloud-stream-binder-nats</artifactId>
+			<artifactId>nats-spring-cloud-stream-binder</artifactId>
 		</dependency>
 	</dependencies>
 
