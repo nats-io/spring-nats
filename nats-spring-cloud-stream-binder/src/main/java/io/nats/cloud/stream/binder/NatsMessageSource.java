@@ -30,6 +30,9 @@ import org.springframework.context.Lifecycle;
 import org.springframework.integration.endpoint.AbstractMessageSource;
 import org.springframework.messaging.support.GenericMessage;
 
+/**
+ * Message source for NATS connections, allowing synchronous polling.
+ */
 public class NatsMessageSource extends AbstractMessageSource<Object> implements Lifecycle {
 	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
 
@@ -37,6 +40,13 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 	private Connection connection;
 	private Subscription sub;
 
+	/**
+	 * Create a message source. Once started, the source will have a subscription but no threads.
+	 * Calls to doReceive result in a nextMessage call at the NATS level. Currently nextMessage is
+	 * called with Duration.ZERO and will wait forever.
+	 * @param destination where to subscribe
+	 * @param nc NATS connection
+	 */
 	public NatsMessageSource(NatsConsumerDestination destination, Connection nc) {
 		this.destination = destination;
 		this.connection = nc;

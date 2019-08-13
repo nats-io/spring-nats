@@ -26,18 +26,32 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.messaging.Message;
 
+/**
+ * NatsMessageHandlers implement the standard message handling pattern. byte[], ByteBuffer and Strings are supported, where
+ * Strings are treated as UTF8 bytes.
+ */
 public class NatsMessageHandler extends AbstractMessageHandler {
 	private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
 
 	private String subject;
 	private Connection connection;
 
+	/**
+	 * Create a handler with a specific, unchanging subject, and a NATS connection.
+	 * @param subject where to send message to by default
+	 * @param nc NATS connection
+	 */
 	public NatsMessageHandler(String subject, Connection nc) {
 		this.subject = subject;
 		this.connection = nc;
 	}
 
 	@Override
+	/**
+	 * Given a message, take the payload and publish it on the handlers subject.
+	 * If the message contains a NatsMessageProducer.REPLY_TO header, that subject is
+	 * used in place of the hardcoded one. This allows a message handler to support request/reply.
+	 */
 	protected void handleMessageInternal(Message<?> message) {
 		Object payload = message.getPayload();
 		byte[] bytes = null;

@@ -18,6 +18,11 @@ package io.nats.cloud.stream.binder;
 
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 
+/**
+ * NATS uses subjects for sending and receiving. While partitions are not used
+ * this class can generate a patition-based name for compatibility with the binder
+ * API.
+ */
 public class NatsProducerDestination implements ProducerDestination {
 	private String name;
 

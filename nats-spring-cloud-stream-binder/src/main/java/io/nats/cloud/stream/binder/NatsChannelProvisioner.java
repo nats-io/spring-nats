@@ -27,17 +27,31 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.cloud.stream.provisioning.ProvisioningException;
 import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
 
+/**
+ * Provisioners turn destination names into Destination objects. This is minimal for NATS where destination names are mapped to subjects.
+ */
 public class NatsChannelProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<NatsConsumerProperties>, ExtendedProducerProperties<NatsProducerProperties>> {
 	public NatsChannelProvisioner() {
 	}
 
 	@Override
+	/**
+	 * @param subject for messages to go to
+	 * @param properties extended properties for the producer, unused
+	 * @return destination that will result in messages being sent to the provided subject
+	 */
 	public ProducerDestination provisionProducerDestination(String subject, ExtendedProducerProperties<NatsProducerProperties> properties)
 			throws ProvisioningException {
 		return new NatsProducerDestination(subject);
 	}
 
 	@Override
+	/**
+	 * @param subject to listen to messages on
+	 * @param group mapped to a queue group name in NATS
+	 * @param properties extended properties, unused
+	 * @return consumer desitation named based on the subject and group.
+	 */
 	public ConsumerDestination provisionConsumerDestination(String subject, String group, ExtendedConsumerProperties<NatsConsumerProperties> properties)
 			throws ProvisioningException {
 		String subscriptionName;

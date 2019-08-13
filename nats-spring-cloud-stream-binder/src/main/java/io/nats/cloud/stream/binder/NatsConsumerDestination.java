@@ -18,9 +18,16 @@ package io.nats.cloud.stream.binder;
 
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 
+/**
+ * NatsConsumerDestinations use their name to determine the subject and queue group (if any) to listen to.
+ */
 public class NatsConsumerDestination implements ConsumerDestination {
 	private String name;
 
+	/**
+	 * Create a new consumer destination with the provided name.
+	 * @param name compound name from the provisioner containing the subject and optional queue group
+	 */
 	public NatsConsumerDestination(String name) {
 		this.name = name;
 	}
@@ -30,6 +37,9 @@ public class NatsConsumerDestination implements ConsumerDestination {
 		return this.name;
 	}
 
+	/**
+	 * @return subject parsed from the name
+	 */
 	public String getSubject() {
 		String[] parts = this.name.split("#");
 
@@ -41,6 +51,9 @@ public class NatsConsumerDestination implements ConsumerDestination {
 		}
 	}
 
+	/**
+	 * @return queue group parsed from the name, or an empty string if no queue should be used
+	 */
 	public String getQueueGroup() {
 		String[] parts = this.name.split("#");
 

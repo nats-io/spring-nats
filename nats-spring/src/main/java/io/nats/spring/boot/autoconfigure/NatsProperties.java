@@ -23,6 +23,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConditionalOnClass({ Options.class })
 @ConfigurationProperties(prefix = "nats.spring")
+/**
+ * NatsProperties extends NatsConnectionProperties, which provides all of the attributes, setters and getters.
+ * A NatsProperties configuration is used during autoconfigure to initialize the underlying NATs connection.
+ */
 public class NatsProperties extends NatsConnectionProperties {
 	public NatsProperties() {
 	}

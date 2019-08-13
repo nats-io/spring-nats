@@ -38,27 +38,51 @@ import org.springframework.context.annotation.Import;
 @Configuration
 @Import({ NatsAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
 @EnableConfigurationProperties({NatsExtendedBindingProperties.class, NatsBinderConfigurationProperties.class})
+/**
+ * NatsChannelBinderConfiguration is used to parametrize a new NATS binder. This configuration provides custom error and connection listeners.
+ */
 public class NatsChannelBinderConfiguration {
 
 	@Autowired(required = false)
+	/**
+	 * A custom connection listener, otherwise a simple logging default is used.
+	 */
 	private ConnectionListener connectionListener;
 
 	@Autowired(required = false)
+	/**
+	 * A custom error listener, otherwise a simple logging default is used.
+	 */
 	private ErrorListener errorListener;
 
 	@Autowired
+	/**
+	 * The NatsProperties configured to define this binders NATS connections. These are configured globally.
+	 */
 	private NatsProperties natsProperties;
 
 	@Autowired
+	/**
+	 * Local configuration properties, with the same options as NatsProperties, but configured specifically for a binder.
+	 */
 	private NatsBinderConfigurationProperties natsBinderConfigurationProperties;
 
 	@Autowired
+	/**
+	 * Extended binding properties, unused currently.
+	 */
 	private NatsExtendedBindingProperties natsExtendedBindingProperties;
 
+	/**
+	 * @return custom properties for this binding configuration
+	 */
 	public NatsBinderConfigurationProperties getNatsBinderConfigurationProperties() {
 		return this.natsBinderConfigurationProperties;
 	}
 
+	/**
+	 * @param natsBinderConfigurationProperties custom properties for this configuration
+	 */
 	public void setNatsBinderConfigurationProperties(NatsBinderConfigurationProperties natsBinderConfigurationProperties) {
 		this.natsBinderConfigurationProperties = natsBinderConfigurationProperties;
 	}
@@ -71,20 +95,33 @@ public class NatsChannelBinderConfiguration {
 		this.natsExtendedBindingProperties = natsExtendedBindingProperties;
 	}
 
+	/**
+	 * @return global NATS connection properties associated with this binder configuration
+	 */
 	public NatsProperties getNatsProperties() {
 		return this.natsProperties;
 	}
 
+
+	/**
+	 * @param natsProperties global NATS connection properties associated with this binder configuration
+	 */
 	public void setNatsProperties(NatsProperties natsProperties) {
 		this.natsProperties = natsProperties;
 	}
 
 	@Bean
+	/**
+	 * @return provisioner for NATS channels
+	 */
 	public NatsChannelProvisioner natsChannelProvisioner() {
 		return new NatsChannelProvisioner();
 	}
 
 	@Bean
+	/**
+	 * @return binder, based on the channel provisioner, using the properties associated with this configuration
+	 */
 	public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) throws IOException, InterruptedException {
 		NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties,
 										this.natsBinderConfigurationProperties,
@@ -95,9 +132,12 @@ public class NatsChannelBinderConfiguration {
 	}
 
 	@Bean
+	/**
+	 * @return mapping between nats.spring.cloud.stream and nats.spring.cloud.stream
+	 */
 	public MappingsProvider natsExtendedPropertiesDefaultMappingsProvider() {
 		return () -> Collections.singletonMap(
 				ConfigurationPropertyName.of("nats.spring.cloud.stream"),
-				ConfigurationPropertyName.of("nats.spring.cloud.stream.default"));
+				ConfigurationPropertyName.of("nats.spring.cloud.stream"));
 	}
 }

@@ -41,6 +41,9 @@ import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
+/**
+ * A NATS channel binder provides a NATS connection to the code attached to it.
+ */
 public class NatsChannelBinder extends
 		AbstractMessageChannelBinder<ExtendedConsumerProperties<NatsConsumerProperties>, ExtendedProducerProperties<NatsProducerProperties>, NatsChannelProvisioner>
 		implements ExtendedPropertiesBinder<MessageChannel, NatsConsumerProperties, NatsProducerProperties> {
@@ -50,6 +53,18 @@ public class NatsChannelBinder extends
 	private NatsProperties natsProperties;
 	private Connection connection;
 
+	/**
+	 * Create a binder with the specified properties. It is expected that either the NatsBinderConfigurationProperties will have a
+	 * server url set, or the NatsProperties will. They are preferred in that order, and only one server URL or server URL list is used.
+	 * The NatsProperties are considered global and a backup. If a connection or error listener is provided it is used, otherwise a default logging listener is assigned to avoid
+	 * silent errors.
+	 * @param bindingProperties extended properties for future use
+	 * @param properties primary properties
+	 * @param natsProperties backup global properties
+	 * @param provisioningProvider provisioner for destination names
+	 * @param connectionListener custom connection listener
+	 * @param errorListener custom error listener
+	 */
 	public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
 			NatsBinderConfigurationProperties properties,
 			NatsProperties natsProperties,
@@ -126,6 +141,9 @@ public class NatsChannelBinder extends
 		}
 	}
 
+	/**
+	 * @return NATS connection
+	 */
 	public Connection getConnection() {
 		return this.connection;
 	}

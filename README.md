@@ -4,6 +4,7 @@
 
 [![License][License-Image]][License-Url]
 
+* [Using the Starter](#starter)
 * [Using the NATS Modules](#using)
   * [Multiple NATS Connections](#multi)
 * [Using the Binder](#binder)
@@ -66,6 +67,20 @@ The released version should be available at:
 ```
 
 and ultimately at maven central.
+
+## Using the Starter <a name="starter"></a>
+
+A spring boot starter is provided that will bring in the autoconfigure module.
+
+To include the starter, add the following dependency to your pom.xml:
+
+```xml
+<dependency>
+    <groupId>io.nats</groupId>
+    <artifactId>nats-spring-boot-starter</artifactId>
+    <version>0.4.0-SNAPSHOT</version>
+</dependency>
+```
 
 ## Using the NATS Modules <a name="using"></a>
 

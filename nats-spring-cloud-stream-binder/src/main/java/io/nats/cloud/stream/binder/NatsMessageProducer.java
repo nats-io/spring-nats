@@ -29,6 +29,9 @@ import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
+/**
+ * MessageProducer for NATS connections.
+ */
 public class NatsMessageProducer implements MessageProducer, Lifecycle {
 	private static final Log logger = LogFactory.getLog(NatsMessageProducer.class);
 
@@ -47,6 +50,12 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 	private MessageChannel output;
 	private Dispatcher dispatcher;
 
+	/**
+	 * Create a message producer. Once started the producer will use a dispatcher, and the associated thread, to
+	 * listen for and handle incoming messages.
+	 * @param destination where to subscribe
+	 * @param nc NATS connection
+	 */
 	public NatsMessageProducer(NatsConsumerDestination destination, Connection nc) {
 		this.destination = destination;
 		this.connection = nc;
