@@ -1,0 +1,21 @@
+dist: trusty
+language: java
+sudo: required
+jdk:
+- oraclejdk8
+- oraclejdk9
+- openjdk8
+- openjdk9
+- openjdk10
+- openjdk11
+before_script:
+- wget "https://github.com/nats-io/nats-server/releases/download/$nats_server_version/gnatsd-$nats_server_version-linux-amd64.zip"
+  -O tmp.zip
+- unzip tmp.zip
+- mv nats-server-$nats_server_version-linux-amd64 nats-server
+script:
+- "./mvnw clean test"
+env:
+  global:
+  - nats_server_version=v2.0.2
+  - nats_server_path=$TRAVIS_BUILD_DIR/nats-server/nats-server
