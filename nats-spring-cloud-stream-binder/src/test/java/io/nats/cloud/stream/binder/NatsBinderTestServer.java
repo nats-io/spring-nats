@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
  */
 public class NatsBinderTestServer implements AutoCloseable {
 
-    private static final String NATS_SERVER = "gnatsd";
+    private static final String NATS_SERVER = "nats-server";
 
     // Use a new port each time, we increment and get so start at the normal port
     private static AtomicInteger portCounter = new AtomicInteger(11223);
