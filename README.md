@@ -3,6 +3,7 @@
 # NATS Spring Support
 
 [![License][License-Image]][License-Url]
+[![Build Status](https://travis-ci.org/nats-io/spring-nats.svg?branch=master)](http://travis-ci.org/nats-io/spring-nats?branch=master)
 
 * [Using the Starter](#starter)
 * [Using the NATS Modules](#using)
