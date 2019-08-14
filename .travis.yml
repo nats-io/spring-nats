@@ -9,12 +9,11 @@ jdk:
 - openjdk10
 - openjdk11
 before_script:
-- wget "https://github.com/nats-io/nats-server/releases/download/$nats_server_version/gnatsd-$nats_server_version-linux-amd64.zip"
+- wget "https://github.com/nats-io/nats-server/releases/download/$nats_server_version/nats-server-$nats_server_version-linux-amd64.zip"
   -O tmp.zip
 - unzip tmp.zip
 - mv nats-server-$nats_server_version-linux-amd64 nats-server
-script:
-- "./mvnw clean test"
+install: mvn install -DskipTests -Dgpg.skip
 env:
   global:
   - nats_server_version=v2.0.2
