@@ -3,13 +3,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	
 	<artifactId>nats-samples</artifactId>
-	<version>0.3.2</version>
+	<version>0.4.0</version>
 	<packaging>pom</packaging>
 	
 	<parent>
 		<groupId>io.nats</groupId>
-		<artifactId>spring-nats-parent</artifactId>
-		<version>0.3.2</version>
+		<artifactId>nats-spring-parent</artifactId>
+		<version>0.4.0</version>
         <relativePath>..</relativePath>
 	</parent>
 	

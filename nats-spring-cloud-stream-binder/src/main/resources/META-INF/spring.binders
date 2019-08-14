@@ -1,0 +1,2 @@
+nats:\
+io.nats.cloud.stream.binder.NatsChannelBinderConfiguration

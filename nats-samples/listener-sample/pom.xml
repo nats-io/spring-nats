@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>listener-sample</artifactId>
-	<version>0.3.2</version>
+	<version>0.4.0</version>
 	<packaging>jar</packaging>
 	<name>listener-sample</name>
 	<description>A listener using the nats binder</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
-		<version>0.3.2</version>
+		<version>0.4.0</version>
         <relativePath>..</relativePath>
 	</parent>
 
@@ -22,7 +22,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>io.nats</groupId>
-			<artifactId>spring-cloud-stream-binder-nats</artifactId>
+			<artifactId>nats-spring-cloud-stream-binder</artifactId>
 		</dependency>
 	</dependencies>
 
