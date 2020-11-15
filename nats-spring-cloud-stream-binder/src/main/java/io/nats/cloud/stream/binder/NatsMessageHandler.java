@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 /**
  * NatsMessageHandlers implement the standard message handling pattern. byte[], ByteBuffer and Strings are supported, where
@@ -73,12 +74,9 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 			return;
 		}
 
-		Object rt = message.getHeaders().get(NatsMessageProducer.REPLY_TO);
-		String replyTo = rt != null ? rt.toString() : null;
-		String subj = replyTo != null ? replyTo : this.subject;
-
-		if (this.connection != null && subj != null && subj.length() > 0) {
-			this.connection.publish(subj, bytes);
+		if (this.connection != null) {
+			final Object replyChannel = message.getHeaders().get(MessageHeaders.REPLY_CHANNEL);
+			this.connection.publish(this.subject, replyChannel != null? replyChannel.toString() : null, bytes);
 		}
 	}
 }
