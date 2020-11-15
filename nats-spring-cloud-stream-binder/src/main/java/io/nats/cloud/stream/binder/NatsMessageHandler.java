@@ -50,8 +50,8 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 	@Override
 	/**
 	 * Given a message, take the payload and publish it on the handlers subject.
-	 * If the message contains a NatsMessageProducer.REPLY_TO header, that subject is
-	 * used in place of the hardcoded one. This allows a message handler to support request/reply.
+	 * If the message contains a MessageHeaders.REPLY_CHANNEL header, it is passed on to allow taking advantage of build-in request/reply handling
+	 * in Spring Integration / Spring Cloud Stream.
 	 */
 	protected void handleMessageInternal(Message<?> message) {
 		Object payload = message.getPayload();
@@ -76,7 +76,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 
 		if (this.connection != null) {
 			final Object replyChannel = message.getHeaders().get(MessageHeaders.REPLY_CHANNEL);
-			this.connection.publish(this.subject, replyChannel != null? replyChannel.toString() : null, bytes);
+			this.connection.publish(this.subject, replyChannel != null ? replyChannel.toString() : null, bytes);
 		}
 	}
 }
