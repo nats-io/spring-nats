@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>processor-sample</artifactId>
-	<version>0.4.0</version>
+	<version>0.4.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>processor-sample</name>
 	<description>A simple sample for the nats cloud stream binding with a processor</description>
@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-samples</artifactId>
-		<version>0.4.0</version>
+		<version>0.4.1-SNAPSHOT</version>
         <relativePath>..</relativePath>
 	</parent>
 

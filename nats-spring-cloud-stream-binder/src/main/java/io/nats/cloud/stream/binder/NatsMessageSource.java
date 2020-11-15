@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.endpoint.AbstractMessageSource;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 /**
@@ -64,7 +65,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 			if (m != null) {
 				Map<String, Object> headers = new HashMap<>();
 				headers.put(NatsMessageProducer.SUBJECT, m.getSubject());
-				headers.put(NatsMessageProducer.REPLY_TO, m.getReplyTo());
+				headers.put(MessageHeaders.REPLY_CHANNEL, m.getReplyTo());
 				GenericMessage<byte[]> gm = new GenericMessage<byte[]>(m.getData(), headers);
 				return gm;
 			}

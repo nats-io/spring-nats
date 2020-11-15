@@ -16,12 +16,6 @@
 
 package io.nats.cloud.stream.binder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -41,11 +35,16 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 import io.nats.client.Connection;
 import io.nats.client.Message;
 import io.nats.client.Subscription;
+import org.springframework.messaging.support.MessageBuilder;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.*;
 
 public class BinderTests {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
@@ -153,7 +152,7 @@ public class BinderTests {
                     Object payload = msg.getPayload();
 
                     if (payload instanceof byte[]) {
-                        received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
+                        received.complete(new String((byte[]) payload, UTF_8));
                     } else {
                         received.complete(payload.toString());
                     }
@@ -167,7 +166,7 @@ public class BinderTests {
                 assertTrue(producer.isRunning());
                 binder.getConnection().flush(Duration.ofSeconds(5));// get the subscription out there
 
-                conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                conn.publish(in, theMessage.getBytes(UTF_8));
                 conn.flush(Duration.ofSeconds(5));
 
                 String result = received.get(5, TimeUnit.SECONDS);
@@ -225,7 +224,7 @@ public class BinderTests {
                 int total = 100;
 
                 for (int i=0; i<total; i++) {
-                    conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                    conn.publish(in, theMessage.getBytes(UTF_8));
                 }
                 conn.flush(Duration.ofSeconds(5));
                 
@@ -279,14 +278,14 @@ public class BinderTests {
                     Object payload = msg.getPayload();
 
                     if (payload instanceof byte[]) {
-                        received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
+                        received.complete(new String((byte[]) payload, UTF_8));
                     } else {
                         received.complete(payload.toString());
                     }
                 });
                 t.start();
 
-                conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                conn.publish(in, theMessage.getBytes(UTF_8));
                 conn.flush(Duration.ofSeconds(5));
 
                 String result = received.get(5, TimeUnit.SECONDS);
@@ -334,14 +333,14 @@ public class BinderTests {
                     Object payload = msg.getPayload();
 
                     if (payload instanceof byte[]) {
-                        received.complete(new String((byte[]) payload, StandardCharsets.UTF_8));
+                        received.complete(new String((byte[]) payload, UTF_8));
                     } else {
                         received.complete(payload.toString());
                     }
                 });
                 t.start();
 
-                conn.publish(in, theMessage.getBytes(StandardCharsets.UTF_8));
+                conn.publish(in, theMessage.getBytes(UTF_8));
                 conn.flush(Duration.ofSeconds(5));
 
                 String result = received.get(5, TimeUnit.SECONDS);
@@ -379,22 +378,22 @@ public class BinderTests {
                 conn.flush(Duration.ofSeconds(5));
 
                 // send a byte array
-                mh.handleMessage(new GenericMessage<byte[]>(theMessage.getBytes(StandardCharsets.UTF_8)));
+                mh.handleMessage(new GenericMessage<byte[]>(theMessage.getBytes(UTF_8)));
                 Message msg = sub.nextMessage(Duration.ofSeconds(5));
-                String result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
+                String result = (msg != null) ? new String((byte[]) msg.getData(), UTF_8) : null;
                 assertEquals(theMessage, result);
 
                 // send a byte buffer
-                ByteBuffer buffer = ByteBuffer.wrap(theMessage.getBytes(StandardCharsets.UTF_8));
+                ByteBuffer buffer = ByteBuffer.wrap(theMessage.getBytes(UTF_8));
                 mh.handleMessage(new GenericMessage<ByteBuffer>(buffer));
                 msg = sub.nextMessage(Duration.ofSeconds(5));
-                result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
+                result = (msg != null) ? new String((byte[]) msg.getData(), UTF_8) : null;
                 assertEquals(theMessage, result);
 
                 // send a string
                 mh.handleMessage(new GenericMessage<String>(theMessage));
                 msg = sub.nextMessage(Duration.ofSeconds(5));
-                result = (msg != null) ? new String((byte[]) msg.getData(), StandardCharsets.UTF_8) : null;
+                result = (msg != null) ? new String((byte[]) msg.getData(), UTF_8) : null;
                 assertEquals(theMessage, result);
 
                 // send an unknown type
@@ -403,5 +402,64 @@ public class BinderTests {
                 assertNull(msg);
             });
         }
+    }
+
+    @Test
+    public void testRequestReply() {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues("nats.spring.server:" + ts.getURI()).run((context) -> {
+                final Connection conn = context.getBean(Connection.class);
+                assertNotNull(conn);
+                assertSame("Connected Status", Connection.Status.CONNECTED, conn.getStatus());
+
+                final NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+                final NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+                final NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
+                final NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
+                config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
+                config.setNatsBinderConfigurationProperties(binderProps);
+                config.setNatsExtendedBindingProperties(props);
+                final NatsChannelBinder binder = config.natsBinder(provisioner);
+
+                final String request = "hello request";
+                final String reply = "hello reply";
+                final String req2rep = "req2rep";
+                final String rep2req = "rep2req";
+                final MessageHandler appOneMh = binder.createProducerMessageHandler(provisioner.provisionProducerDestination(req2rep, null), null, null);
+                final CompletableFuture<org.springframework.messaging.Message<?>> appOneReceived = new CompletableFuture<>();
+                final NatsMessageProducer appOneMp = buildMessageProducer(rep2req, appOneReceived, binder, provisioner);
+                appOneMp.start();
+
+                final MessageHandler appTwoMh = binder.createProducerMessageHandler(provisioner.provisionProducerDestination(rep2req, null), null, null);
+                final CompletableFuture<org.springframework.messaging.Message<?>> appTwoReceived = new CompletableFuture<>();
+                final NatsMessageProducer appTwoMp = buildMessageProducer(req2rep, appTwoReceived, binder, provisioner);
+                appTwoReceived.thenAccept(requestMsg -> {
+                    // appTwo replies copying headers
+                    appTwoMh.handleMessage(MessageBuilder.withPayload(reply + " to " + new String((byte[]) requestMsg.getPayload(), UTF_8)).copyHeaders(requestMsg.getHeaders()).build());
+                });
+                appTwoMp.start();
+
+                // appOne sends request
+                appOneMh.handleMessage(MessageBuilder.withPayload(request).setHeader(MessageHeaders.REPLY_CHANNEL, rep2req).build());
+
+                // appTwo receives request with header (and replies)
+                final org.springframework.messaging.Message<?> appTwoMessage = appTwoReceived.get(5, TimeUnit.SECONDS);
+                assertEquals(rep2req, appTwoMessage.getHeaders().get(MessageHeaders.REPLY_CHANNEL));
+                assertEquals(request, new String((byte[]) appTwoMessage.getPayload(), UTF_8));
+
+                // appOne receives the reply
+                final org.springframework.messaging.Message<?> appOneMessage = appOneReceived.get(5, TimeUnit.SECONDS);
+                assertEquals(rep2req, appOneMessage.getHeaders().get(MessageHeaders.REPLY_CHANNEL));
+                assertEquals(reply + " to " + request, new String((byte[]) appOneMessage.getPayload(), UTF_8));
+            });
+        }
+    }
+
+    private NatsMessageProducer buildMessageProducer(String subject, CompletableFuture<org.springframework.messaging.Message<?>> received, NatsChannelBinder binder, NatsChannelProvisioner provisioner) {
+        final NatsMessageProducer mp = (NatsMessageProducer) binder.createConsumerEndpoint(provisioner.provisionConsumerDestination(subject, "", null), "", null);
+        final DirectChannel output = new DirectChannel();
+        output.subscribe(received::complete);
+        mp.setOutputChannel(output);
+        return mp;
     }
 }
