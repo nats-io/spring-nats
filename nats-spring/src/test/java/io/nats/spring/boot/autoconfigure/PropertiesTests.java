@@ -91,8 +91,16 @@ public class PropertiesTests {
         assertNull(options.getToken());
         assertNull(options.getUsername());
         assertNull(options.getPassword());
-
         assertNotNull(options.getAuthHandler());
+        assertEquals("FileAuthHandler", options.getAuthHandler().getClass().getSimpleName());
+
+        props.setNkey("nkey");
+        options = props.toOptions();
+        assertNull(options.getToken());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+        assertNotNull(options.getAuthHandler());
+        assertEquals("StringAuthHandler", options.getAuthHandler().getClass().getSimpleName());
 
         props.setKeyStorePassword("password".toCharArray());
         props.setKeyStorePath("src/test/resources/keystore.jks");
@@ -175,8 +183,16 @@ public class PropertiesTests {
         assertNull(options.getToken());
         assertNull(options.getUsername());
         assertNull(options.getPassword());
-
         assertNotNull(options.getAuthHandler());
+        assertEquals("FileAuthHandler", options.getAuthHandler().getClass().getSimpleName());
+
+        props = props.nkey("nkey");
+        options = props.toOptions();
+        assertNull(options.getToken());
+        assertNull(options.getUsername());
+        assertNull(options.getPassword());
+        assertNotNull(options.getAuthHandler());
+        assertEquals("StringAuthHandler", options.getAuthHandler().getClass().getSimpleName());
 
         props = props.keyStorePassword("password".toCharArray());
         props = props.keyStorePath("src/test/resources/keystore.jks");

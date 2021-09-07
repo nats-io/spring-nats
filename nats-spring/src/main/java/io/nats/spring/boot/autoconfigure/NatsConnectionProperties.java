@@ -91,24 +91,29 @@ public class NatsConnectionProperties {
 	private boolean utf8Support;
 
 	/**
-	 * Authentication user name. Requires the password, but not the token or credentials.
+	 * Authentication user name. Requires the password, but not the token, or credentials, or NKey.
 	 */
 	private String username;
 
 	/**
-	 * Authentication password. Requires the username, but not the token or credentials.
+	 * Authentication password. Requires the username, but not the token, or credentials, or NKey.
 	 */
 	private String password;
 
 	/**
-	 * Authentication token, do not use with username/password or credentials.
+	 * Authentication token, do not use with username/password, or credentials, or NKey.
 	 */
 	private String token;
 
 	/**
-	 * User credentials file path, do not use with user/password or token. Credentials are used by account enabled servers.
+	 * User credentials file path, do not use with user/password, or token, or NKey. Credentials are used by account enabled servers.
 	 */
 	private String credentials;
+
+	/**
+	 * Private key (seed) for NKey authentication, do not use with user/password, or token, or credentials.
+	 */
+	private String nkey;
 
 	/**
 	 * Path to the SSL keystore.
@@ -281,6 +286,20 @@ public class NatsConnectionProperties {
 	 */
 	public void setToken(String token) {
 		this.token = token;
+	}
+
+	/**
+	 * @return private key (seed) for NKey authentication with the server
+	 */
+	public String getNkey() {
+		return nkey;
+	}
+
+	/**
+	 * @param nkey private key (seed) for NKey authentication with the server
+	 */
+	public void setNkey(String nkey) {
+		this.nkey = nkey;
 	}
 
 	/**
@@ -529,6 +548,15 @@ public class NatsConnectionProperties {
 	}
 
 	/**
+	 * @param nkey private key (seed) for NKey authentication
+	 * @return chainable properties
+	 */
+	public NatsConnectionProperties nkey(String nkey) {
+		this.nkey = nkey;
+		return this;
+	}
+
+	/**
 	 * @param inboxPrefix custom prefix to use for request/reply inboxes
 	 * @return chainable properties
 	 */
@@ -699,7 +727,10 @@ public class NatsConnectionProperties {
 			builder = builder.supportUTF8Subjects();
 		}
 
-		if (this.credentials != null && this.credentials.length() > 0) {
+		if (this.nkey != null && this.nkey.length() > 0) {
+			builder = builder.authHandler(Nats.staticCredentials(null, this.nkey.toCharArray()));
+		}
+		else if (this.credentials != null && this.credentials.length() > 0) {
 			builder = builder.authHandler(Nats.credentials(this.credentials));
 		}
 		else if (this.token != null && this.token.length() > 0) {
@@ -733,6 +764,7 @@ public class NatsConnectionProperties {
 		" password='" + getPassword() + "'," +
 		" token='" + getToken() + "'," +
 		" creds='" + getCredentials() + "'," +
+		" nkey='" + getNkey() + "'," +
 			"}";
 	}
 }
