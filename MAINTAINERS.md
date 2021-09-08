@@ -2,9 +2,7 @@
 
 Maintainership is on a per project basis.
 
-### Core-maintainers
+### Maintainers
   - Derek Collison <derek@nats.io> [@derekcollison](https://github.com/derekcollison)
   - Stephen Asbury <sasbury@sasbury.com> [@sasbury](https://github.com/sasbury)
-
-### Maintainers
   - Colin Sullivan <colin@nats.io> [@ColinSullivan1](https://github.com/ColinSullivan1)
