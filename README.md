@@ -79,7 +79,7 @@ To include the starter, add the following dependency to your pom.xml:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
-    <version>0.4.1-SNAPSHOT</version>
+    <version>0.4.1</version>
 </dependency>
 ```
 
@@ -91,12 +91,12 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats</artifactId>
-    <version>2.11.5</version>
+    <version>2.11.6</version>
 </dependency>
 <dependency>
   <groupId>io.nats</groupId>
   <artifactId>nats-spring</artifactId>
-  <version>0.4.1-SNAPSHOT</version>
+  <version>0.4.1</version>
 </dependency>
 ```
 
@@ -131,7 +131,7 @@ and include a dependency on the library:
 <dependency>
   <groupId>io.nats</groupId>
   <artifactId>nats-spring-cloud-stream-binder</artifactId>
-  <version>0.4.1-SNAPSHOT</version>
+  <version>0.4.1</version>
 </dependency>
 ```
 
@@ -228,7 +228,7 @@ This repo contains two types of samples. First there is a [stand-alone demo](dem
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-samples/listener-sample/target/listener-sample-0.4.1-SNAPSHOT.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-samples/listener-sample/target/listener-sample-0.4.1.jar --nats.spring.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -240,7 +240,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/processor-sample/target/processor-sample-0.4.1-SNAPSHOT.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-samples/processor-sample/target/processor-sample-0.4.1.jar --nats.spring.server="nats://localhost:4222"
 ...
 
 ```
