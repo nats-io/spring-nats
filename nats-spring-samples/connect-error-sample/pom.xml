@@ -2,17 +2,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>queue-sample</artifactId>
-	<version>0.4.1</version>
+	<artifactId>nats-spring-samples-connect-error</artifactId>
+	<version>0.5.0</version>
 	<packaging>jar</packaging>
-	<name>queue-sample</name>
-	<description>A queue listener using the nats binder</description>
+	<name>connect-error-sample</name>
+	<description>A sample that sets up a custom connection and error listener for the NATS binder</description>
 
 	<parent>
-		<groupId>io.nats</groupId>
-		<artifactId>nats-samples</artifactId>
-		<version>0.4.1</version>
-        <relativePath>..</relativePath>
+		<groupId>io.nats.nats-spring-samples</groupId>
+		<artifactId>nats-spring-samples-parent</artifactId>
+		<version>0.5.0</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<properties>

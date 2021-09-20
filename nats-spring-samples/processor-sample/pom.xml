@@ -2,17 +2,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>polling-sample</artifactId>
-	<version>0.4.1</version>
+	<artifactId>nats-spring-samples-processor</artifactId>
+	<version>0.5.0</version>
 	<packaging>jar</packaging>
-	<name>polling-sample</name>
-	<description>A poller using the nats binder</description>
+	<name>processor-sample</name>
+	<description>A simple sample for the nats cloud stream binding with a processor</description>
 
 	<parent>
-		<groupId>io.nats</groupId>
-		<artifactId>nats-samples</artifactId>
-		<version>0.4.1</version>
-        <relativePath>..</relativePath>
+		<groupId>io.nats.nats-spring-samples</groupId>
+		<artifactId>nats-spring-samples-parent</artifactId>
+		<version>0.5.0</version>
+		<relativePath>..</relativePath>
 	</parent>
 
 	<properties>
