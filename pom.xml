@@ -4,7 +4,7 @@
 	
 	<artifactId>nats-spring-parent</artifactId>
 	<groupId>io.nats</groupId>
-	<version>0.4.1</version>
+	<version>0.5.0</version>
 	<packaging>pom</packaging>
 	
 	<parent>
@@ -20,14 +20,14 @@
 		<junit.version>4.13.2</junit.version>
 		<java.version>1.8</java.version>
 		<!-- Unique entry point for version number management --> 
-		<revision>0.4.1</revision>
+		<revision>0.5.0</revision>
 	</properties>
 
 	<modules>
 		<module>nats-spring</module>
 		<module>nats-spring-boot-starter</module>
 		<module>nats-spring-cloud-stream-binder</module>
-		<module>nats-samples</module>
+		<module>nats-spring-samples</module>
 	</modules>
 
 	<distributionManagement>
@@ -180,10 +180,7 @@
 							<goal>sign</goal>
 						</goals>
 						<configuration>
-							<gpgArguments>
-								<arg>--pinentry-mode</arg>
-								<arg>loopback</arg>
-							</gpgArguments>
+							<keyname>01684F29</keyname>
 						</configuration>
 					</execution>
 				</executions>
@@ -196,6 +193,7 @@
 				<configuration>
 					<serverId>ossrh</serverId>
 					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>true</autoReleaseAfterClose>
 				</configuration>
 			</plugin>
 		</plugins>

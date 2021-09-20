@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
-	<artifactId>nats-samples</artifactId>
-	<version>0.4.1</version>
+
+	<groupId>io.nats.nats-spring-samples</groupId>
+	<artifactId>nats-spring-samples-parent</artifactId>
+	<version>0.5.0</version>
 	<packaging>pom</packaging>
 	
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-spring-parent</artifactId>
-		<version>0.4.1</version>
-        <relativePath>..</relativePath>
+		<version>0.5.0</version>
+        <relativePath>../pom.xml</relativePath>
 	</parent>
-	
+
 	<properties>
 		<spring-boot.version>2.1.6.RELEASE</spring-boot.version>
 		<spring-cloud-stream.version>2.2.0.RELEASE</spring-cloud-stream.version>
