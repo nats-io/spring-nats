@@ -16,6 +16,15 @@
 
 package io.nats.spring.boot.autoconfigure;
 
+import io.nats.client.Nats;
+import io.nats.client.Options;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,20 +33,12 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.time.Duration;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-
-import io.nats.client.Nats;
-import io.nats.client.Options;
-
-@ConditionalOnClass({ Options.class })
+/**
+ * Nats Connection Properties.
+ */
+@ConditionalOnClass({Options.class})
 public class NatsConnectionProperties {
-    
+
     /**
      * URL for the nats server, can be a comma separated list.
      */
@@ -83,22 +84,22 @@ public class NatsConnectionProperties {
     private String inboxPrefix = Options.DEFAULT_INBOX_PREFIX;
 
     /**
-     * Default KeyStore format/type for KeyManager instances
+     * Default KeyStore format/type for KeyManager instances.
      */
     private final String defaultKeyStoreType = "PKCS12";
 
     /**
-     * Default KeyStore format/type for TrustManager instances
+     * Default KeyStore format/type for TrustManager instances.
      */
     private final String defaultTrustStoreType = "PKCS12";
 
     /**
-     * Default KeyStore Provider Algorithm for KeyManager instances
+     * Default KeyStore Provider Algorithm for KeyManager instances.
      */
     private final String defaultKeyStoreProviderAlgorithm = "SunX509";
 
     /**
-     * Default KeyStore Provider Algorithm for TrustManager instances
+     * Default KeyStore Provider Algorithm for TrustManager instances.
      */
     private final String defaultTrustStoreProviderAlgorithm = "SunX509";
 
@@ -188,6 +189,9 @@ public class NatsConnectionProperties {
      */
     private String trustStoreType;
 
+    /**
+     * Default Constructor.
+     */
     public NatsConnectionProperties() {
     }
 
@@ -195,49 +199,49 @@ public class NatsConnectionProperties {
      * @return url for the nats server
      */
     public String getServer() {
-	return this.server;
+        return this.server;
     }
 
     /**
      * @param server url for the nats server
      */
     public void setServer(String server) {
-	this.server = server;
+        this.server = server;
     }
 
     /**
      * @return a name used for the connection
      */
     public String getConnectionName() {
-	return this.connectionName;
+        return this.connectionName;
     }
 
     /**
      * @param connectionName a name to associate with the connection
      */
     public void setConnectionName(String connectionName) {
-	this.connectionName = connectionName;
+        this.connectionName = connectionName;
     }
 
     /**
      * @return maximum times to try to reconnect
      */
     public int getMaxReconnect() {
-	return this.maxReconnect;
+        return this.maxReconnect;
     }
 
     /**
      * @param maxReconnect maximum times to try to reconnect
      */
     public void setMaxReconnect(int maxReconnect) {
-	this.maxReconnect = maxReconnect;
+        this.maxReconnect = maxReconnect;
     }
 
     /**
      * @return time to wait between reconnect attempts on the same server url
      */
     public Duration getReconnectWait() {
-	return this.reconnectWait;
+        return this.reconnectWait;
     }
 
     /**
@@ -245,43 +249,43 @@ public class NatsConnectionProperties {
      *                      server url
      */
     public void setReconnectWait(Duration reconnectWait) {
-	this.reconnectWait = reconnectWait;
+        this.reconnectWait = reconnectWait;
     }
 
     /**
      * @return maximum time for initial connection
      */
     public Duration getConnectionTimeout() {
-	return this.connectionTimeout;
+        return this.connectionTimeout;
     }
 
     /**
      * @param connectionTimeout maximum time for initial connection
      */
     public void setConnectionTimeout(Duration connectionTimeout) {
-	this.connectionTimeout = connectionTimeout;
+        this.connectionTimeout = connectionTimeout;
     }
 
     /**
      * @return time between server pings
      */
     public Duration getPingInterval() {
-	return this.pingInterval;
+        return this.pingInterval;
     }
 
     /**
      * @param pingInterval time between server pings
      */
     public void setPingInterval(Duration pingInterval) {
-	this.pingInterval = pingInterval;
+        this.pingInterval = pingInterval;
     }
 
     /**
      * @return size of the buffer, in bytes, used to store publish messages during
-     *         reconnect
+     * reconnect
      */
     public long getReconnectBufferSize() {
-	return this.reconnectBufferSize;
+        return this.reconnectBufferSize;
     }
 
     /**
@@ -289,93 +293,93 @@ public class NatsConnectionProperties {
      *                            publish messages during reconnect
      */
     public void setReconnectBufferSize(long reconnectBufferSize) {
-	this.reconnectBufferSize = reconnectBufferSize;
+        this.reconnectBufferSize = reconnectBufferSize;
     }
 
     /**
      * @return username to use with password for authenticaiton
      */
     public String getUsername() {
-	return this.username;
+        return this.username;
     }
 
     /**
      * @param username to use with password for authenticaiton
      */
     public void setUsername(String username) {
-	this.username = username;
+        this.username = username;
     }
 
     /**
      * @return password to use with username for authenticaiton
      */
     public String getPassword() {
-	return this.password;
+        return this.password;
     }
 
     /**
      * @param password to use with username for authenticaiton
      */
     public void setPassword(String password) {
-	this.password = password;
+        this.password = password;
     }
 
     /**
      * @return authentication token to use with the server
      */
     public String getToken() {
-	return this.token;
+        return this.token;
     }
 
     /**
      * @param token authentication token to use with the server
      */
     public void setToken(String token) {
-	this.token = token;
+        this.token = token;
     }
 
     /**
      * @return private key (seed) for NKey authentication with the server
      */
     public String getNkey() {
-	return nkey;
+        return nkey;
     }
 
     /**
      * @param nkey private key (seed) for NKey authentication with the server
      */
     public void setNkey(String nkey) {
-	this.nkey = nkey;
+        this.nkey = nkey;
     }
 
     /**
      * @return prefix to use for request/reply inboxes
      */
     public String getInboxPrefix() {
-	return this.inboxPrefix;
+        return this.inboxPrefix;
     }
 
     /**
      * @param inboxPrefix custom prefix to use for request/reply inboxes
      */
     public void setInboxPrefix(String inboxPrefix) {
-	this.inboxPrefix = inboxPrefix;
+        this.inboxPrefix = inboxPrefix;
     }
 
     /**
      * @return whether or not to block echo messages, messages that were sent by
-     *         this connection
+     * this connection
      */
     public boolean isNoEcho() {
-	return this.noEcho;
+        return this.noEcho;
     }
 
     /**
      * @return whether or not to block echo messages, messages that were sent by
-     *         this connection
+     * this connection
      */
     public boolean getNoEcho() {
-	return this.noEcho;
+        return this.noEcho;
     }
 
     /**
@@ -383,21 +387,21 @@ public class NatsConnectionProperties {
      *               connection back to this connection
      */
     public void setNoEcho(boolean noEcho) {
-	this.noEcho = noEcho;
+        this.noEcho = noEcho;
     }
 
     /**
      * @return whether or not the client should support for UTF8 subject names
      */
     public boolean isUtf8Support() {
-	return this.utf8Support;
+        return this.utf8Support;
     }
 
     /**
      * @return whether or not the client should support for UTF8 subject names
      */
     public boolean getUtf8Support() {
-	return this.utf8Support;
+        return this.utf8Support;
     }
 
     /**
@@ -405,15 +409,15 @@ public class NatsConnectionProperties {
      *                    names
      */
     public void setUtf8Support(boolean utf8Support) {
-	this.utf8Support = utf8Support;
+        this.utf8Support = utf8Support;
     }
 
     /**
      * @return path to the credentials file to use for authentication with an
-     *         account enabled server
+     * account enabled server
      */
     public String getCredentials() {
-	return this.credentials;
+        return this.credentials;
     }
 
     /**
@@ -421,42 +425,42 @@ public class NatsConnectionProperties {
      *                    with an account enabled server
      */
     public void setCredentials(String credentials) {
-	this.credentials = credentials;
+        this.credentials = credentials;
     }
 
     /**
      * @return path to the SSL Keystore
      */
     public String getKeyStorePath() {
-	return this.keyStorePath;
+        return this.keyStorePath;
     }
 
     /**
      * @param keyStorePath file path for the SSL Keystore
      */
     public void setKeyStorePath(String keyStorePath) {
-	this.keyStorePath = keyStorePath;
+        this.keyStorePath = keyStorePath;
     }
 
     /**
      * @return password used to unlock the keystore
      */
     public char[] getKeyStorePassword() {
-	return this.keyStorePassword;
+        return this.keyStorePassword;
     }
 
     /**
      * @param keyStorePassword used to unlock the keystore
      */
     public void setKeyStorePassword(char[] keyStorePassword) {
-	this.keyStorePassword = keyStorePassword;
+        this.keyStorePassword = keyStorePassword;
     }
 
     /**
      * @return type of keystore to use for SSL connections
      */
     public String getKeyStoreType() {
-	return this.keyStoreType;
+        return this.keyStoreType;
     }
 
     /**
@@ -464,42 +468,42 @@ public class NatsConnectionProperties {
      *                     formats/types
      */
     public void setKeyStoreType(String keyStoreType) {
-	this.keyStoreType = keyStoreType;
+        this.keyStoreType = keyStoreType;
     }
 
     /**
      * @return file path for the SSL trust store
      */
     public String getTrustStorePath() {
-	return this.trustStorePath;
+        return this.trustStorePath;
     }
 
     /**
      * @param trustStorePath file path for the SSL trust store
      */
     public void setTrustStorePath(String trustStorePath) {
-	this.trustStorePath = trustStorePath;
+        this.trustStorePath = trustStorePath;
     }
 
     /**
      * @return password used to unlock the trust store
      */
     public char[] getTrustStorePassword() {
-	return this.trustStorePassword;
+        return this.trustStorePassword;
     }
 
     /**
      * @param trustStorePassword used to unlock the trust store
      */
     public void setTrustStorePassword(char[] trustStorePassword) {
-	this.trustStorePassword = trustStorePassword;
+        this.trustStorePassword = trustStorePassword;
     }
 
     /**
      * @return type of keystore to use for SSL connections
      */
     public String getTrustStoreType() {
-	return this.trustStoreType;
+        return this.trustStoreType;
     }
 
     /**
@@ -507,50 +511,49 @@ public class NatsConnectionProperties {
      *                       store formats/types
      */
     public void setTrustStoreType(String trustStoreType) {
-	this.trustStoreType = trustStoreType;
+        this.trustStoreType = trustStoreType;
     }
 
     /**
      * @return keyStoreProvider of keystore to use for SSL connections
      */
     public String getKeyStoreProvider() {
-	return keyStoreProvider;
+        return keyStoreProvider;
     }
 
     /**
      * @param keyStoreProvider defaults to SunX509. Alternatives include PKIX.
      */
     public void setKeyStoreProvider(String keyStoreProvider) {
-	this.keyStoreProvider = keyStoreProvider;
+        this.keyStoreProvider = keyStoreProvider;
     }
 
     /**
      * @return trustStoreProvider of keystore to use for SSL connections
      */
     public String getTrustStoreProvider() {
-	return trustStoreProvider;
+        return trustStoreProvider;
     }
 
     /**
      * @param trustStoreProvider defaults to SunX509. Alternatives include PKIX.
      */
     public void setTrustStoreProvider(String trustStoreProvider) {
-	this.trustStoreProvider = trustStoreProvider;
+        this.trustStoreProvider = trustStoreProvider;
     }
 
     /**
-     * 
      * @return tlsProtocol to be used in TLS handshake
      */
     public String getTlsProtocol() {
-	return tlsProtocol;
+        return tlsProtocol;
     }
 
     /**
-     * @param trustStoreProvider defaults to TLSv1.2
+     * @param tlsProtocol the tls protocol
      */
     public void setTlsProtocol(String tlsProtocol) {
-	this.tlsProtocol = tlsProtocol;
+        this.tlsProtocol = tlsProtocol;
     }
 
     /**
@@ -559,8 +562,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties server(String serverURL) {
-	this.server = serverURL;
-	return this;
+        this.server = serverURL;
+        return this;
     }
 
     /**
@@ -568,8 +571,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties connectionName(String connectionName) {
-	this.connectionName = connectionName;
-	return this;
+        this.connectionName = connectionName;
+        return this;
     }
 
     /**
@@ -578,8 +581,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties maxReconnect(int maxReconnect) {
-	this.maxReconnect = maxReconnect;
-	return this;
+        this.maxReconnect = maxReconnect;
+        return this;
     }
 
     /**
@@ -588,8 +591,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties reconnectWait(Duration reconnectWait) {
-	this.reconnectWait = reconnectWait;
-	return this;
+        this.reconnectWait = reconnectWait;
+        return this;
     }
 
     /**
@@ -597,8 +600,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties connectionTimeout(Duration connectionTimeout) {
-	this.connectionTimeout = connectionTimeout;
-	return this;
+        this.connectionTimeout = connectionTimeout;
+        return this;
     }
 
     /**
@@ -606,8 +609,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties pingInterval(Duration pingInterval) {
-	this.pingInterval = pingInterval;
-	return this;
+        this.pingInterval = pingInterval;
+        return this;
     }
 
     /**
@@ -616,8 +619,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties reconnectBufferSize(long reconnectBufferSize) {
-	this.reconnectBufferSize = reconnectBufferSize;
-	return this;
+        this.reconnectBufferSize = reconnectBufferSize;
+        return this;
     }
 
     /**
@@ -625,8 +628,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties username(String username) {
-	this.username = username;
-	return this;
+        this.username = username;
+        return this;
     }
 
     /**
@@ -634,8 +637,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties password(String password) {
-	this.password = password;
-	return this;
+        this.password = password;
+        return this;
     }
 
     /**
@@ -643,8 +646,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties token(String token) {
-	this.token = token;
-	return this;
+        this.token = token;
+        return this;
     }
 
     /**
@@ -652,8 +655,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties nkey(String nkey) {
-	this.nkey = nkey;
-	return this;
+        this.nkey = nkey;
+        return this;
     }
 
     /**
@@ -661,8 +664,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties inboxPrefix(String inboxPrefix) {
-	this.inboxPrefix = inboxPrefix;
-	return this;
+        this.inboxPrefix = inboxPrefix;
+        return this;
     }
 
     /**
@@ -671,8 +674,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties noEcho(boolean noEcho) {
-	this.noEcho = noEcho;
-	return this;
+        this.noEcho = noEcho;
+        return this;
     }
 
     /**
@@ -680,8 +683,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties utf8Support(boolean utf8Support) {
-	this.utf8Support = utf8Support;
-	return this;
+        this.utf8Support = utf8Support;
+        return this;
     }
 
     /**
@@ -690,8 +693,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties credentials(String credentials) {
-	this.credentials = credentials;
-	return this;
+        this.credentials = credentials;
+        return this;
     }
 
     /**
@@ -699,8 +702,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties keyStorePath(String keyStorePath) {
-	this.keyStorePath = keyStorePath;
-	return this;
+        this.keyStorePath = keyStorePath;
+        return this;
     }
 
     /**
@@ -708,8 +711,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties keyStorePassword(char[] keyStorePassword) {
-	this.keyStorePassword = keyStorePassword;
-	return this;
+        this.keyStorePassword = keyStorePassword;
+        return this;
     }
 
     /**
@@ -717,8 +720,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties trustStorePath(String trustStorePath) {
-	this.trustStorePath = trustStorePath;
-	return this;
+        this.trustStorePath = trustStorePath;
+        return this;
     }
 
     /**
@@ -726,8 +729,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties trustStorePassword(char[] trustStorePassword) {
-	setTrustStorePassword(trustStorePassword);
-	return this;
+        setTrustStorePassword(trustStorePassword);
+        return this;
     }
 
     /**
@@ -735,8 +738,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties keyStoreType(String keyStoreType) {
-	this.keyStoreType = keyStoreType;
-	return this;
+        this.keyStoreType = keyStoreType;
+        return this;
     }
 
     /**
@@ -744,8 +747,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties keyStoreProvider(String keyStoreProvider) {
-	this.keyStoreProvider = keyStoreProvider;
-	return this;
+        this.keyStoreProvider = keyStoreProvider;
+        return this;
     }
 
     /**
@@ -753,8 +756,8 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties trustStoreType(String trustStoreType) {
-	this.trustStoreType = trustStoreType;
-	return this;
+        this.trustStoreType = trustStoreType;
+        return this;
     }
 
     /**
@@ -762,109 +765,111 @@ public class NatsConnectionProperties {
      * @return chainable properties
      */
     public NatsConnectionProperties trustStoreProvider(String trustStoreProvider) {
-	this.trustStoreProvider = trustStoreProvider;
-	return this;
+        this.trustStoreProvider = trustStoreProvider;
+        return this;
     }
 
     /**
-     * @param trustStoreProvider of the SSL Trust Store
+     * @param tlsProtocol the tls protocol
      * @return chainable properties
      */
     public NatsConnectionProperties tlsProtocol(String tlsProtocol) {
-	this.tlsProtocol = tlsProtocol;
-	return this;
+        this.tlsProtocol = tlsProtocol;
+        return this;
     }
 
     protected KeyStore loadKeystore(String path, char[] password, String keyStoreType)
-	    throws IOException, GeneralSecurityException {
-	KeyStore store = KeyStore.getInstance(keyStoreType);
+        throws IOException, GeneralSecurityException {
+        KeyStore store = KeyStore.getInstance(keyStoreType);
 
-	try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(path))) {
-	    store.load(in, password);
-	}
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(path))) {
+            store.load(in, password);
+        }
 
-	return store;
+        return store;
     }
 
     protected KeyManager[] createKeyManagers(String path, char[] password, String keyStoreProvider, String keyStoreType)
-	    throws IOException, GeneralSecurityException {
-	
-	if (keyStoreProvider == null || keyStoreProvider.length() == 0) {
-	    keyStoreProvider = defaultKeyStoreProviderAlgorithm;
-	}
+        throws IOException, GeneralSecurityException {
 
-	if (keyStoreType == null || keyStoreType.length() == 0) {
-	    keyStoreType = defaultKeyStoreType;
-	}
+        if (keyStoreProvider == null || keyStoreProvider.length() == 0) {
+            keyStoreProvider = defaultKeyStoreProviderAlgorithm;
+        }
 
-	if (password == null || password.length == 0) {
-	    password = new char[0];
-	}
+        if (keyStoreType == null || keyStoreType.length() == 0) {
+            keyStoreType = defaultKeyStoreType;
+        }
 
-	KeyStore store = this.loadKeystore(path, password, keyStoreType);
-	KeyManagerFactory factory = KeyManagerFactory.getInstance(keyStoreProvider);
-	factory.init(store, password);
-	
-	return factory.getKeyManagers();
+        if (password == null || password.length == 0) {
+            password = new char[0];
+        }
+
+        KeyStore store = this.loadKeystore(path, password, keyStoreType);
+        KeyManagerFactory factory = KeyManagerFactory.getInstance(keyStoreProvider);
+        factory.init(store, password);
+
+        return factory.getKeyManagers();
     }
 
     protected TrustManager[] createTrustManagers(String path, char[] password, String trustStoreProvider,
-	    String trustStoreType) throws IOException, GeneralSecurityException {
+                                                 String trustStoreType) throws IOException, GeneralSecurityException {
 
-	if (trustStoreProvider == null || trustStoreProvider.length() == 0) {
-	    trustStoreProvider = defaultTrustStoreProviderAlgorithm;
-	}
+        if (trustStoreProvider == null || trustStoreProvider.length() == 0) {
+            trustStoreProvider = defaultTrustStoreProviderAlgorithm;
+        }
 
-	if (trustStoreType == null || trustStoreType.length() == 0) {
-	    trustStoreType = defaultTrustStoreType;
-	}
+        if (trustStoreType == null || trustStoreType.length() == 0) {
+            trustStoreType = defaultTrustStoreType;
+        }
 
-	if (password == null || password.length == 0) {
-	    password = new char[0];
-	}
+        if (password == null || password.length == 0) {
+            password = new char[0];
+        }
 
-	KeyStore store = loadKeystore(path, password, trustStoreType);
-	TrustManagerFactory factory = TrustManagerFactory.getInstance(trustStoreProvider);
+        KeyStore store = loadKeystore(path, password, trustStoreType);
+        TrustManagerFactory factory = TrustManagerFactory.getInstance(trustStoreProvider);
 
-	/*
-	 * Trust Store doesn't need to load any keys from the store (just certs) so
-	 * passing a password is not necessary
-	 */
-	factory.init(store);
+        /*
+         * Trust Store doesn't need to load any keys from the store (just certs) so
+         * passing a password is not necessary
+         */
+        factory.init(store);
 
-	return factory.getTrustManagers();
+        return factory.getTrustManagers();
     }
 
     /**
      * @return SSLContext with the specified TLS protocol, Key and Trust stores.
-     * @throws IOException
-     * @throws GeneralSecurityException
+     * @throws IOException              if there is a problem reading a file or
+     *                                  setting up the SSL context
+     * @throws GeneralSecurityException if there is a problem setting up the SSL
+     *                                  context
      */
     protected SSLContext createSSLContext() throws IOException, GeneralSecurityException {
 
-	if (this.tlsProtocol == null || this.tlsProtocol.length() == 0) {
-	    this.tlsProtocol = Options.DEFAULT_SSL_PROTOCOL;
-	}
+        if (this.tlsProtocol == null || this.tlsProtocol.length() == 0) {
+            this.tlsProtocol = Options.DEFAULT_SSL_PROTOCOL;
+        }
 
-	SSLContext sslContext = SSLContext.getInstance(this.tlsProtocol);
+        SSLContext sslContext = SSLContext.getInstance(this.tlsProtocol);
 
-	KeyManager[] keyManagers = createKeyManagers(
-		this.keyStorePath,
-		this.keyStorePassword, 
-		this.keyStoreProvider,
-		this.keyStoreType
-	);
-	
-	TrustManager[] trustManagers = createTrustManagers(
-		this.trustStorePath,
-		this.trustStorePassword,
-		this.trustStoreProvider, 
-		this.trustStoreType
-	);
+        KeyManager[] keyManagers = createKeyManagers(
+            this.keyStorePath,
+            this.keyStorePassword,
+            this.keyStoreProvider,
+            this.keyStoreType
+        );
 
-	sslContext.init(keyManagers, trustManagers, new SecureRandom());
+        TrustManager[] trustManagers = createTrustManagers(
+            this.trustStorePath,
+            this.trustStorePassword,
+            this.trustStoreProvider,
+            this.trustStoreType
+        );
 
-	return sslContext;
+        sslContext.init(keyManagers, trustManagers, new SecureRandom());
+
+        return sslContext;
     }
 
     /**
@@ -875,73 +880,76 @@ public class NatsConnectionProperties {
      *                                  context
      */
     public Options toOptions() throws IOException, GeneralSecurityException {
-	return toOptionsBuilder().build();
+        return toOptionsBuilder().build();
     }
 
     /**
      * @return NATS options builder based on this set of properties, useful if other
-     *         settings are required before connect is called
+     * settings are required before connect is called
      * @throws IOException              if there is a problem reading a file or
      *                                  setting up the SSL context
      * @throws GeneralSecurityException if there is a problem setting up the SSL
      *                                  context
      */
     public Options.Builder toOptionsBuilder() throws IOException, GeneralSecurityException {
-	Options.Builder builder = new Options.Builder();
+        Options.Builder builder = new Options.Builder();
 
-	builder = builder.server(this.server);
-	builder = builder.maxReconnects(this.maxReconnect);
-	builder = builder.reconnectWait(this.reconnectWait);
-	builder = builder.connectionTimeout(this.connectionTimeout);
-	builder = builder.connectionName(this.connectionName);
-	builder = builder.pingInterval(this.pingInterval);
-	builder = builder.reconnectBufferSize(this.reconnectBufferSize);
-	builder = builder.inboxPrefix(this.inboxPrefix);
+        builder = builder.server(this.server);
+        builder = builder.maxReconnects(this.maxReconnect);
+        builder = builder.reconnectWait(this.reconnectWait);
+        builder = builder.connectionTimeout(this.connectionTimeout);
+        builder = builder.connectionName(this.connectionName);
+        builder = builder.pingInterval(this.pingInterval);
+        builder = builder.reconnectBufferSize(this.reconnectBufferSize);
+        builder = builder.inboxPrefix(this.inboxPrefix);
 
-	if (this.noEcho) {
-	    builder = builder.noEcho();
-	}
+        if (this.noEcho) {
+            builder = builder.noEcho();
+        }
 
-	if (this.utf8Support) {
-	    builder = builder.supportUTF8Subjects();
-	}
+        if (this.utf8Support) {
+            builder = builder.supportUTF8Subjects();
+        }
 
-	if (this.nkey != null && this.nkey.length() > 0) {
-	    builder = builder.authHandler(Nats.staticCredentials(null, this.nkey.toCharArray()));
-	} else if (this.credentials != null && this.credentials.length() > 0) {
-	    builder = builder.authHandler(Nats.credentials(this.credentials));
-	} else if (this.token != null && this.token.length() > 0) {
-	    builder = builder.token(this.token.toCharArray());
-	} else if (this.username != null && this.username.length() > 0) {
-	    builder = builder.userInfo(this.username.toCharArray(), this.password.toCharArray());
-	}
+        if (this.nkey != null && this.nkey.length() > 0) {
+            builder = builder.authHandler(Nats.staticCredentials(null, this.nkey.toCharArray()));
+        } else if (this.credentials != null && this.credentials.length() > 0) {
+            builder = builder.authHandler(Nats.credentials(this.credentials));
+        } else if (this.token != null && this.token.length() > 0) {
+            builder = builder.token(this.token.toCharArray());
+        } else if (this.username != null && this.username.length() > 0) {
+            builder = builder.userInfo(this.username.toCharArray(), this.password.toCharArray());
+        }
 
-	if (this.keyStorePath != null && this.keyStorePath.length() > 0 && this.trustStorePath != null
-		&& this.trustStorePath.length() > 0) {
-	    builder.sslContext(this.createSSLContext());
-	}
+        if (this.keyStorePath != null && this.keyStorePath.length() > 0 && this.trustStorePath != null
+            && this.trustStorePath.length() > 0) {
+            builder.sslContext(this.createSSLContext());
+        }
 
-	return builder;
+        return builder;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
-	return "{" +
-        " server='" + getServer() + "'," +
-	" name='" + getConnectionName() + "'," +
-        " maxReconnect='" + getMaxReconnect() + "'," +
-	" reconnectWait='" + getReconnectWait() + "'," +
-        " connectionTimeout='" + getConnectionTimeout() + "'," +
-	" pingInterval='" + getPingInterval() + "'," +
-        " reconnectBufferSize='" + getReconnectBufferSize() + "'," +
-	" noEcho='" + getNoEcho() + "'," +
-        " utf8='" + getUtf8Support() + "'," +
-	" user='" + getUsername() + "'," +
-        " password='" + getPassword() + "'," +
-	" token='" + getToken() + "'," +
-        " creds='" + getCredentials() + "'," +
-	" nkey='" + getNkey() + "'," +
-        "}";
+        return "{"
+            + " server='" + getServer() + "',"
+            + " name='" + getConnectionName() + "',"
+            + " maxReconnect='" + getMaxReconnect() + "',"
+            + " reconnectWait='" + getReconnectWait() + "',"
+            + " connectionTimeout='" + getConnectionTimeout() + "',"
+            + " pingInterval='" + getPingInterval() + "',"
+            + " reconnectBufferSize='" + getReconnectBufferSize() + "',"
+            + " noEcho='" + getNoEcho() + "',"
+            + " utf8='" + getUtf8Support() + "',"
+            + " user='" + getUsername() + "',"
+            + " password='" + getPassword() + "',"
+            + " token='" + getToken() + "',"
+            + " creds='" + getCredentials() + "',"
+            + " nkey='" + getNkey() + "',"
+            + "}";
     }
 
 }

@@ -14,7 +14,7 @@
 		<groupId>io.nats</groupId>
 		<artifactId>nats-spring-parent</artifactId>
 		<version>0.5.2</version>
-        <relativePath>..</relativePath>
+        <relativePath>../pom.xml</relativePath>
 	</parent>
 	
 	<properties>

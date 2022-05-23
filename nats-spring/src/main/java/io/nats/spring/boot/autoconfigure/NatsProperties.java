@@ -17,17 +17,20 @@
 package io.nats.spring.boot.autoconfigure;
 
 import io.nats.client.Options;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConditionalOnClass({ Options.class })
-@ConfigurationProperties(prefix = "nats.spring")
 /**
- * NatsProperties extends NatsConnectionProperties, which provides all of the attributes, setters and getters.
- * A NatsProperties configuration is used during autoconfigure to initialize the underlying NATs connection.
+ * NatsProperties extends NatsConnectionProperties, which provides all of the
+ * attributes, setters and getters. A NatsProperties configuration is used
+ * during autoconfigure to initialize the underlying NATs connection.
  */
+@ConditionalOnClass({Options.class})
+@ConfigurationProperties(prefix = "nats.spring")
 public class NatsProperties extends NatsConnectionProperties {
-	public NatsProperties() {
-	}
+
+    /**
+     * Default Constructor.
+     */
+    public NatsProperties() { }
 }

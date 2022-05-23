@@ -12,7 +12,7 @@
 		<groupId>io.nats.nats-spring-samples</groupId>
 		<artifactId>nats-spring-samples-parent</artifactId>
 		<version>0.5.2</version>
-		<relativePath>..</relativePath>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<properties>
