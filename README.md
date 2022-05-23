@@ -79,7 +79,7 @@ To include the starter, add the following dependency to your pom.xml:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
-    <version>0.4.1</version>
+    <version>0.5.3</version>
 </dependency>
 ```
 
@@ -91,12 +91,12 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats</artifactId>
-    <version>2.11.6</version>
+    <version>2.12.0</version>
 </dependency>
 <dependency>
   <groupId>io.nats</groupId>
   <artifactId>nats-spring</artifactId>
-  <version>0.4.1</version>
+  <version>0.5.3</version>
 </dependency>
 ```
 
@@ -131,7 +131,7 @@ and include a dependency on the library:
 <dependency>
   <groupId>io.nats</groupId>
   <artifactId>nats-spring-cloud-stream-binder</artifactId>
-  <version>0.4.1</version>
+  <version>0.5.3</version>
 </dependency>
 ```
 
@@ -160,15 +160,15 @@ NATS does not use the concept of partitions. The binder supports the API for par
 By default, properties are configured using the `nats.spring` prefix:
 
 * `nats.spring.server` specifies the NATS server url or a list of urls in a comma separated list
-* `nats.spring.connectionname` the connection name
-* `nats.spring.maxreconnect` the maximum reconnects attempts on a single disconnect before the connection closes
-* `nats.spring.reconnectwait` the time, as a duration like `4s`, to wait between trying to reconnect to the same server
-* `nats.spring.connectiontimeout` the time, as a duration like `4s`, to wait before cancelling the connection
-* `nats.spring.pinginterval` the time, as a duration like `4s`, between pings to the server
-* `nats.spring.reconnectbuffersize` the size in bytes for the reconnect buffer
-* `nats.spring.inboxprefix` a custom inbox prefix
-* `nats.spring.noecho` turn off echo from the server
-* `nats.spring.utf8support` enable UTF-8 subject names (warning this is an experimental feature, not all language clients will support it)
+* `nats.spring.connection-name` the connection name
+* `nats.spring.max-reconnect` the maximum reconnects attempts on a single disconnect before the connection closes
+* `nats.spring.reconnect-wait` the time, as a duration like `4s`, to wait between trying to reconnect to the same server
+* `nats.spring.connection-timeout` the time, as a duration like `4s`, to wait before cancelling the connection
+* `nats.spring.ping-interval` the time, as a duration like `4s`, between pings to the server
+* `nats.spring.reconnect-buffer-size` the size in bytes for the reconnect buffer
+* `nats.spring.inbox-prefix` a custom inbox prefix
+* `nats.spring.no-echo` turn off echo from the server
+* `nats.spring.utf8-support` enable UTF-8 subject names (warning this is an experimental feature, not all language clients will support it)
 * `nats.spring.username`, `nats.spring.password` the user name and password to authenticate with
 * `nats.spring.token` an authentication token, takes precedence over the username/password
 * `nats.spring.credentials` a path to a credentials file, takes precedence over the token and user/pass
@@ -176,14 +176,20 @@ By default, properties are configured using the `nats.spring` prefix:
 
 TLS can be configured several ways. Set up a default context using system properties like `javax.net.ssl.keyStore`, set a default SSLContext in the main method before running the spring application, or by setting several properties:
 
-* `nats.spring.keystorepath` the path to the key store file
-* `nats.spring.keystorepassword` the password for the key store, defaults to ""
-* `nats.spring.keystoretype` (optional) the format of the key store, defaults to "SunX509"
-* `nats.spring.truststorepath` the path to the trust store file
-* `nats.spring.truststorepassword` the password for the trust store, defaults to ""
-* `nats.spring.truststoretype` (optional) the format of the trust store, defaults to "SunX509"
+* `nats.spring.trust-store-password` the password for the trust store, defaults to ""
+* `nats.spring.trust-store-path` the path to the trust store file
+* `nats.spring.trust-store-provider` (optional) the format of the trust store, defaults to "SunX509". Common options are "SunX509", "PKIX".
+* `nats.spring.trust-store-type` (optional) the format of the trust store, defaults to "PKCS12". Common options are "PKCS12", "JKS", "JCEKS", "DKS".
 
-The keyStorePath and trustStorePath must be non-empty to trigger the creation of an SSL context.
+* `nats.spring.key-store-password` the password for the key store, defaults to ""
+* `nats.spring.key-store-path` the path to the key store file
+* `nats.spring.key-store-provider` (optional) the format of the key store, defaults to "SunX509". Common options are "SunX509", "PKIX".
+* `nats.spring.key-store-type` (optional) the format of the key store, defaults to "PKCS12". Common options are "PKCS12", "JKS", "JCEKS", "DKS".
+
+* `nats.spring.tls-protocol` (optional) the preferred protocol for TLS handshake. Common options: TLSv1.2 (default), TLSv1.3.
+
+
+The `key-store-path` and `trust-store-path` must be non-empty to trigger the creation of an SSL context.
 
 ### Custom Listeners <a name="listeners"></a>
 
@@ -228,7 +234,7 @@ This repo contains two types of samples. First there is a [stand-alone demo](dem
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-samples/listener-sample/target/listener-sample-0.4.1.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-samples/listener-sample/target/listener-sample-0.5.3.jar --nats.spring.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -240,7 +246,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/processor-sample/target/processor-sample-0.4.1.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-samples/processor-sample/target/processor-sample-0.5.3.jar --nats.spring.server="nats://localhost:4222"
 ...
 
 ```
