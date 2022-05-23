@@ -4,13 +4,13 @@
 
 	<groupId>io.nats.nats-spring-samples</groupId>
 	<artifactId>nats-spring-samples-parent</artifactId>
-	<version>0.5.2</version>
+	<version>0.5.3</version>
 	<packaging>pom</packaging>
 	
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-spring-parent</artifactId>
-		<version>0.5.2</version>
+		<version>0.5.3</version>
         <relativePath>../pom.xml</relativePath>
 	</parent>
 

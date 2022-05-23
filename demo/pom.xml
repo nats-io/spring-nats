@@ -22,12 +22,12 @@
 		<dependency>
 			<groupId>io.nats</groupId>
 			<artifactId>nats-spring-cloud-stream-binder</artifactId>
-			<version>0.5.2</version>
+			<version>0.5.3</version>
 		</dependency>
 		<dependency>
 			<groupId>io.nats</groupId>
 			<artifactId>nats-spring</artifactId>
-			<version>0.5.2</version>
+			<version>0.5.3</version>
 		</dependency>
 
 		<dependency>
