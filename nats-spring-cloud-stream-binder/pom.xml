@@ -4,7 +4,7 @@
 
 	<artifactId>nats-spring-cloud-stream-binder</artifactId>
 	<description>Spring Cloud Stream Binder for NATS</description>
-	<version>0.5.1</version>
+	<version>0.5.2</version>
 	<organization>
 		<name>CNCF</name>
 		<url>https://www.nats.io</url>
@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>io.nats</groupId>
 		<artifactId>nats-spring-parent</artifactId>
-		<version>0.5.1</version>
+		<version>0.5.2</version>
         <relativePath>..</relativePath>
 	</parent>
 	
@@ -31,7 +31,7 @@
 		<dependency>
 			<groupId>io.nats</groupId>
 			<artifactId>nats-spring</artifactId>
-			<version>0.5.1</version>
+			<version>0.5.2</version>
 		</dependency>
 		
 		<dependency>
