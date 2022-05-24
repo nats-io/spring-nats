@@ -16,13 +16,8 @@
 
 package io.nats.spring;
 
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -33,37 +28,41 @@ import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.MessageChannel;
 
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @SpringBootApplication
 @EnableBinding(PollingSample.PolledProcessor.class)
 public class PollingSample {
 
-	private static final Log logger = LogFactory.getLog(PollingSample.class);
-	public static final ExecutorService exec = Executors.newSingleThreadExecutor();
+    public static final ExecutorService exec = Executors.newSingleThreadExecutor();
+    private static final Log logger = LogFactory.getLog(PollingSample.class);
 
-	public static void main(String[] args) {
-		SpringApplication.run(PollingSample.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(PollingSample.class, args);
+    }
 
-	@Bean
-	public ApplicationRunner runner(PollableMessageSource input, MessageChannel output) {
-		return args -> {
-			exec.execute(() -> {
-				while (true) {
-					input.poll(message -> {
-						byte[] bytes = (byte[]) message.getPayload();
-						String val = new String(bytes, StandardCharsets.UTF_8);
-						logger.info("received message " + val);
-					});
-				}
-			});
-		};
-	}
+    @Bean
+    public ApplicationRunner runner(PollableMessageSource input, MessageChannel output) {
+        return args -> {
+            exec.execute(() -> {
+                while (true) {
+                    input.poll(message -> {
+                        byte[] bytes = (byte[]) message.getPayload();
+                        String val = new String(bytes, StandardCharsets.UTF_8);
+                        logger.info("received message " + val);
+                    });
+                }
+            });
+        };
+    }
 
-	public interface PolledProcessor {
-		@Input
-		PollableMessageSource input();
+    public interface PolledProcessor {
+        @Input
+        PollableMessageSource input();
 
-		@Output
-		MessageChannel output();
-	}
+        @Output
+        MessageChannel output();
+    }
 }

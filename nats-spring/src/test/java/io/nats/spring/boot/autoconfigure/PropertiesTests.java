@@ -17,17 +17,16 @@
 package io.nats.spring.boot.autoconfigure;
 
 import io.nats.client.Options;
+import org.junit.Test;
+
+import java.net.URI;
+import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import java.net.URI;
-import java.time.Duration;
-
-import org.junit.Test;
 
 public class PropertiesTests {
 
@@ -45,7 +44,7 @@ public class PropertiesTests {
         props.setReconnectWait(dura);
         props.setConnectionTimeout(dura);
         props.setPingInterval(dura);
-        props.setMaxReconnect((int)size);
+        props.setMaxReconnect((int) size);
         props.setReconnectBufferSize(size);
 
         Options options = props.toOptions();
@@ -58,7 +57,7 @@ public class PropertiesTests {
         assertEquals(dura, options.getConnectionTimeout());
         assertEquals(dura, options.getPingInterval());
         assertEquals(size, options.getReconnectBufferSize());
-        assertEquals((int)size, options.getMaxReconnect());
+        assertEquals((int) size, options.getMaxReconnect());
         assertFalse(options.isNoEcho());
         assertFalse(options.supportUTF8Subjects());
         assertNull(options.getUsername());
@@ -141,7 +140,7 @@ public class PropertiesTests {
         props = props.reconnectWait(dura);
         props = props.connectionTimeout(dura);
         props = props.pingInterval(dura);
-        props = props.maxReconnect((int)size);
+        props = props.maxReconnect((int) size);
         props = props.reconnectBufferSize(size);
         props = props.noEcho(true);
         props = props.utf8Support(true);
@@ -156,7 +155,7 @@ public class PropertiesTests {
         assertEquals(dura, options.getConnectionTimeout());
         assertEquals(dura, options.getPingInterval());
         assertEquals(size, options.getReconnectBufferSize());
-        assertEquals((int)size, options.getMaxReconnect());
+        assertEquals((int) size, options.getMaxReconnect());
         assertTrue(options.isNoEcho());
         assertTrue(options.supportUTF8Subjects());
         assertNull(options.getUsername());

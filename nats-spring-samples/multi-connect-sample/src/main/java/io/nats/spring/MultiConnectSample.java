@@ -21,7 +21,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class MultiConnectSample {
-	public static void main(String[] args) {
-		SpringApplication.run(MultiConnectSample.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MultiConnectSample.class, args);
+    }
 }

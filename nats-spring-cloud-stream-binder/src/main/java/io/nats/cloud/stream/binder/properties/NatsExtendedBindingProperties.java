@@ -22,17 +22,17 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
 @ConfigurationProperties("nats.spring.cloud.stream")
 public class NatsExtendedBindingProperties
-		extends AbstractExtendedBindingProperties<NatsConsumerProperties, NatsProducerProperties, NatsBindingProperties> {
+        extends AbstractExtendedBindingProperties<NatsConsumerProperties, NatsProducerProperties, NatsBindingProperties> {
 
-	private static final String DEFAULTS_PREFIX = "nats.spring.cloud.stream.default";
+    private static final String DEFAULTS_PREFIX = "nats.spring.cloud.stream.default";
 
-	@Override
-	public String getDefaultsPrefix() {
-		return DEFAULTS_PREFIX;
-	}
+    @Override
+    public String getDefaultsPrefix() {
+        return DEFAULTS_PREFIX;
+    }
 
-	@Override
-	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
-		return NatsBindingProperties.class;
-	}
+    @Override
+    public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
+        return NatsBindingProperties.class;
+    }
 }

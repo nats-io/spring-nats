@@ -1,38 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>nats-spring-samples-autoconfigure</artifactId>
-	<version>0.5.3</version>
-	<packaging>jar</packaging>
-	<name>autoconfigure-sample</name>
-	<description>A spring boot app that uses the autoconfigure NATS connection</description>
+    <artifactId>nats-spring-samples-autoconfigure</artifactId>
+    <version>0.5.3</version>
+    <packaging>jar</packaging>
+    <name>autoconfigure-sample</name>
+    <description>A spring boot app that uses the autoconfigure NATS connection</description>
 
-	<parent>
-		<groupId>io.nats.nats-spring-samples</groupId>
-		<artifactId>nats-spring-samples-parent</artifactId>
-		<version>0.5.3</version>
+    <parent>
+        <groupId>io.nats.nats-spring-samples</groupId>
+        <artifactId>nats-spring-samples-parent</artifactId>
+        <version>0.5.3</version>
         <relativePath>../pom.xml</relativePath>
-	</parent>
+    </parent>
 
-	<properties>
-		<main.basedir>${basedir}/..</main.basedir>
-	</properties>
+    <properties>
+        <main.basedir>${basedir}/..</main.basedir>
+    </properties>
 
-	<dependencies>
-		<dependency>
-			<groupId>io.nats</groupId>
-			<artifactId>nats-spring</artifactId>
-			<version>0.5.3</version>
-		</dependency>
-	</dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>io.nats</groupId>
+            <artifactId>nats-spring</artifactId>
+            <version>0.5.3</version>
+        </dependency>
+    </dependencies>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>
