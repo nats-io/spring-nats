@@ -24,19 +24,19 @@ import org.springframework.cloud.stream.provisioning.ProducerDestination;
  * API.
  */
 public class NatsProducerDestination implements ProducerDestination {
-	private String name;
+    private String name;
 
-	public NatsProducerDestination(String name) {
-		this.name = name;
-	}
+    public NatsProducerDestination(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public String getName() {
-		return this.name;
-	}
+    @Override
+    public String getName() {
+        return this.name;
+    }
 
-	@Override
-	public String getNameForPartition(int partition) {
-		return this.name + "-" + partition;
-	}
+    @Override
+    public String getNameForPartition(int partition) {
+        return this.name + "-" + partition;
+    }
 }

@@ -22,48 +22,47 @@ import org.springframework.cloud.stream.provisioning.ConsumerDestination;
  * NatsConsumerDestinations use their name to determine the subject and queue group (if any) to listen to.
  */
 public class NatsConsumerDestination implements ConsumerDestination {
-	private String name;
+    private String name;
 
-	/**
-	 * Create a new consumer destination with the provided name.
-	 * @param name compound name from the provisioner containing the subject and optional queue group
-	 */
-	public NatsConsumerDestination(String name) {
-		this.name = name;
-	}
+    /**
+     * Create a new consumer destination with the provided name.
+     *
+     * @param name compound name from the provisioner containing the subject and optional queue group
+     */
+    public NatsConsumerDestination(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public String getName() {
-		return this.name;
-	}
+    @Override
+    public String getName() {
+        return this.name;
+    }
 
-	/**
-	 * @return subject parsed from the name
-	 */
-	public String getSubject() {
-		String[] parts = this.name.split("#");
+    /**
+     * @return subject parsed from the name
+     */
+    public String getSubject() {
+        String[] parts = this.name.split("#");
 
-		if (parts.length > 2) {
-			return parts[1];
-		}
-		else {
-			return parts[0];
-		}
-	}
+        if (parts.length > 2) {
+            return parts[1];
+        } else {
+            return parts[0];
+        }
+    }
 
-	/**
-	 * @return queue group parsed from the name, or an empty string if no queue should be used
-	 */
-	public String getQueueGroup() {
-		String[] parts = this.name.split("#");
+    /**
+     * @return queue group parsed from the name, or an empty string if no queue should be used
+     */
+    public String getQueueGroup() {
+        String[] parts = this.name.split("#");
 
-		if (parts.length > 2) {
-			return "";
-		}
-		else if (parts.length == 2) {
-			return parts[1];
-		}
+        if (parts.length > 2) {
+            return "";
+        } else if (parts.length == 2) {
+            return parts[1];
+        }
 
-		return "";
-	}
+        return "";
+    }
 }

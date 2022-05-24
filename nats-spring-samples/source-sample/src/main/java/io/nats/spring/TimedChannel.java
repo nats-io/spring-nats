@@ -24,8 +24,8 @@ import org.springframework.messaging.MessageChannel;
  * spring wants to bind.
  */
 public interface TimedChannel {
-	String OUTPUT = "timedchannel";
+    String OUTPUT = "timedchannel";
 
-	@Output(TimedChannel.OUTPUT)
-	MessageChannel output();
+    @Output(TimedChannel.OUTPUT)
+    MessageChannel output();
 }

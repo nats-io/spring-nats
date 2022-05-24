@@ -46,12 +46,12 @@ public class NatsAutoConfiguration {
 
     /**
      * @return NATS connection created with the provided properties. If no server URL is set the method will return null.
-     * @throws IOException when a connection error occurs
-     * @throws InterruptedException in the unusual case of a thread interruption during connect
+     * @throws IOException              when a connection error occurs
+     * @throws InterruptedException     in the unusual case of a thread interruption during connect
      * @throws GeneralSecurityException if there is a problem authenticating the connection
      */
-	@Bean
-	@ConditionalOnMissingBean
+    @Bean
+    @ConditionalOnMissingBean
     public Connection natsConnection(NatsProperties properties) throws IOException, InterruptedException, GeneralSecurityException {
         Connection nc = null;
         String serverProp = (properties != null) ? properties.getServer() : null;

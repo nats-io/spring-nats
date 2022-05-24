@@ -1,45 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<groupId>io.nats.nats-spring-samples</groupId>
-	<artifactId>nats-spring-samples-parent</artifactId>
-	<version>0.5.3</version>
-	<packaging>pom</packaging>
-	
-	<parent>
-		<groupId>io.nats</groupId>
-		<artifactId>nats-spring-parent</artifactId>
-		<version>0.5.3</version>
+    <groupId>io.nats.nats-spring-samples</groupId>
+    <artifactId>nats-spring-samples-parent</artifactId>
+    <version>0.5.3</version>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>io.nats</groupId>
+        <artifactId>nats-spring-parent</artifactId>
+        <version>0.5.3</version>
         <relativePath>../pom.xml</relativePath>
-	</parent>
+    </parent>
 
-	<properties>
-		<spring-boot.version>2.5.12</spring-boot.version>
-		<spring-cloud-stream.version>3.2.2</spring-cloud-stream.version>
-		<java.version>1.8</java.version>
-	</properties>
+    <properties>
+        <spring-boot.version>2.5.12</spring-boot.version>
+        <spring-cloud-stream.version>3.2.2</spring-cloud-stream.version>
+        <java.version>1.8</java.version>
+    </properties>
 
-	<modules>
-		<module>processor-sample</module>
-		<module>listener-sample</module>
-		<module>polling-sample</module>
-		<module>source-sample</module>
-		<module>queue-sample</module>
-		<module>multi-connect-sample</module>
-		<module>autoconfigure-sample</module>
-		<module>connect-error-sample</module>
-	</modules>
+    <modules>
+        <module>processor-sample</module>
+        <module>listener-sample</module>
+        <module>polling-sample</module>
+        <module>source-sample</module>
+        <module>queue-sample</module>
+        <module>multi-connect-sample</module>
+        <module>autoconfigure-sample</module>
+        <module>connect-error-sample</module>
+    </modules>
 
-	<dependencyManagement>
-	</dependencyManagement>
-    
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
+    <dependencyManagement>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

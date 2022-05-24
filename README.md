@@ -7,12 +7,12 @@
 
 * [Using the Starter](#starter)
 * [Using the NATS Modules](#using)
-  * [Multiple NATS Connections](#multi)
+    * [Multiple NATS Connections](#multi)
 * [Using the Binder](#binder)
-  * [Request-Reply](#reqreply)
-  * [Partitions](#partition)
+    * [Request-Reply](#reqreply)
+    * [Partitions](#partition)
 * [Configuration](#configure)
-  * [Custom Listeners](#listener)
+    * [Custom Listeners](#listener)
 * [Samples](#samples)
 * [Building This Project](#build)
 * [External Resources](#resources)
@@ -41,29 +41,37 @@ works while the YAML equivalent will not.
 Snapshots are hosted on `oss.sonatype.org`, to access these within maven update your settings to include:
 
 ```xml
+
 <profiles>
-  <profile>
-     <id>allow-snapshots</id>
-        <activation><activeByDefault>true</activeByDefault></activation>
-     <repositories>
-       <repository>
-         <id>snapshots-repo</id>
-         <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-         <releases><enabled>false</enabled></releases>
-         <snapshots><enabled>true</enabled></snapshots>
-       </repository>
-     </repositories>
-   </profile>
+    <profile>
+        <id>allow-snapshots</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <repositories>
+            <repository>
+                <id>snapshots-repo</id>
+                <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                <releases>
+                    <enabled>false</enabled>
+                </releases>
+                <snapshots>
+                    <enabled>true</enabled>
+                </snapshots>
+            </repository>
+        </repositories>
+    </profile>
 </profiles>
 ```
 
 The released version should be available at:
 
 ```xml
+
 <repository>
-  <id>oss-sonatype</id>
-  <name>oss-sonatype</name>
-  <url>https://oss.sonatype.org/content/repositories/</url>
+    <id>oss-sonatype</id>
+    <name>oss-sonatype</name>
+    <url>https://oss.sonatype.org/content/repositories/</url>
 </repository>
 ```
 
@@ -76,6 +84,7 @@ A spring boot starter is provided that will bring in the autoconfigure module.
 To include the starter, add the following dependency to your pom.xml:
 
 ```xml
+
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
@@ -88,15 +97,16 @@ To include the starter, add the following dependency to your pom.xml:
 To depend on the autoconfigure module, simply add it as a dependency in your pom.xml:
 
 ```xml
+
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats</artifactId>
     <version>2.12.0</version>
 </dependency>
 <dependency>
-  <groupId>io.nats</groupId>
-  <artifactId>nats-spring</artifactId>
-  <version>0.5.3</version>
+<groupId>io.nats</groupId>
+<artifactId>nats-spring</artifactId>
+<version>0.5.3</version>
 </dependency>
 ```
 
@@ -114,24 +124,25 @@ To use the binder, simply define a binding in your application.yml with the type
 
 ```yaml
 spring:
-  cloud:
-    stream:
-      bindings:
-        input:
-          destination: dataIn
-          binder: nats
-        output:
-          destination: dataOut
-          binder: nats
+    cloud:
+        stream:
+            bindings:
+                input:
+                    destination: dataIn
+                    binder: nats
+                output:
+                    destination: dataOut
+                    binder: nats
 ```
 
 and include a dependency on the library:
 
 ```xml
+
 <dependency>
-  <groupId>io.nats</groupId>
-  <artifactId>nats-spring-cloud-stream-binder</artifactId>
-  <version>0.5.3</version>
+    <groupId>io.nats</groupId>
+    <artifactId>nats-spring-cloud-stream-binder</artifactId>
+    <version>0.5.3</version>
 </dependency>
 ```
 
@@ -188,7 +199,6 @@ TLS can be configured several ways. Set up a default context using system proper
 
 * `nats.spring.tls-protocol` (optional) the preferred protocol for TLS handshake. Common options: TLSv1.2 (default), TLSv1.3.
 
-
 The `key-store-path` and `trust-store-path` must be non-empty to trigger the creation of an SSL context.
 
 ### Custom Listeners <a name="listeners"></a>
@@ -197,14 +207,14 @@ Custom ConnectionListener and ErrorListeners can be provided by a bean factory. 
 
 ```java
 @Bean
-public ConnectionListener createConnectionListener() {
-  return new ConnectionListener() {
-    @Override
-    public void connectionEvent(Connection conn, Events type) {
-        System.out.println("## Custom status change " + type);
+public ConnectionListener createConnectionListener(){
+        return new ConnectionListener(){
+@Override
+public void connectionEvent(Connection conn,Events type){
+        System.out.println("## Custom status change "+type);
         }
-  };
-}
+        };
+        }
 ```
 
 to create a custom connection listener. The [connect-error-sample](./nats-samples/connect-error-sample) has an example for both types of listener.
@@ -272,15 +282,16 @@ Internally there are multiple pom files, one parent for the project, one parent 
 Signing and deploying requires that you set up your settings.xml file for maven:
 
 ```xml
+
 <settings>
-  <servers>
-    <server>
-      <id>ossrh</id>
-      <username>xxx</username>
-      <password>xxxxx</password>
-    </server>
-  </servers>
-  <profiles>
+    <servers>
+        <server>
+            <id>ossrh</id>
+            <username>xxx</username>
+            <password>xxxxx</password>
+        </server>
+    </servers>
+    <profiles>
         <profile>
             <activation>
                 <activeByDefault>true</activeByDefault>
@@ -309,6 +320,7 @@ All of the configuration properties are injected into the NatsProperties class i
 * [Spring Cloud Stream](https://spring.io/projects/spring-cloud-stream)
 
 [License-Url]: https://www.apache.org/licenses/LICENSE-2.0
+
 [License-Image]: https://img.shields.io/badge/License-Apache2-blue.svg
 
 ## License <a name="license"></a>

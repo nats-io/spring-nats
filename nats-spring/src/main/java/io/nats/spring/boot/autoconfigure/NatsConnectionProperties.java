@@ -40,69 +40,57 @@ import java.time.Duration;
 public class NatsConnectionProperties {
 
     /**
+     * Default KeyStore format/type for KeyManager instances.
+     */
+    private final String defaultKeyStoreType = "PKCS12";
+    /**
+     * Default KeyStore format/type for TrustManager instances.
+     */
+    private final String defaultTrustStoreType = "PKCS12";
+    /**
+     * Default KeyStore Provider Algorithm for KeyManager instances.
+     */
+    private final String defaultKeyStoreProviderAlgorithm = "SunX509";
+    /**
+     * Default KeyStore Provider Algorithm for TrustManager instances.
+     */
+    private final String defaultTrustStoreProviderAlgorithm = "SunX509";
+    /**
      * URL for the nats server, can be a comma separated list.
      */
     private String server;
-
     /**
      * Connection name, shows up in thread names.
      */
     private String connectionName;
-
     /**
      * Maximum reconnect attempts if a connection is lost, after the initial
      * connection.
      */
     private int maxReconnect = Options.DEFAULT_MAX_RECONNECT;
-
     /**
      * Time to wait between reconnect attempts to the same server url.
      */
     private Duration reconnectWait = Options.DEFAULT_RECONNECT_WAIT;
-
     /**
      * Timeout for the initial connection, if this time is passed, the connection
      * will fail and no reconnect attempts are made.
      */
     private Duration connectionTimeout = Options.DEFAULT_CONNECTION_TIMEOUT;
-
     /**
      * Time between pings to the server to check "liveness".
      */
     private Duration pingInterval = Options.DEFAULT_PING_INTERVAL;
-
     /**
      * Size of the buffer, in bytes, used to hold outgoing messages during
      * reconnect.
      */
     private long reconnectBufferSize = Options.DEFAULT_RECONNECT_BUF_SIZE;
-
     /**
      * Prefix to use for inboxes, generally the default is used but custom prefixes
      * can allow security controls.
      */
     private String inboxPrefix = Options.DEFAULT_INBOX_PREFIX;
-
-    /**
-     * Default KeyStore format/type for KeyManager instances.
-     */
-    private final String defaultKeyStoreType = "PKCS12";
-
-    /**
-     * Default KeyStore format/type for TrustManager instances.
-     */
-    private final String defaultTrustStoreType = "PKCS12";
-
-    /**
-     * Default KeyStore Provider Algorithm for KeyManager instances.
-     */
-    private final String defaultKeyStoreProviderAlgorithm = "SunX509";
-
-    /**
-     * Default KeyStore Provider Algorithm for TrustManager instances.
-     */
-    private final String defaultTrustStoreProviderAlgorithm = "SunX509";
-
     /**
      * Whether or not the server will send messages sent from this connection back
      * to the connection.
@@ -779,7 +767,7 @@ public class NatsConnectionProperties {
     }
 
     protected KeyStore loadKeystore(String path, char[] password, String keyStoreType)
-        throws IOException, GeneralSecurityException {
+            throws IOException, GeneralSecurityException {
         KeyStore store = KeyStore.getInstance(keyStoreType);
 
         try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(path))) {
@@ -790,7 +778,7 @@ public class NatsConnectionProperties {
     }
 
     protected KeyManager[] createKeyManagers(String path, char[] password, String keyStoreProvider, String keyStoreType)
-        throws IOException, GeneralSecurityException {
+            throws IOException, GeneralSecurityException {
 
         if (keyStoreProvider == null || keyStoreProvider.length() == 0) {
             keyStoreProvider = defaultKeyStoreProviderAlgorithm;
@@ -854,17 +842,17 @@ public class NatsConnectionProperties {
         SSLContext sslContext = SSLContext.getInstance(this.tlsProtocol);
 
         KeyManager[] keyManagers = createKeyManagers(
-            this.keyStorePath,
-            this.keyStorePassword,
-            this.keyStoreProvider,
-            this.keyStoreType
+                this.keyStorePath,
+                this.keyStorePassword,
+                this.keyStoreProvider,
+                this.keyStoreType
         );
 
         TrustManager[] trustManagers = createTrustManagers(
-            this.trustStorePath,
-            this.trustStorePassword,
-            this.trustStoreProvider,
-            this.trustStoreType
+                this.trustStorePath,
+                this.trustStorePassword,
+                this.trustStoreProvider,
+                this.trustStoreType
         );
 
         sslContext.init(keyManagers, trustManagers, new SecureRandom());
@@ -922,7 +910,7 @@ public class NatsConnectionProperties {
         }
 
         if (this.keyStorePath != null && this.keyStorePath.length() > 0 && this.trustStorePath != null
-            && this.trustStorePath.length() > 0) {
+                && this.trustStorePath.length() > 0) {
             builder.sslContext(this.createSSLContext());
         }
 
@@ -935,21 +923,21 @@ public class NatsConnectionProperties {
     @Override
     public String toString() {
         return "{"
-            + " server='" + getServer() + "',"
-            + " name='" + getConnectionName() + "',"
-            + " maxReconnect='" + getMaxReconnect() + "',"
-            + " reconnectWait='" + getReconnectWait() + "',"
-            + " connectionTimeout='" + getConnectionTimeout() + "',"
-            + " pingInterval='" + getPingInterval() + "',"
-            + " reconnectBufferSize='" + getReconnectBufferSize() + "',"
-            + " noEcho='" + getNoEcho() + "',"
-            + " utf8='" + getUtf8Support() + "',"
-            + " user='" + getUsername() + "',"
-            + " password='" + getPassword() + "',"
-            + " token='" + getToken() + "',"
-            + " creds='" + getCredentials() + "',"
-            + " nkey='" + getNkey() + "',"
-            + "}";
+                + " server='" + getServer() + "',"
+                + " name='" + getConnectionName() + "',"
+                + " maxReconnect='" + getMaxReconnect() + "',"
+                + " reconnectWait='" + getReconnectWait() + "',"
+                + " connectionTimeout='" + getConnectionTimeout() + "',"
+                + " pingInterval='" + getPingInterval() + "',"
+                + " reconnectBufferSize='" + getReconnectBufferSize() + "',"
+                + " noEcho='" + getNoEcho() + "',"
+                + " utf8='" + getUtf8Support() + "',"
+                + " user='" + getUsername() + "',"
+                + " password='" + getPassword() + "',"
+                + " token='" + getToken() + "',"
+                + " creds='" + getCredentials() + "',"
+                + " nkey='" + getNkey() + "',"
+                + "}";
     }
 
 }

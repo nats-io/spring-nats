@@ -16,10 +16,10 @@
 
 package io.nats.cloud.stream.binder;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
+
+import static org.junit.Assert.assertEquals;
 
 public class DestinationNameTests {
     @Test

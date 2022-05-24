@@ -20,24 +20,24 @@ import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 
 public class NatsBindingProperties implements BinderSpecificPropertiesProvider {
 
-	private NatsConsumerProperties consumer = new NatsConsumerProperties();
-	private NatsProducerProperties producer = new NatsProducerProperties();
+    private NatsConsumerProperties consumer = new NatsConsumerProperties();
+    private NatsProducerProperties producer = new NatsProducerProperties();
 
-	@Override
-	public NatsConsumerProperties getConsumer() {
-		return consumer;
-	}
+    @Override
+    public NatsConsumerProperties getConsumer() {
+        return consumer;
+    }
 
-	public void setConsumer(NatsConsumerProperties consumer) {
-		this.consumer = consumer;
-	}
+    public void setConsumer(NatsConsumerProperties consumer) {
+        this.consumer = consumer;
+    }
 
-	@Override
-	public NatsProducerProperties getProducer() {
-		return producer;
-	}
+    @Override
+    public NatsProducerProperties getProducer() {
+        return producer;
+    }
 
-	public void setProducer(NatsProducerProperties producer) {
-		this.producer = producer;
-	}
+    public void setProducer(NatsProducerProperties producer) {
+        this.producer = producer;
+    }
 }

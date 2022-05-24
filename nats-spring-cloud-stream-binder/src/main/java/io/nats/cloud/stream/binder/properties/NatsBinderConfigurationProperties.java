@@ -17,11 +17,10 @@
 package io.nats.cloud.stream.binder.properties;
 
 import io.nats.spring.boot.autoconfigure.NatsConnectionProperties;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "nats.spring.cloud.stream.binder")
 public class NatsBinderConfigurationProperties extends NatsConnectionProperties {
-	public NatsBinderConfigurationProperties() {
-	}
+    public NatsBinderConfigurationProperties() {
+    }
 }

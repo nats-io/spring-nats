@@ -32,5 +32,6 @@ public class NatsProperties extends NatsConnectionProperties {
     /**
      * Default Constructor.
      */
-    public NatsProperties() { }
+    public NatsProperties() {
+    }
 }

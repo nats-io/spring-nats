@@ -22,8 +22,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class ListenerSample {
 
-	public static void main(String[] args) {
-		SpringApplication.run(ListenerSample.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(ListenerSample.class, args);
+    }
 
 }

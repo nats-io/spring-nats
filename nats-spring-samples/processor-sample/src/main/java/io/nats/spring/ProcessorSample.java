@@ -22,8 +22,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class ProcessorSample {
 
-	public static void main(String[] args) {
-		SpringApplication.run(ProcessorSample.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(ProcessorSample.class, args);
+    }
 
 }

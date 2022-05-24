@@ -19,7 +19,6 @@ package io.nats.cloud.stream.binder;
 import io.nats.client.NUID;
 import io.nats.cloud.stream.binder.properties.NatsConsumerProperties;
 import io.nats.cloud.stream.binder.properties.NatsProducerProperties;
-
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
 import org.springframework.cloud.stream.binder.ExtendedProducerProperties;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
@@ -31,38 +30,37 @@ import org.springframework.cloud.stream.provisioning.ProvisioningProvider;
  * Provisioners turn destination names into Destination objects. This is minimal for NATS where destination names are mapped to subjects.
  */
 public class NatsChannelProvisioner implements ProvisioningProvider<ExtendedConsumerProperties<NatsConsumerProperties>, ExtendedProducerProperties<NatsProducerProperties>> {
-	public NatsChannelProvisioner() {
-	}
+    public NatsChannelProvisioner() {
+    }
 
-	@Override
-	/**
-	 * @param subject for messages to go to
-	 * @param properties extended properties for the producer, unused
-	 * @return destination that will result in messages being sent to the provided subject
-	 */
-	public ProducerDestination provisionProducerDestination(String subject, ExtendedProducerProperties<NatsProducerProperties> properties)
-			throws ProvisioningException {
-		return new NatsProducerDestination(subject);
-	}
+    @Override
+    /**
+     * @param subject for messages to go to
+     * @param properties extended properties for the producer, unused
+     * @return destination that will result in messages being sent to the provided subject
+     */
+    public ProducerDestination provisionProducerDestination(String subject, ExtendedProducerProperties<NatsProducerProperties> properties)
+            throws ProvisioningException {
+        return new NatsProducerDestination(subject);
+    }
 
-	@Override
-	/**
-	 * @param subject to listen to messages on
-	 * @param group mapped to a queue group name in NATS
-	 * @param properties extended properties, unused
-	 * @return consumer desitation named based on the subject and group.
-	 */
-	public ConsumerDestination provisionConsumerDestination(String subject, String group, ExtendedConsumerProperties<NatsConsumerProperties> properties)
-			throws ProvisioningException {
-		String subscriptionName;
+    @Override
+    /**
+     * @param subject to listen to messages on
+     * @param group mapped to a queue group name in NATS
+     * @param properties extended properties, unused
+     * @return consumer desitation named based on the subject and group.
+     */
+    public ConsumerDestination provisionConsumerDestination(String subject, String group, ExtendedConsumerProperties<NatsConsumerProperties> properties)
+            throws ProvisioningException {
+        String subscriptionName;
 
-		if (group != null && group.length() > 0) {
-			subscriptionName = subject + "#" + group;
-		}
-		else {
-			subscriptionName = "anonymous#" + subject + "#" + NUID.nextGlobal();
-		}
+        if (group != null && group.length() > 0) {
+            subscriptionName = subject + "#" + group;
+        } else {
+            subscriptionName = "anonymous#" + subject + "#" + NUID.nextGlobal();
+        }
 
-		return new NatsConsumerDestination(subscriptionName);
-	}
+        return new NatsConsumerDestination(subscriptionName);
+    }
 }
