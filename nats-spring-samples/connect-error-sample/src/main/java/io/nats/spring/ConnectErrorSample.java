@@ -20,7 +20,6 @@ import io.nats.client.Connection;
 import io.nats.client.ConnectionListener;
 import io.nats.client.Consumer;
 import io.nats.client.ErrorListener;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -28,38 +27,38 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 public class ConnectErrorSample {
 
-	@Bean
-	public ConnectionListener createConnectionListener() {
-		return new ConnectionListener() {
-			@Override
-			public void connectionEvent(Connection conn, Events type) {
-					System.out.println("## Custom status change " + type);
-			}
-		};
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(ConnectErrorSample.class, args);
+    }
 
-	@Bean
-	public ErrorListener createErrorListener() {
-		return new ErrorListener() {
-			@Override
-			public void slowConsumerDetected(Connection conn, Consumer consumer) {
-				System.out.println("## slow consumer detected");
-			}
+    @Bean
+    public ConnectionListener createConnectionListener() {
+        return new ConnectionListener() {
+            @Override
+            public void connectionEvent(Connection conn, Events type) {
+                System.out.println("## Custom status change " + type);
+            }
+        };
+    }
 
-			@Override
-			public void exceptionOccurred(Connection conn, Exception exp) {
-				System.out.println("## exception occurred");
-				exp.printStackTrace();
-			}
+    @Bean
+    public ErrorListener createErrorListener() {
+        return new ErrorListener() {
+            @Override
+            public void slowConsumerDetected(Connection conn, Consumer consumer) {
+                System.out.println("## slow consumer detected");
+            }
 
-			@Override
-			public void errorOccurred(Connection conn, String error) {
-				System.out.println("## error occurred " + error);
-			}
-		};
-	}
+            @Override
+            public void exceptionOccurred(Connection conn, Exception exp) {
+                System.out.println("## exception occurred");
+                exp.printStackTrace();
+            }
 
-	public static void main(String[] args) {
-		SpringApplication.run(ConnectErrorSample.class, args);
-	}
+            @Override
+            public void errorOccurred(Connection conn, String error) {
+                System.out.println("## error occurred " + error);
+            }
+        };
+    }
 }

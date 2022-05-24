@@ -44,48 +44,6 @@ public class NatsBinderTestServer implements AutoCloseable {
     private String[] customArgs;
     private String[] configInserts;
 
-    public static String generateNatsServerVersionString() {
-        ArrayList<String> cmd = new ArrayList<String>();
-
-        String server_path = System.getenv("nats_server_path");
-
-        if(server_path == null){
-            server_path = NatsBinderTestServer.NATS_SERVER;
-        }
-
-        cmd.add(server_path);
-        cmd.add("--version");
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            Process process = pb.start();
-            process.waitFor();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            ArrayList<String> lines = new ArrayList<String>();
-            String line = "";			
-			while ((line = reader.readLine())!= null) {
-				lines.add(line);
-            }
-            
-            if (lines.size() > 0) {
-                return lines.get(0);
-            }
-
-            return null;
-        }
-        catch (Exception exp) {
-            return null;
-        }
-    }
-
-    public static int nextPort() {
-        return NatsBinderTestServer.portCounter.incrementAndGet();
-    }
-
-    public static int currentPort() {
-        return NatsBinderTestServer.portCounter.get();
-    }
-
     public NatsBinderTestServer() {
         this(false);
     }
@@ -136,12 +94,57 @@ public class NatsBinderTestServer implements AutoCloseable {
         start();
     }
 
+    public static String generateNatsServerVersionString() {
+        ArrayList<String> cmd = new ArrayList<String>();
+
+        String server_path = System.getenv("nats_server_path");
+
+        if (server_path == null) {
+            server_path = NatsBinderTestServer.NATS_SERVER;
+        }
+
+        cmd.add(server_path);
+        cmd.add("--version");
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            Process process = pb.start();
+            process.waitFor();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            ArrayList<String> lines = new ArrayList<String>();
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+
+            if (lines.size() > 0) {
+                return lines.get(0);
+            }
+
+            return null;
+        } catch (Exception exp) {
+            return null;
+        }
+    }
+
+    public static int nextPort() {
+        return NatsBinderTestServer.portCounter.incrementAndGet();
+    }
+
+    public static int currentPort() {
+        return NatsBinderTestServer.portCounter.get();
+    }
+
+    public static String getURIForPort(int port) {
+        return "nats://localhost:" + port;
+    }
+
     public void start() {
         ArrayList<String> cmd = new ArrayList<String>();
 
         String server_path = System.getenv("nats_server_path");
 
-        if(server_path == null){
+        if (server_path == null) {
             server_path = NatsBinderTestServer.NATS_SERVER;
         }
 
@@ -190,7 +193,7 @@ public class NatsBinderTestServer implements AutoCloseable {
                     }
                 }
                 if (write != null) {
-                    try{
+                    try {
                         write.close();
                     } catch (Exception e) {
                         throw new IllegalStateException("Failed to update config file");
@@ -208,7 +211,7 @@ public class NatsBinderTestServer implements AutoCloseable {
         if (this.customArgs != null) {
             cmd.addAll(Arrays.asList(this.customArgs));
         }
-            
+
         if (debug) {
             cmd.add("-DV");
         }
@@ -228,7 +231,7 @@ public class NatsBinderTestServer implements AutoCloseable {
                 if (osName != null && osName.contains("Windows")) {
                     // Windows uses the "nul" file.
                     errFile = "nul";
-                } else {                
+                } else {
                     errFile = "/dev/null";
                 }
 
@@ -236,7 +239,7 @@ public class NatsBinderTestServer implements AutoCloseable {
             }
 
             this.process = pb.start();
-            
+
             int tries = 10;
             // wait at least 1x and maybe 10
             do {
@@ -246,7 +249,7 @@ public class NatsBinderTestServer implements AutoCloseable {
                     //Give the server time to get going
                 }
                 tries--;
-            } while(!this.process.isAlive() && tries > 0);
+            } while (!this.process.isAlive() && tries > 0);
 
             System.out.println("%%% Started [" + this.cmdLine + "]");
         } catch (IOException ex) {
@@ -255,7 +258,7 @@ public class NatsBinderTestServer implements AutoCloseable {
             System.out.println("%%% Make sure that the nats-server is installed and in your PATH.");
             System.out.println("%%% See https://github.com/nats-io/nats-server for information on installation");
 
-            throw new IllegalStateException("Failed to run [" + this.cmdLine +"]");
+            throw new IllegalStateException("Failed to run [" + this.cmdLine + "]");
         }
     }
 
@@ -267,10 +270,6 @@ public class NatsBinderTestServer implements AutoCloseable {
         return getURIForPort(this.port);
     }
 
-    public static String getURIForPort(int port) {
-        return "nats://localhost:" + port;
-    }
-
     public void shutdown() {
 
         if (this.process == null) {
@@ -278,8 +277,8 @@ public class NatsBinderTestServer implements AutoCloseable {
         }
 
         this.process.destroy();
-        
-        System.out.println("%%% Shut down ["+ this.cmdLine +"]");
+
+        System.out.println("%%% Shut down [" + this.cmdLine + "]");
 
         this.process = null;
     }

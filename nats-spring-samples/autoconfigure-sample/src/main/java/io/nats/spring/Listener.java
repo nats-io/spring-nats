@@ -20,38 +20,37 @@ import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 @Component
 public class Listener implements CommandLineRunner {
-	private static final Log logger = LogFactory.getLog(Listener.class);
+    private static final Log logger = LogFactory.getLog(Listener.class);
 
-	@Autowired
-	Connection nc;
+    @Autowired
+    Connection nc;
 
-	private Dispatcher dispatcher;
+    private Dispatcher dispatcher;
 
-	@Override
-	public void run(String... args) {
-		logger.info("starting autoconfigure listener with connection " + this.nc);
+    @Override
+    public void run(String... args) {
+        logger.info("starting autoconfigure listener with connection " + this.nc);
 
-		this.dispatcher = this.nc.createDispatcher(m -> {
-			logger.info("received message on " + m.getSubject() + " with reply to " + m.getReplyTo());
-			if (m.getReplyTo() != null) {
-				nc.publish(m.getReplyTo(), m.getData());
-			}
-		});
+        this.dispatcher = this.nc.createDispatcher(m -> {
+            logger.info("received message on " + m.getSubject() + " with reply to " + m.getReplyTo());
+            if (m.getReplyTo() != null) {
+                nc.publish(m.getReplyTo(), m.getData());
+            }
+        });
 
-		String subject = "dataIn";
+        String subject = "dataIn";
 
-		if (args.length > 0) {
-			subject = args[0];
-		}
+        if (args.length > 0) {
+            subject = args[0];
+        }
 
-		logger.info("subscribing to " + subject);
-		this.dispatcher.subscribe(subject);
-	}
+        logger.info("subscribing to " + subject);
+        this.dispatcher.subscribe(subject);
+    }
 }

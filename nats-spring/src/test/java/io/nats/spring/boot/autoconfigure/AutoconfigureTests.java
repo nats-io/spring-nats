@@ -16,29 +16,28 @@
 
 package io.nats.spring.boot.autoconfigure;
 
+import io.nats.client.Connection;
+import org.junit.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+
+import java.io.IOException;
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.time.Duration;
-
-import org.junit.Test;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-
-import io.nats.client.Connection;
-
 public class AutoconfigureTests {
-    private final ApplicationContextRunner contextRunner = 
-        new ApplicationContextRunner().withConfiguration(AutoConfigurations.of(NatsAutoConfiguration.class));
-        
+    private final ApplicationContextRunner contextRunner =
+            new ApplicationContextRunner().withConfiguration(AutoConfigurations.of(NatsAutoConfiguration.class));
+
     @Test
     public void testDefaultConnection() throws IOException, InterruptedException {
         try (NatsTestServer ts = new NatsTestServer()) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI(),
-                                                    "nats.spring.connectionTimeout=15s").run((context) -> {
+                    "nats.spring.connectionTimeout=15s").run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
                 assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
@@ -47,16 +46,16 @@ public class AutoconfigureTests {
             });
         }
     }
-    
+
     @Test
     public void testSSLConnection() throws IOException, InterruptedException {
         try (NatsTestServer ts = new NatsTestServer("src/test/resources/tls.conf", false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI(),
-                                                    "nats.spring.connectionTimeout=15s",
-                                                    "nats.spring.keystorepath=src/test/resources/keystore.jks",
-                                                    "nats.spring.keystorepassword=password",
-                                                    "nats.spring.truststorepath=src/test/resources/cacerts",
-                                                    "nats.spring.truststorepassword=password").run((context) -> {
+                    "nats.spring.connectionTimeout=15s",
+                    "nats.spring.keystorepath=src/test/resources/keystore.jks",
+                    "nats.spring.keystorepassword=password",
+                    "nats.spring.truststorepath=src/test/resources/cacerts",
+                    "nats.spring.truststorepassword=password").run((context) -> {
                 Connection conn = (Connection) context.getBean(Connection.class);
                 assertNotNull(conn);
                 assertTrue("Connected Status", Connection.Status.CONNECTED == conn.getStatus());
@@ -65,8 +64,8 @@ public class AutoconfigureTests {
             });
         }
     }
-    
-    @Test(expected=org.springframework.beans.factory.BeanNotOfRequiredTypeException.class)
+
+    @Test(expected = org.springframework.beans.factory.BeanNotOfRequiredTypeException.class)
     public void testNoParamNoConnection() throws IOException, InterruptedException {
         try (NatsTestServer ts = new NatsTestServer()) {
             this.contextRunner.run((context) -> {
@@ -76,11 +75,11 @@ public class AutoconfigureTests {
         }
     }
 
-    @Test(expected=java.lang.IllegalStateException.class)
+    @Test(expected = java.lang.IllegalStateException.class)
     public void testNoServer() throws IOException, InterruptedException {
         this.contextRunner.withPropertyValues("nats.spring.server=nodomain:3311").run((context) -> {
-                Object o = context.getBean(Connection.class);
-                assertNull(o);
-            });
-        }
+            Object o = context.getBean(Connection.class);
+            assertNull(o);
+        });
+    }
 }

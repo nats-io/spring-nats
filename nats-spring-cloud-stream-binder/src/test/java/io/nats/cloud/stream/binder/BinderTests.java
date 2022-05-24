@@ -16,31 +16,30 @@
 
 package io.nats.cloud.stream.binder;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.Test;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
-import io.nats.spring.boot.autoconfigure.NatsAutoConfiguration;
-import io.nats.spring.boot.autoconfigure.NatsProperties;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import io.nats.client.Connection;
+import io.nats.client.Message;
+import io.nats.client.Subscription;
 import io.nats.cloud.stream.binder.properties.NatsBinderConfigurationProperties;
 import io.nats.cloud.stream.binder.properties.NatsExtendedBindingProperties;
+import io.nats.spring.boot.autoconfigure.NatsAutoConfiguration;
+import io.nats.spring.boot.autoconfigure.NatsProperties;
+import org.junit.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
-
-import io.nats.client.Connection;
-import io.nats.client.Message;
-import io.nats.client.Subscription;
 import org.springframework.messaging.support.MessageBuilder;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -65,7 +64,7 @@ public class BinderTests {
                 config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
-                
+
                 config.natsBinder(provisioner);
             });
         }
@@ -82,7 +81,7 @@ public class BinderTests {
                 config.setNatsProperties(new NatsProperties());
                 config.setNatsBinderConfigurationProperties((NatsBinderConfigurationProperties) binderProps.server(ts.getURI()));
                 config.setNatsExtendedBindingProperties(props);
-                
+
                 config.natsBinder(provisioner);
             });
         }
@@ -99,7 +98,7 @@ public class BinderTests {
                 config.setNatsProperties(new NatsProperties());
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
-                
+
                 assertNull(config.natsBinder(provisioner));
             });
         }
@@ -109,11 +108,11 @@ public class BinderTests {
     public void createTLSBinderFromGlobalProperties() throws IOException, InterruptedException {
         try (NatsBinderTestServer ts = new NatsBinderTestServer("src/test/resources/tls.conf", false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI(),
-                                                    "nats.spring.connectionTimeout=15s",
-                                                    "nats.spring.keystorepath=src/test/resources/keystore.jks",
-                                                    "nats.spring.keystorepassword=password",
-                                                    "nats.spring.truststorepath=src/test/resources/cacerts",
-                                                    "nats.spring.truststorepassword=password").run((context) -> {
+                    "nats.spring.connectionTimeout=15s",
+                    "nats.spring.keystorepath=src/test/resources/keystore.jks",
+                    "nats.spring.keystorepassword=password",
+                    "nats.spring.truststorepath=src/test/resources/cacerts",
+                    "nats.spring.truststorepassword=password").run((context) -> {
                 NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
                 NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
                 NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
@@ -121,12 +120,12 @@ public class BinderTests {
                 config.setNatsProperties((NatsProperties) new NatsProperties().server(ts.getURI()));
                 config.setNatsBinderConfigurationProperties(binderProps);
                 config.setNatsExtendedBindingProperties(props);
-                
+
                 config.natsBinder(provisioner);
             });
         }
     }
-        
+
     @Test
     public void testMessageProducer() throws IOException, InterruptedException {
         try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
@@ -204,16 +203,16 @@ public class BinderTests {
                 String group = "group";
 
                 ConsumerDestination from = provisioner.provisionConsumerDestination(in, group, null);
-                
+
                 AtomicInteger counter = new AtomicInteger(0);
-                
+
                 NatsMessageProducer producer = (NatsMessageProducer) binder.createConsumerEndpoint(from, group, null);
                 DirectChannel output = new DirectChannel();
                 output.subscribe(msg -> {
                     counter.incrementAndGet();
                 });
                 producer.setOutputChannel(output);
-                
+
                 NatsMessageProducer producer2 = (NatsMessageProducer) binder.createConsumerEndpoint(from, group, null);
                 DirectChannel output2 = new DirectChannel();
                 output2.subscribe(msg -> {
@@ -227,11 +226,11 @@ public class BinderTests {
 
                 int total = 100;
 
-                for (int i=0; i<total; i++) {
+                for (int i = 0; i < total; i++) {
                     conn.publish(in, theMessage.getBytes(UTF_8));
                 }
                 conn.flush(Duration.ofSeconds(5));
-                
+
                 // make sure the messages get through
                 try {
                     Thread.sleep(2000);
@@ -274,7 +273,7 @@ public class BinderTests {
                 src.start();
                 assertTrue(src.isRunning());
                 binder.getConnection().flush(Duration.ofSeconds(5));// get the subscription out there
-                
+
                 CompletableFuture<String> received = new CompletableFuture<>();
 
                 Thread t = new Thread(() -> {
@@ -329,7 +328,7 @@ public class BinderTests {
                 src.start();
                 assertTrue(src.isRunning());
                 binder.getConnection().flush(Duration.ofSeconds(5));// get the subscription out there
-                
+
                 CompletableFuture<String> received = new CompletableFuture<>();
 
                 Thread t = new Thread(() -> {

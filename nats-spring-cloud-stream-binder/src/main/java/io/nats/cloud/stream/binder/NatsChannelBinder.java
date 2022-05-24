@@ -29,7 +29,6 @@ import io.nats.cloud.stream.binder.properties.NatsProducerProperties;
 import io.nats.spring.boot.autoconfigure.NatsProperties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.cloud.stream.binder.AbstractMessageChannelBinder;
 import org.springframework.cloud.stream.binder.BinderSpecificPropertiesProvider;
 import org.springframework.cloud.stream.binder.ExtendedConsumerProperties;
@@ -45,146 +44,142 @@ import org.springframework.messaging.MessageHandler;
  * A NATS channel binder provides a NATS connection to the code attached to it.
  */
 public class NatsChannelBinder extends
-		AbstractMessageChannelBinder<ExtendedConsumerProperties<NatsConsumerProperties>, ExtendedProducerProperties<NatsProducerProperties>, NatsChannelProvisioner>
-		implements ExtendedPropertiesBinder<MessageChannel, NatsConsumerProperties, NatsProducerProperties> {
-			private static final Log logger = LogFactory.getLog(NatsChannelBinder.class);
-	private final NatsExtendedBindingProperties bindingProperties;
-	private NatsBinderConfigurationProperties properties;
-	private NatsProperties natsProperties;
-	private Connection connection;
+        AbstractMessageChannelBinder<ExtendedConsumerProperties<NatsConsumerProperties>, ExtendedProducerProperties<NatsProducerProperties>, NatsChannelProvisioner>
+        implements ExtendedPropertiesBinder<MessageChannel, NatsConsumerProperties, NatsProducerProperties> {
+    private static final Log logger = LogFactory.getLog(NatsChannelBinder.class);
+    private final NatsExtendedBindingProperties bindingProperties;
+    private NatsBinderConfigurationProperties properties;
+    private NatsProperties natsProperties;
+    private Connection connection;
 
-	/**
-	 * Create a binder with the specified properties. It is expected that either the NatsBinderConfigurationProperties will have a
-	 * server url set, or the NatsProperties will. They are preferred in that order, and only one server URL or server URL list is used.
-	 * The NatsProperties are considered global and a backup. If a connection or error listener is provided it is used, otherwise a default logging listener is assigned to avoid
-	 * silent errors.
-	 * @param bindingProperties extended properties for future use
-	 * @param properties primary properties
-	 * @param natsProperties backup global properties
-	 * @param provisioningProvider provisioner for destination names
-	 * @param connectionListener custom connection listener
-	 * @param errorListener custom error listener
-	 */
-	public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
-			NatsBinderConfigurationProperties properties,
-			NatsProperties natsProperties,
-			NatsChannelProvisioner provisioningProvider,
-			ConnectionListener connectionListener,
-			ErrorListener errorListener) {
-		super(null, provisioningProvider); // null for headers to embed
-		this.bindingProperties = bindingProperties;
-		this.properties = properties;
-		this.natsProperties = natsProperties;
+    /**
+     * Create a binder with the specified properties. It is expected that either the NatsBinderConfigurationProperties will have a
+     * server url set, or the NatsProperties will. They are preferred in that order, and only one server URL or server URL list is used.
+     * The NatsProperties are considered global and a backup. If a connection or error listener is provided it is used, otherwise a default logging listener is assigned to avoid
+     * silent errors.
+     *
+     * @param bindingProperties    extended properties for future use
+     * @param properties           primary properties
+     * @param natsProperties       backup global properties
+     * @param provisioningProvider provisioner for destination names
+     * @param connectionListener   custom connection listener
+     * @param errorListener        custom error listener
+     */
+    public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
+                             NatsBinderConfigurationProperties properties,
+                             NatsProperties natsProperties,
+                             NatsChannelProvisioner provisioningProvider,
+                             ConnectionListener connectionListener,
+                             ErrorListener errorListener) {
+        super(null, provisioningProvider); // null for headers to embed
+        this.bindingProperties = bindingProperties;
+        this.properties = properties;
+        this.natsProperties = natsProperties;
 
-		try {
-			Options.Builder builder = null;
-			String bindingServer = (this.properties != null) ? this.properties.getServer() : null;
-			String globalServer = (this.natsProperties != null) ? this.natsProperties.getServer() : null;
+        try {
+            Options.Builder builder = null;
+            String bindingServer = (this.properties != null) ? this.properties.getServer() : null;
+            String globalServer = (this.natsProperties != null) ? this.natsProperties.getServer() : null;
 
-			// Use the binder properties first, if they don't have a server, try the global
-			if (bindingServer != null && bindingServer.length() > 0) {
-				logger.info("binder connecting to nats with named properties " + this.properties);
-				builder = this.properties.toOptionsBuilder();
-			}
-			else if (globalServer != null && globalServer.length() > 0) {
-				logger.info("binder connecting to nats with global properties " + this.natsProperties);
-				builder = this.natsProperties.toOptionsBuilder();
-			}
-			else {
-				this.connection = null;
-				logger.info("unable to connect from binder to NATS no server properties where found");
-				return;
-			}
+            // Use the binder properties first, if they don't have a server, try the global
+            if (bindingServer != null && bindingServer.length() > 0) {
+                logger.info("binder connecting to nats with named properties " + this.properties);
+                builder = this.properties.toOptionsBuilder();
+            } else if (globalServer != null && globalServer.length() > 0) {
+                logger.info("binder connecting to nats with global properties " + this.natsProperties);
+                builder = this.natsProperties.toOptionsBuilder();
+            } else {
+                this.connection = null;
+                logger.info("unable to connect from binder to NATS no server properties where found");
+                return;
+            }
 
-			if (connectionListener != null) {
-				builder = builder.connectionListener(connectionListener);
-			}
-			else {
-				builder = builder.connectionListener(new ConnectionListener() {
-					public void connectionEvent(Connection conn, Events type) {
-							logger.info("NATS connection status changed " + type);
-					}
-				});
-			}
+            if (connectionListener != null) {
+                builder = builder.connectionListener(connectionListener);
+            } else {
+                builder = builder.connectionListener(new ConnectionListener() {
+                    public void connectionEvent(Connection conn, Events type) {
+                        logger.info("NATS connection status changed " + type);
+                    }
+                });
+            }
 
-			if (errorListener != null) {
-				builder = builder.errorListener(errorListener);
-			}
-			else {
-				builder = builder.errorListener(new ErrorListener() {
-					@Override
-					public void slowConsumerDetected(Connection conn, Consumer consumer) {
-						logger.info("NATS connection slow consumer detected");
-					}
+            if (errorListener != null) {
+                builder = builder.errorListener(errorListener);
+            } else {
+                builder = builder.errorListener(new ErrorListener() {
+                    @Override
+                    public void slowConsumerDetected(Connection conn, Consumer consumer) {
+                        logger.info("NATS connection slow consumer detected");
+                    }
 
-					@Override
-					public void exceptionOccurred(Connection conn, Exception exp) {
-						logger.info("NATS connection exception occurred", exp);
-					}
+                    @Override
+                    public void exceptionOccurred(Connection conn, Exception exp) {
+                        logger.info("NATS connection exception occurred", exp);
+                    }
 
-					@Override
-					public void errorOccurred(Connection conn, String error) {
-						logger.info("NATS connection error occurred " + error);
-					}
-				});
-			}
+                    @Override
+                    public void errorOccurred(Connection conn, String error) {
+                        logger.info("NATS connection error occurred " + error);
+                    }
+                });
+            }
 
-			this.connection = Nats.connect(builder.build());
-		}
-		catch (Exception e) {
-			logger.info("exception connecting binder to NATS", e);
-			this.connection = null;
-		}
+            this.connection = Nats.connect(builder.build());
+        } catch (Exception e) {
+            logger.info("exception connecting binder to NATS", e);
+            this.connection = null;
+        }
 
-		if (this.connection == null) {
-			logger.info("unable to connect from binder to NATS");
-		}
-	}
+        if (this.connection == null) {
+            logger.info("unable to connect from binder to NATS");
+        }
+    }
 
-	/**
-	 * @return NATS connection
-	 */
-	public Connection getConnection() {
-		return this.connection;
-	}
+    /**
+     * @return NATS connection
+     */
+    public Connection getConnection() {
+        return this.connection;
+    }
 
-	@Override
-	protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
-			ExtendedProducerProperties<NatsProducerProperties> producerProperties, MessageChannel errorChannel) {
-		return new NatsMessageHandler(destination.getName(), this.connection);
-	}
+    @Override
+    protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
+                                                          ExtendedProducerProperties<NatsProducerProperties> producerProperties, MessageChannel errorChannel) {
+        return new NatsMessageHandler(destination.getName(), this.connection);
+    }
 
-	@Override
-	protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
-			ExtendedConsumerProperties<NatsConsumerProperties> properties) {
-		return new NatsMessageProducer((NatsConsumerDestination) destination, this.connection);
-	}
+    @Override
+    protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
+                                                     ExtendedConsumerProperties<NatsConsumerProperties> properties) {
+        return new NatsMessageProducer((NatsConsumerDestination) destination, this.connection);
+    }
 
-	@Override
-	protected PolledConsumerResources createPolledConsumerResources(String name, String group,
-			ConsumerDestination destination, ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties) {
-		return new PolledConsumerResources(
-				new NatsMessageSource((NatsConsumerDestination) destination, this.connection),
-				registerErrorInfrastructure(destination, group, consumerProperties, true));
-	}
+    @Override
+    protected PolledConsumerResources createPolledConsumerResources(String name, String group,
+                                                                    ConsumerDestination destination, ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties) {
+        return new PolledConsumerResources(
+                new NatsMessageSource((NatsConsumerDestination) destination, this.connection),
+                registerErrorInfrastructure(destination, group, consumerProperties, true));
+    }
 
-	@Override
-	public NatsConsumerProperties getExtendedConsumerProperties(String channelName) {
-		return bindingProperties.getExtendedConsumerProperties(channelName);
-	}
+    @Override
+    public NatsConsumerProperties getExtendedConsumerProperties(String channelName) {
+        return bindingProperties.getExtendedConsumerProperties(channelName);
+    }
 
-	@Override
-	public NatsProducerProperties getExtendedProducerProperties(String channelName) {
-		return bindingProperties.getExtendedProducerProperties(channelName);
-	}
+    @Override
+    public NatsProducerProperties getExtendedProducerProperties(String channelName) {
+        return bindingProperties.getExtendedProducerProperties(channelName);
+    }
 
-	@Override
-	public String getDefaultsPrefix() {
-		return bindingProperties.getDefaultsPrefix();
-	}
+    @Override
+    public String getDefaultsPrefix() {
+        return bindingProperties.getDefaultsPrefix();
+    }
 
-	@Override
-	public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
-		return bindingProperties.getExtendedPropertiesEntryClass();
-	}
+    @Override
+    public Class<? extends BinderSpecificPropertiesProvider> getExtendedPropertiesEntryClass() {
+        return bindingProperties.getExtendedPropertiesEntryClass();
+    }
 }
