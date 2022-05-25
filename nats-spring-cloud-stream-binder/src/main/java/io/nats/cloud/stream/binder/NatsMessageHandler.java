@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -49,8 +50,8 @@ public class NatsMessageHandler extends AbstractMessageHandler {
     @Override
     /**
      * Given a message, take the payload and publish it on the handlers subject.
-     * If the message contains a NatsMessageProducer.REPLY_TO header, that subject is
-     * used in place of the hardcoded one. This allows a message handler to support request/reply.
+     * If the message contains a MessageHeaders.REPLY_CHANNEL header, it is passed on to allow taking advantage of build-in request/reply handling
+     * in Spring Integration / Spring Cloud Stream.
      */
     protected void handleMessageInternal(Message<?> message) {
         Object payload = message.getPayload();
@@ -71,12 +72,9 @@ public class NatsMessageHandler extends AbstractMessageHandler {
             return;
         }
 
-        Object rt = message.getHeaders().get(NatsMessageProducer.REPLY_TO);
-        String replyTo = rt != null ? rt.toString() : null;
-        String subj = replyTo != null ? replyTo : this.subject;
-
-        if (this.connection != null && subj != null && subj.length() > 0) {
-            this.connection.publish(subj, bytes);
+        if (this.connection != null) {
+            final Object replyChannel = message.getHeaders().get(MessageHeaders.REPLY_CHANNEL);
+            this.connection.publish(this.subject, replyChannel != null ? replyChannel.toString() : null, bytes);
         }
     }
 }

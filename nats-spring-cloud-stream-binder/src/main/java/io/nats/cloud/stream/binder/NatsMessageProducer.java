@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.util.HashMap;
@@ -32,15 +33,13 @@ import java.util.Map;
  * MessageProducer for NATS connections.
  */
 public class NatsMessageProducer implements MessageProducer, Lifecycle {
+    private static final Log logger = LogFactory.getLog(NatsMessageProducer.class);
+
     /**
      * The NATS subject for incoming message is stored in the SUBJECT header.
      */
     public static final String SUBJECT = "subject";
-    /**
-     * If an incoming message has a reply to subject, that will be stored in the REPLY_TO header for propogation to the NatsMessageSource.
-     */
-    public static final String REPLY_TO = "reply_to";
-    private static final Log logger = LogFactory.getLog(NatsMessageProducer.class);
+
     private NatsConsumerDestination destination;
     private Connection connection;
     private MessageChannel output;
@@ -89,7 +88,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
             try {
                 Map<String, Object> headers = new HashMap<>();
                 headers.put(SUBJECT, msg.getSubject());
-                headers.put(REPLY_TO, msg.getReplyTo());
+                headers.put(MessageHeaders.REPLY_CHANNEL, msg.getReplyTo());
                 GenericMessage<byte[]> m = new GenericMessage<byte[]>(msg.getData(), headers);
                 this.output.send(m);
             } catch (Exception e) {
