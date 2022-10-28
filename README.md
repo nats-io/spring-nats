@@ -23,7 +23,7 @@ This repository contains two core packages:
 * `nats-spring` an implementation of the autoconfigure pattern for a NATS connection using the core [NATS Java Client](https://github.com/nats-io/nats.java)
 * `nats-spring-cloud-stream-binder` a spring cloud binder for NATS
 
-A third package `nats-samples` is included to <a href="#samples">demonstrate</a> how the other two modules can be used.
+A third package `nats-spring-samples` is included to <a href="#samples">demonstrate</a> how the other two modules can be used.
 
 ## Version Notes
 
@@ -244,7 +244,7 @@ This repo contains two types of samples. First there is a [stand-alone demo](dem
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-samples/listener-sample/target/listener-sample-0.5.6.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-spring-samples/listener-sample/target/listener-sample-0.5.6.jar --nats.spring.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -256,7 +256,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-samples/processor-sample/target/processor-sample-0.5.6.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-spring-samples/processor-sample/target/processor-sample-0.5.6.jar --nats.spring.server="nats://localhost:4222"
 ...
 
 ```
