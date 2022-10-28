@@ -217,7 +217,7 @@ public void connectionEvent(Connection conn,Events type){
         }
 ```
 
-to create a custom connection listener. The [connect-error-sample](./nats-samples/connect-error-sample) has an example for both types of listener.
+to create a custom connection listener. The [connect-error-sample](./nats-spring-samples/connect-error-sample) has an example for both types of listener.
 
 If no custom listeners are provided, a default one is used which will log errors and connection events.
 
@@ -225,21 +225,21 @@ If no custom listeners are provided, a default one is used which will log errors
 
 This repo contains two types of samples. First there is a [stand-alone demo](demo/README.md) that can be used as starter code, for a POM at least. Second there is a collection of samples showing the major use-cases implemented by the core code:
 
-* [autoconfigure-sample](./nats-samples/autoconfigure-sample) a simple command line runner with spring boot that uses the auto-configured nats connection from an application.properties file.
+* [autoconfigure-sample](./nats-spring-samples/autoconfigure-sample) a simple command line runner with spring boot that uses the auto-configured nats connection from an application.properties file.
 
-* [listener-sample](./nats-samples/listener-sample) uses the binder to listen to a single subject and print messages it receives. The configuration in application.yml specifies a single subject `dataIn`.
+* [listener-sample](./nats-spring-samples/listener-sample) uses the binder to listen to a single subject and print messages it receives. The configuration in application.yml specifies a single subject `dataIn`.
 
-* [processor-sample](./nats-samples/processor-sample) creates a processor. The example listens to the subject `dataIn` and sends to the subject `dataOut`. If the message contains a UTF-8 string, it is converted to all CAPS before being sent.
+* [processor-sample](./nats-spring-samples/processor-sample) creates a processor. The example listens to the subject `dataIn` and sends to the subject `dataOut`. If the message contains a UTF-8 string, it is converted to all CAPS before being sent.
 
-* [polling-sample](./nats-samples/polling-sample) is similar to the listener sample, but uses polling.
+* [polling-sample](./nats-spring-samples/polling-sample) is similar to the listener sample, but uses polling.
 
-* [source-sample](./nats-samples/source-sample) generates messages on a timer and sends them to a NATS endpoint. In order to leverage this pattern you need to create a named source. See the `application.yml` for details.
+* [source-sample](./nats-spring-samples/source-sample) generates messages on a timer and sends them to a NATS endpoint. In order to leverage this pattern you need to create a named source. See the `application.yml` for details.
 
-* [queue-sample](./nats-samples/queue-sample) listens on a subject and queue group, run multiple copies of the sample to see how messages are load balanced.
+* [queue-sample](./nats-spring-samples/queue-sample) listens on a subject and queue group, run multiple copies of the sample to see how messages are load balanced.
 
-* [multi-connect-sample](./nats-samples/multi-connect-sample) copy of the processor-sample that uses 2 nats connections.
+* [multi-connect-sample](./nats-spring-samples/multi-connect-sample) copy of the processor-sample that uses 2 nats connections.
 
-* [connect-error-sample](./nats-samples/connect-error-sample) demonstrates how to set up a custom connection and error handler.
+* [connect-error-sample](./nats-spring-samples/connect-error-sample) demonstrates how to set up a custom connection and error handler.
 
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
