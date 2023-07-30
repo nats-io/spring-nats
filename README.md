@@ -101,7 +101,7 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats</artifactId>
-    <version>2.12.0</version>
+    <version>2.16.13</version>
 </dependency>
 <dependency>
 <groupId>io.nats</groupId>
@@ -207,14 +207,14 @@ Custom ConnectionListener and ErrorListeners can be provided by a bean factory. 
 
 ```java
 @Bean
-public ConnectionListener createConnectionListener(){
-        return new ConnectionListener(){
-@Override
-public void connectionEvent(Connection conn,Events type){
-        System.out.println("## Custom status change "+type);
+public ConnectionListener createConnectionListener() {
+    return new ConnectionListener() {
+        @Override
+        public void connectionEvent(Connection conn, Events type){
+            System.out.println("## Custom status change " + type);
         }
-        };
-        }
+    };
+}
 ```
 
 to create a custom connection listener. The [connect-error-sample](./nats-spring-samples/connect-error-sample) has an example for both types of listener.
