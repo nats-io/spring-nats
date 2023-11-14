@@ -41,7 +41,6 @@ works while the YAML equivalent will not.
 Snapshots are hosted on `oss.sonatype.org`, to access these within maven update your settings to include:
 
 ```xml
-
 <profiles>
     <profile>
         <id>allow-snapshots</id>
@@ -67,7 +66,6 @@ Snapshots are hosted on `oss.sonatype.org`, to access these within maven update 
 The released version should be available at:
 
 ```xml
-
 <repository>
     <id>oss-sonatype</id>
     <name>oss-sonatype</name>
@@ -84,7 +82,6 @@ A spring boot starter is provided that will bring in the autoconfigure module.
 To include the starter, add the following dependency to your pom.xml:
 
 ```xml
-
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
@@ -97,16 +94,15 @@ To include the starter, add the following dependency to your pom.xml:
 To depend on the autoconfigure module, simply add it as a dependency in your pom.xml:
 
 ```xml
-
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats</artifactId>
     <version>2.16.13</version>
 </dependency>
 <dependency>
-<groupId>io.nats</groupId>
-<artifactId>nats-spring</artifactId>
-<version>0.5.6</version>
+    <groupId>io.nats</groupId>
+    <artifactId>nats-spring</artifactId>
+    <version>0.5.6</version>
 </dependency>
 ```
 
@@ -124,21 +120,20 @@ To use the binder, simply define a binding in your application.yml with the type
 
 ```yaml
 spring:
-    cloud:
-        stream:
-            bindings:
-                input:
-                    destination: dataIn
-                    binder: nats
-                output:
-                    destination: dataOut
-                    binder: nats
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: dataIn
+          binder: nats
+        output:
+          destination: dataOut
+          binder: nats
 ```
 
 and include a dependency on the library:
 
 ```xml
-
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
@@ -207,10 +202,10 @@ Custom ConnectionListener and ErrorListeners can be provided by a bean factory. 
 
 ```java
 @Bean
-public ConnectionListener createConnectionListener() {
-    return new ConnectionListener() {
+public ConnectionListener createConnectionListener(){
+    return new ConnectionListener(){
         @Override
-        public void connectionEvent(Connection conn, Events type){
+        public void connectionEvent(Connection conn,Events type){
             System.out.println("## Custom status change " + type);
         }
     };
@@ -223,7 +218,7 @@ If no custom listeners are provided, a default one is used which will log errors
 
 ## Samples <a name="samples"></a>
 
-This repo contains two types of samples. First there is a [stand-alone demo](demo/README.md) that can be used as starter code, for a POM at least. Second there is a collection of samples showing the major use-cases implemented by the core code:
+This repo contains two types of samples. First, there is a [stand-alone demo](demo/README.md) that can be used as starter code, for a POM at least. Second, there is a collection of samples showing the major use-cases implemented by the core code:
 
 * [autoconfigure-sample](./nats-spring-samples/autoconfigure-sample) a simple command line runner with spring boot that uses the auto-configured nats connection from an application.properties file.
 
@@ -282,7 +277,6 @@ Internally there are multiple pom files, one parent for the project, one parent 
 Signing and deploying requires that you set up your settings.xml file for maven:
 
 ```xml
-
 <settings>
     <servers>
         <server>
