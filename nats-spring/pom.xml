@@ -52,7 +52,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <version>2.5.4</version>
+            <version>${spring-boot.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

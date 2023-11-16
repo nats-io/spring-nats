@@ -52,7 +52,8 @@ public class NatsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public Connection natsConnection(NatsProperties properties) throws IOException, InterruptedException, GeneralSecurityException {
+    public Connection natsConnection(NatsProperties properties, ConnectionListener connectionListener, ErrorListener errorListener)
+            throws IOException, InterruptedException, GeneralSecurityException {
         Connection nc = null;
         String serverProp = (properties != null) ? properties.getServer() : null;
 
@@ -64,28 +65,9 @@ public class NatsAutoConfiguration {
             logger.info("autoconnecting to NATS with properties - " + properties);
             Options.Builder builder = properties.toOptionsBuilder();
 
-            builder = builder.connectionListener(new ConnectionListener() {
-                public void connectionEvent(Connection conn, Events type) {
-                    logger.info("NATS connection status changed " + type);
-                }
-            });
+            builder = builder.connectionListener(connectionListener);
 
-            builder = builder.errorListener(new ErrorListener() {
-                @Override
-                public void slowConsumerDetected(Connection conn, Consumer consumer) {
-                    logger.info("NATS connection slow consumer detected");
-                }
-
-                @Override
-                public void exceptionOccurred(Connection conn, Exception exp) {
-                    logger.info("NATS connection exception occurred", exp);
-                }
-
-                @Override
-                public void errorOccurred(Connection conn, String error) {
-                    logger.info("NATS connection error occurred " + error);
-                }
-            });
+            builder = builder.errorListener(errorListener);
 
             nc = Nats.connect(builder.build());
         } catch (Exception e) {
@@ -94,5 +76,37 @@ public class NatsAutoConfiguration {
         }
         return nc;
     }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ConnectionListener defaultConnectionListener() {
+        return new ConnectionListener() {
+            public void connectionEvent(Connection conn, Events type) {
+                logger.info("NATS connection status changed " + type);
+            }
+        };
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ErrorListener defaultErrorListener() {
+        return new ErrorListener() {
+            @Override
+            public void slowConsumerDetected(Connection conn, Consumer consumer) {
+                logger.info("NATS connection slow consumer detected");
+            }
+
+            @Override
+            public void exceptionOccurred(Connection conn, Exception exp) {
+                logger.info("NATS connection exception occurred", exp);
+            }
+
+            @Override
+            public void errorOccurred(Connection conn, String error) {
+                logger.info("NATS connection error occurred " + error);
+            }
+        };
+    }
+
 
 }

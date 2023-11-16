@@ -11,13 +11,13 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-build</artifactId>
-        <version>2.1.4.RELEASE</version>
+        <version>3.1.8</version>
         <relativePath/>
     </parent>
 
     <properties>
-        <spring-boot.version>2.5.12</spring-boot.version>
-        <spring-cloud-stream.version>3.2.2</spring-cloud-stream.version>
+        <spring-boot.version>2.7.14</spring-boot.version>
+        <spring-cloud-stream.version>3.2.9</spring-cloud-stream.version>
         <junit.version>4.13.2</junit.version>
         <java.version>1.8</java.version>
         <!-- Unique entry point for version number management -->
@@ -148,7 +148,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.2</version>
+                <version>0.8.10</version>
                 <executions>
                     <execution>
                         <goals>
