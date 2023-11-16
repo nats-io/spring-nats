@@ -92,6 +92,11 @@ public class NatsConnectionProperties {
      */
     private String inboxPrefix = Options.DEFAULT_INBOX_PREFIX;
     /**
+     * Whether to resolve hostnames when building server list.
+     */
+    private boolean noResolveHostnames;
+
+    /**
      * Whether or not the server will send messages sent from this connection back
      * to the connection.
      */
@@ -176,6 +181,16 @@ public class NatsConnectionProperties {
      * Type of SSL trust store, generally the default is used.
      */
     private String trustStoreType;
+
+    /**
+     * Set TLS Handshake First behavior on. Default is off.
+     * TLS Handshake First is used to instruct the library perform
+     * the TLS handshake right after the connect and before receiving
+     * the INFO protocol from the server. If this option is enabled
+     * but the server is not configured to perform the TLS handshake
+     * first, the connection will fail.
+     */
+    private boolean tlsFirst;
 
     /**
      * Default Constructor.
@@ -352,6 +367,27 @@ public class NatsConnectionProperties {
      */
     public void setInboxPrefix(String inboxPrefix) {
         this.inboxPrefix = inboxPrefix;
+    }
+
+    /**
+     * @return should we resolve hostnames for server connection attempts, see {@link Options.Builder#noResolveHostnames() noResolveHostnames()} in the builder doc
+     */
+    public boolean isNoResolveHostnames() {
+        return this.noResolveHostnames;
+    }
+
+    /**
+     * @return should we resolve hostnames for server connection attempts, see {@link Options.Builder#noResolveHostnames() noResolveHostnames()} in the builder doc
+     */
+    public boolean getNoResolveHostnames() {
+        return this.noResolveHostnames;
+    }
+
+    /**
+     * @param noResolveHostnames should we resolve hostnames for server connection attempts, see {@link Options.Builder#noResolveHostnames() noResolveHostnames()} in the builder doc
+     */
+    public void setNoResolveHostnames(boolean noResolveHostnames) {
+        this.noResolveHostnames = noResolveHostnames;
     }
 
     /**
@@ -545,6 +581,29 @@ public class NatsConnectionProperties {
     }
 
     /**
+     * Get whether to do tls first
+     * @return the flag
+     */
+    public boolean isTlsFirst() {
+        return tlsFirst;
+    }
+
+    /**
+     * Get whether to do tls first
+     * @return the flag
+     */
+    public boolean getTlsFirst() {
+        return tlsFirst;
+    }
+
+    /**
+     * @param tlsFirst Whether to do tls first
+     */
+    public void setTlsFirst(boolean tlsFirst) {
+        this.tlsFirst = tlsFirst;
+    }
+
+    /**
      * @param serverURL used for the underlying nats connection, can be a comma
      *                  separated list
      * @return chainable properties
@@ -657,6 +716,15 @@ public class NatsConnectionProperties {
     }
 
     /**
+     * @param noResolveHostnames should we resolve hostnames for server connection attempts, see {@link Options.Builder#noResolveHostnames() noResolveHostnames()} in the builder doc
+     * @return chainable properties
+     */
+    public NatsConnectionProperties noResolveHostnames(boolean noResolveHostnames) {
+        this.noResolveHostnames = noResolveHostnames;
+        return this;
+    }
+
+    /**
      * @param noEcho whether or not to send messages published by this connection
      *               back to it's subscribers
      * @return chainable properties
@@ -763,6 +831,15 @@ public class NatsConnectionProperties {
      */
     public NatsConnectionProperties tlsProtocol(String tlsProtocol) {
         this.tlsProtocol = tlsProtocol;
+        return this;
+    }
+
+    /**
+     * @param tlsFirst Whether to do tls first
+     * @return chainable properties
+     */
+    public NatsConnectionProperties tlsFirst(boolean tlsFirst) {
+        this.tlsFirst = tlsFirst;
         return this;
     }
 
@@ -891,12 +968,20 @@ public class NatsConnectionProperties {
         builder = builder.reconnectBufferSize(this.reconnectBufferSize);
         builder = builder.inboxPrefix(this.inboxPrefix);
 
+        if (this.noResolveHostnames) {
+            builder = builder.noResolveHostnames();
+        }
+
         if (this.noEcho) {
             builder = builder.noEcho();
         }
 
         if (this.utf8Support) {
             builder = builder.supportUTF8Subjects();
+        }
+
+        if (this.tlsFirst) {
+            builder = builder.tlsFirst();
         }
 
         if (this.nkey != null && this.nkey.length() > 0) {
@@ -930,7 +1015,9 @@ public class NatsConnectionProperties {
                 + " connectionTimeout='" + getConnectionTimeout() + "',"
                 + " pingInterval='" + getPingInterval() + "',"
                 + " reconnectBufferSize='" + getReconnectBufferSize() + "',"
+                + " noResolveHostnames='" + getNoResolveHostnames() + "',"
                 + " noEcho='" + getNoEcho() + "',"
+                + " tlsFirst='" + getTlsFirst() + "',"
                 + " utf8='" + getUtf8Support() + "',"
                 + " user='" + getUsername() + "',"
                 + " password='" + getPassword() + "',"
