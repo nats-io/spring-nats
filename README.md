@@ -2,6 +2,8 @@
 
 # NATS Spring Support
 
+**Current Release**: 0.5.7
+
 [![License][License-Image]][License-Url]
 [![Build Status](https://travis-ci.org/nats-io/spring-nats.svg?branch=master)](http://travis-ci.org/nats-io/spring-nats?branch=master)
 
