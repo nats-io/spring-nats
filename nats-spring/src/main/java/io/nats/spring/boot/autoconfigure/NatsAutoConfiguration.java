@@ -24,6 +24,7 @@ import io.nats.client.Nats;
 import io.nats.client.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -39,6 +40,7 @@ import java.security.GeneralSecurityException;
  * <p>
  * {@link EnableAutoConfiguration Auto-configuration} for NATS.
  */
+@AutoConfiguration
 @ConditionalOnClass({Connection.class})
 @EnableConfigurationProperties(NatsProperties.class)
 public class NatsAutoConfiguration {
