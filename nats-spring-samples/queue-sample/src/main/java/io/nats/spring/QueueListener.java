@@ -18,16 +18,17 @@ package io.nats.spring;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
-@EnableBinding(Sink.class)
+import java.util.function.Consumer;
+
+@Component
 public class QueueListener {
     private static final Log logger = LogFactory.getLog(QueueListener.class);
 
-    @StreamListener(Sink.INPUT)
-    public void handle(Object message) {
-        logger.info("received message " + message);
+    @Bean
+    public Consumer<Object> input() {
+        return message -> logger.info("received message:- " + new String((byte[]) message));
     }
 }

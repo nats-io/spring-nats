@@ -18,12 +18,10 @@ package io.nats.spring;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.Input;
-import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.binder.PollableMessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.MessageChannel;
@@ -33,7 +31,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @SpringBootApplication
-@EnableBinding(PollingSample.PolledProcessor.class)
 public class PollingSample {
 
     public static final ExecutorService exec = Executors.newSingleThreadExecutor();
@@ -44,7 +41,8 @@ public class PollingSample {
     }
 
     @Bean
-    public ApplicationRunner runner(PollableMessageSource input, MessageChannel output) {
+    public ApplicationRunner runner(PollableMessageSource input,
+                                    @Qualifier("errorChannel") MessageChannel output) {
         return args -> {
             exec.execute(() -> {
                 while (true) {
@@ -56,13 +54,5 @@ public class PollingSample {
                 }
             });
         };
-    }
-
-    public interface PolledProcessor {
-        @Input
-        PollableMessageSource input();
-
-        @Output
-        MessageChannel output();
     }
 }

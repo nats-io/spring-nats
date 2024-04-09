@@ -1,6 +1,10 @@
 spring:
   cloud:
     stream:
+      function:
+        bindings:
+          transform-in-0: input
+          transform-out-0: output
       bindings:
         input:
           destination: dataIn
@@ -8,3 +12,6 @@ spring:
         output:
           destination: dataOut
           binder: nats
+nats:
+  spring:
+    server: nats://localhost:4222

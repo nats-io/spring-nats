@@ -16,33 +16,38 @@
 
 package io.nats.spring;
 
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-@EnableBinding(Processor.class)
+@Component
 public class MultiConnectTransformer {
-    @StreamListener(Processor.INPUT)
-    @SendTo(Processor.OUTPUT)
-    public Object transform(Object message) {
-        if (message instanceof byte[]) {
-            String value = new String((byte[]) message, StandardCharsets.UTF_8);
-            StringBuilder reverse = new StringBuilder();
-            for (int i = value.length() - 1; i >= 0; i--) {
-                reverse.append(value.charAt(i));
+    private static final Logger LOG = LoggerFactory.getLogger(MultiConnectTransformer.class);
+
+    private static Object getMessage(String value) {
+        String reverse = IntStream.iterate(value.length() - 1, i -> i >= 0, i -> i - 1)
+                .mapToObj(i -> String.valueOf(value.charAt(i))).collect(Collectors.joining());
+        return reverse.getBytes(StandardCharsets.UTF_8);
+    }
+
+    @Bean
+    public Function<Object, Object> transform() {
+        return message -> {
+            String messageValue = null;
+            if (message instanceof byte[]) {
+                messageValue = new String((byte[]) message, StandardCharsets.UTF_8);
+            } else if (message instanceof String value) {
+                messageValue = value;
             }
-            message = reverse.toString().getBytes(StandardCharsets.UTF_8);
-        } else if (message instanceof String) {
-            String value = (String) message;
-            StringBuilder reverse = new StringBuilder();
-            for (int i = value.length() - 1; i >= 0; i--) {
-                reverse.append(value.charAt(i));
-            }
-            message = reverse.toString().getBytes(StandardCharsets.UTF_8);
-        }
-        return message;
+            LOG.info("Message : {}", messageValue);
+            return Objects.isNull(messageValue) ? null : getMessage(messageValue);
+        };
     }
 }
