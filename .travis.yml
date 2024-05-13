@@ -1,12 +1,13 @@
-dist: trusty
+dist: jammy
 language: java
 sudo: required
 jdk:
-  - oraclejdk8
-  - oraclejdk9
-  - openjdk8
-  - openjdk10
-  - openjdk11
+  - openjdk17
+  - openjdk18
+  - openjdk19
+  - openjdk20
+  - openjdk21
+  - openjdk22
 before_script:
   - wget "https://github.com/nats-io/nats-server/releases/download/$nats_server_version/nats-server-$nats_server_version-linux-amd64.zip"
     -O tmp.zip

@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nats-spring-samples-polling</artifactId>
-    <version>0.5.7</version>
+    <version>0.6.0</version>
     <packaging>jar</packaging>
     <name>polling-sample</name>
     <description>A poller using the nats binder</description>
@@ -12,7 +12,7 @@
     <parent>
         <groupId>io.nats.nats-spring-samples</groupId>
         <artifactId>nats-spring-samples-parent</artifactId>
-        <version>0.5.7</version>
+        <version>0.6.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

@@ -5,7 +5,7 @@
 
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
     <description>Spring Cloud Stream Binder for NATS</description>
-    <version>0.5.7</version>
+    <version>0.6.0</version>
     <organization>
         <name>CNCF</name>
         <url>https://www.nats.io</url>
@@ -14,7 +14,7 @@
     <parent>
         <groupId>io.nats</groupId>
         <artifactId>nats-spring-parent</artifactId>
-        <version>0.5.7</version>
+        <version>0.6.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -32,7 +32,7 @@
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>nats-spring</artifactId>
-            <version>0.5.7</version>
+            <version>0.6.0</version>
         </dependency>
 
         <dependency>
@@ -50,16 +50,6 @@
             <artifactId>spring-boot-autoconfigure-processor</artifactId>
             <optional>true</optional>
             <version>${spring-boot.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream-binder-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream-test-support-internal</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

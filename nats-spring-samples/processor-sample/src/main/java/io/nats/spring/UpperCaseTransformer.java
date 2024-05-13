@@ -16,24 +16,25 @@
 
 package io.nats.spring;
 
-import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.messaging.handler.annotation.SendTo;
-
 import java.nio.charset.StandardCharsets;
+import java.util.function.Function;
 
-@EnableBinding(Processor.class)
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
+
+@Component
 public class UpperCaseTransformer {
-    @StreamListener(Processor.INPUT)
-    @SendTo(Processor.OUTPUT)
-    public Object transform(Object message) {
-        if (message instanceof byte[]) {
-            String value = new String((byte[]) message, StandardCharsets.UTF_8);
-            message = value.toUpperCase().getBytes(StandardCharsets.UTF_8);
-        } else if (message instanceof String) {
-            message = ((String) message).toUpperCase();
-        }
-        return message;
+
+    @Bean
+    public Function<Object, Object> transform() {
+        return message -> {
+            if (message instanceof byte[]) {
+                String value = new String((byte[]) message, StandardCharsets.UTF_8);
+                message = value.toUpperCase().getBytes(StandardCharsets.UTF_8);
+            } else if (message instanceof String) {
+                message = ((String) message).toUpperCase();
+            }
+            return message;
+        };
     }
 }

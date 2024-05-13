@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nats-spring-samples-processor</artifactId>
-    <version>0.5.7</version>
+    <version>0.6.0</version>
     <packaging>jar</packaging>
     <name>processor-sample</name>
     <description>A simple sample for the nats cloud stream binding with a processor</description>
@@ -12,7 +12,7 @@
     <parent>
         <groupId>io.nats.nats-spring-samples</groupId>
         <artifactId>nats-spring-samples-parent</artifactId>
-        <version>0.5.7</version>
+        <version>0.6.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

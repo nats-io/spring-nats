@@ -2,7 +2,11 @@ spring:
   cloud:
     stream:
       bindings:
-        input:
+        input-in-0:
           destination: dataIn
           binder: nats
           group: one
+
+nats:
+  spring:
+    server: nats://localhost:4222
