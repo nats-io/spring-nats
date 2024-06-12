@@ -132,6 +132,12 @@ public class NatsConnectionProperties {
     private String credentials;
 
     /**
+     * User jwt, do not use with user/password, or
+     * token, or credentials.
+     */
+    private String jwt;
+
+    /**
      * Private key (seed) for NKey authentication, do not use with user/password, or
      * token, or credentials.
      */
@@ -353,6 +359,20 @@ public class NatsConnectionProperties {
      */
     public void setNkey(String nkey) {
         this.nkey = nkey;
+    }
+
+    /**
+     * @return user jwt for authentication with the server
+     */
+    public String getJwt() {
+        return jwt;
+    }
+
+    /**
+     * @param jwt user jwt for authentication with the server
+     */
+    public void setJwt(String jwt) {
+        this.jwt = jwt;
     }
 
     /**
@@ -707,6 +727,15 @@ public class NatsConnectionProperties {
     }
 
     /**
+     * @param jwt user jwt for authentication with the server
+     * @return chainable properties
+     */
+    public NatsConnectionProperties jwt(String jwt) {
+        this.jwt = jwt;
+        return this;
+    }
+
+    /**
      * @param inboxPrefix custom prefix to use for request/reply inboxes
      * @return chainable properties
      */
@@ -985,7 +1014,8 @@ public class NatsConnectionProperties {
         }
 
         if (this.nkey != null && this.nkey.length() > 0) {
-            builder = builder.authHandler(Nats.staticCredentials(null, this.nkey.toCharArray()));
+            char[] jwtChars = this.jwt != null ? this.jwt.toCharArray() : null;
+            builder = builder.authHandler(Nats.staticCredentials(jwtChars, this.nkey.toCharArray()));
         } else if (this.credentials != null && this.credentials.length() > 0) {
             builder = builder.authHandler(Nats.credentials(this.credentials));
         } else if (this.token != null && this.token.length() > 0) {
