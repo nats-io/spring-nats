@@ -2,7 +2,7 @@
 
 # NATS Spring Support
 
-**Current Release**: 0.5.7
+**Current Release**: 0.6.0-SB3
 
 [![License][License-Image]][License-Url]
 [![Build Status](https://travis-ci.org/nats-io/spring-nats.svg?branch=master)](http://travis-ci.org/nats-io/spring-nats?branch=master)
@@ -87,7 +87,7 @@ To include the starter, add the following dependency to your pom.xml:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
-    <version>0.5.7</version>
+    <version>0.6.0-SB3</version>
 </dependency>
 ```
 
@@ -99,20 +99,20 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats</artifactId>
-    <version>2.17.2</version>
+    <version>2.19.1</version>
 </dependency>
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring</artifactId>
-    <version>0.5.7</version>
+    <version>0.6.0-SB3</version>
 </dependency>
 ```
 
-This module defines and exports an auto-configuration for NATS Connection objects.
+This module defines and exports an autoconfiguration for NATS Connection objects.
 
 ### Multiple NATS Connections <a name="multi"></a>
 
-By default the autoconfigure modules will create a single NATS connection and the binders will create a second one.
+By default, the autoconfigure modules will create a single NATS connection and the binders will create a second one.
 
 > An example multi-binder-sample demonstrates how to have multiple named binders.
 
@@ -139,7 +139,7 @@ and include a dependency on the library:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
-    <version>0.5.7</version>
+    <version>0.6.0-SB3</version>
 </dependency>
 ```
 
@@ -241,7 +241,7 @@ This repo contains two types of samples. First, there is a [stand-alone demo](de
 You can exercise the samples using the `nats-sub` and `nats-pub` executables for the client library. For example, to try out the listener:
 
 ```bash
-% java -jar nats-spring-samples/listener-sample/target/listener-sample-0.5.7.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-spring-samples/listener-sample/target/listener-sample-0.6.0-SB3.jar --nats.spring.server="nats://localhost:4222"
 ...
 2019-06-24 15:36:43.690  INFO 36282 --- [         nats:3] o.s.cloud.stream.binder.nats.Listener    : received message hello
 ```
@@ -253,7 +253,7 @@ You can exercise the samples using the `nats-sub` and `nats-pub` executables for
 For the multi-binder, try:
 
 ```bash
-% java -jar nats-spring-samples/processor-sample/target/processor-sample-0.5.7.jar --nats.spring.server="nats://localhost:4222"
+% java -jar nats-spring-samples/processor-sample/target/processor-sample-0.6.0-SB3.jar --nats.spring.server="nats://localhost:4222"
 ...
 
 ```

@@ -12,7 +12,7 @@ This file lists the dependencies used in this repository.
 | com.fasterxml:classmate:jar:1.5.1                                             | Apache 2.0 License                      |
 | com.jayway.jsonpath:json-path:jar:2.7.0                                       | Apache 2.0 License                      |
 | com.vaadin.external.google:android-json:jar:0.0.20131108.vaadin1              | Apache 2.0 License                      |
-| io.nats:jnats:jar:2.17.2                                                      | Apache 2.0 License                      |
+| io.nats:jnats:jar:2.18.0                                                      | Apache 2.0 License                      |
 | io.nats:nats-spring-cloud-stream-binder:jar:0.5.6                             | Apache 2.0 License                      |
 | io.nats:nats-spring:jar:0.5.6                                                 | Apache 2.0 License                      |
 | io.projectreactor:reactor-core:jar:3.4.31                                     | Apache 2.0 License                      |
