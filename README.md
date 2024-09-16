@@ -103,7 +103,7 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats</artifactId>
-    <version>2.19.1</version>
+    <version>2.20.2</version>
 </dependency>
 <dependency>
     <groupId>io.nats</groupId>
