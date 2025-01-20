@@ -27,6 +27,7 @@
     <modules>
         <module>nats-spring</module>
         <module>nats-spring-boot-starter</module>
+        <module>nats-spring-docker-compose</module>
         <module>nats-spring-cloud-stream-binder</module>
         <module>nats-spring-samples</module>
     </modules>
@@ -104,7 +105,14 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>${spring-boot.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <build>
         <pluginManagement>
             <plugins>

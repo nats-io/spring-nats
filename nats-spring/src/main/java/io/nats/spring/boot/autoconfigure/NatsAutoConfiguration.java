@@ -24,6 +24,7 @@ import io.nats.client.Nats;
 import io.nats.client.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -33,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Optional;
 
 /**
  * NatsAutoConfiguration will create a NATS connection from an instance of NatsProperties.
@@ -54,17 +56,20 @@ public class NatsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public Connection natsConnection(NatsProperties properties, ConnectionListener connectionListener, ErrorListener errorListener)
+    public Connection natsConnection(NatsProperties properties,
+                                     ObjectProvider<NatsConnectionDetails> natsConnectionDetails,
+                                     ConnectionListener connectionListener,
+                                     ErrorListener errorListener)
             throws IOException, InterruptedException, GeneralSecurityException {
-        Connection nc = null;
-        String serverProp = (properties != null) ? properties.getServer() : null;
+        Connection nc;
 
-        if (serverProp == null || serverProp.length() == 0) {
+        String serverProp = (properties != null) ? resolveServerProperty(properties, natsConnectionDetails.getIfAvailable()) : null;
+
+        if (serverProp == null || serverProp.isEmpty()) {
             return null;
         }
-
         try {
-            logger.info("autoconnecting to NATS with properties - " + properties);
+            logger.info("auto connecting to NATS with properties - " + properties);
             Options.Builder builder = properties.toOptionsBuilder();
 
             builder = builder.connectionListener(connectionListener);
@@ -77,6 +82,15 @@ public class NatsAutoConfiguration {
             throw e;
         }
         return nc;
+    }
+
+    private String resolveServerProperty(NatsProperties properties, NatsConnectionDetails natsConnectionDetails) {
+        if (properties.getServer() == null){
+            Optional.ofNullable(natsConnectionDetails).
+                    map(NatsConnectionDetails::getServer)
+                    .ifPresent(properties::setServer);
+        }
+        return properties.getServer();
     }
 
     @Bean
