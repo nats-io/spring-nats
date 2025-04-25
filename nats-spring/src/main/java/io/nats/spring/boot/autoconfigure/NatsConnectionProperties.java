@@ -1019,11 +1019,11 @@ public class NatsConnectionProperties {
                 + " noEcho='" + getNoEcho() + "',"
                 + " tlsFirst='" + getTlsFirst() + "',"
                 + " utf8='" + getUtf8Support() + "',"
-                + " user='" + redact(getUsername()) + "',"
-                + " password='" + redact(getPassword()) + "',"
-                + " token='" + getToken() + "',"
-                + " creds='" + getCredentials() + "',"
-                + " nkey='" + getNkey() + "',"
+                + " user=" + redact(getUsername()) + ","
+                + " password=" + redact(getPassword()) + ","
+                + " token=" + redact(getToken()) + ","
+                + " creds=" + redact(getCredentials()) + ","
+                + " nkey=" + redact(getNkey())
                 + "}";
     }
 
