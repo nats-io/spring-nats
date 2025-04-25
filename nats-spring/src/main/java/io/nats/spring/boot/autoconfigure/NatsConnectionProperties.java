@@ -1049,12 +1049,16 @@ public class NatsConnectionProperties {
                 + " noEcho='" + getNoEcho() + "',"
                 + " tlsFirst='" + getTlsFirst() + "',"
                 + " utf8='" + getUtf8Support() + "',"
-                + " user='" + getUsername() + "',"
-                + " password='" + getPassword() + "',"
-                + " token='" + getToken() + "',"
-                + " creds='" + getCredentials() + "',"
-                + " nkey='" + getNkey() + "',"
+                + " user=" + redact(getUsername()) + ","
+                + " password=" + redact(getPassword()) + ","
+                + " token=" + redact(getToken()) + ","
+                + " creds=" + redact(getCredentials()) + ","
+                + " nkey=" + redact(getNkey())
                 + "}";
+    }
+
+    private String redact(String text) {
+        return text == null || text.isEmpty() ? "N/A" : "**********";
     }
 
 }
