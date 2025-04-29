@@ -29,6 +29,7 @@
         <module>multi-connect-sample</module>
         <module>autoconfigure-sample</module>
         <module>connect-error-sample</module>
+        <module>docker-compose-sample</module>
     </modules>
 
     <dependencyManagement>
