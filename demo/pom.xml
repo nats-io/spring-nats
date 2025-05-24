@@ -15,19 +15,19 @@
     <description>Demo project for Spring Boot</description>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>17</java.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>nats-spring-cloud-stream-binder</artifactId>
-            <version>0.6.1+3.1</version>
+            <version>0.6.2+3.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>nats-spring</artifactId>
-            <version>0.6.1+3.1</version>
+            <version>0.6.2+3.1-SNAPSHOT</version>
         </dependency>
 
         <dependency>

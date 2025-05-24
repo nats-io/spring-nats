@@ -91,7 +91,7 @@ To include the starter, add the following dependency to your pom.xml:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
-    <version>0.6.1+3.1</version>
+    <version>0.6.2+3.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -108,7 +108,7 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring</artifactId>
-    <version>0.6.1+3.1</version>
+    <version>0.6.2+3.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -143,7 +143,7 @@ and include a dependency on the library:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
-    <version>0.6.1+3.1</version>
+    <version>0.6.2+3.1-SNAPSHOT</version>
 </dependency>
 ```
 

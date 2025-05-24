@@ -1,17 +1,16 @@
 @echo --------------------------------------------------------------------------------
 @echo 1. Make sure you have the following from 1password
-@echo "Java GHA SIGNING_PASSWORD Build Admin" - used for gpg signing
-@echo "spring-nats.settings.xml" - used to store sonatype login and gpgp references
+@echo "Java OSSRH CENTRAL USERNAME and TOKEN nats.io synadia.io" - used for gpg signing
+@echo "settings.xml" - populate the environment
 @echo --------------------------------------------------------------------------------
 @echo 2. You must have Java 17 or later
 @echo --------------------------------------------------------------------------------
 pause
 
-call mvn -N clean install
+call mvn --settings settings.xml -N clean install
 
 cd nats-spring-samples
-call mvn -N clean package install
-
+call mvn --settings ..\settings.xml -N clean package install
 cd ..
 
-call mvn clean package gpg:sign deploy
+call mvn --settings settings.xml clean package sign:sign deploy
