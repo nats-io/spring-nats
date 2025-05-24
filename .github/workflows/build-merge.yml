@@ -42,11 +42,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
       - name: Build and Install Parent Pom
-        run: mvn -N clean install
+        run: mvn --settings settings.xml -N clean install
       - name: Build and Install Samples
         run: |
           cd nats-spring-samples
-          mvn -N clean package install
+          mvn --settings settings.xml -N clean package install
           cd ..
       - name: Publish Snapshot
         run: mvn --settings settings.xml clean package sign:sign deploy
