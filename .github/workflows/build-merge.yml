@@ -20,7 +20,7 @@ jobs:
       GODEBUG: x509sha1=1
     steps:
       - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.2.1
+        uses: s4u/setup-maven-action@v1.18.0
         with:
           java-version: 17
       - name: Setup GO
