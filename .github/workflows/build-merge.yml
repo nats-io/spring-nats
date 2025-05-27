@@ -54,6 +54,6 @@ jobs:
           mvn --no-transfer-progress --settings ../settings.xml -N clean package install
           cd ..
       - name: Publish
-        run: mvn --no-transfer-progress --also-make-dependents --settings ./settings.xml clean package sign:sign deploy
+        run: mvn --no-transfer-progress --settings ./settings.xml -N clean package sign:sign deploy
 
 
