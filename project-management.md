@@ -59,7 +59,9 @@ When it's time to release, do the following:
 2. Push to a branch and make a PR.
 3. Merge the PR.
 
-Once the release has been published, **IMMEDIATELY** ...
+While the release action is building, you can...
 1. Update all version tags to increment the semver and add `-SNAPHOT`
 2. Push a branch and make a PR.
-3. Merge the PR.
+
+Once the release action is completed...
+1. Merge the PR.
