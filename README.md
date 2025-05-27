@@ -35,16 +35,16 @@ A third package `nats-spring-samples` is included to <a href="#samples">demonstr
 
 As of version 0.3.x the properties used to [configure](#configure) can be in YAML or properties if you pass in the NATS properties externally. If you want the application file to contain connection info it should be a properties file and not YAML. In other words:
 
-```yaml
+```properties
 spring.cloud.stream.bindings.input.destination=dataIn
 spring.cloud.stream.bindings.input.binder=nats1
 spring.cloud.stream.binders.nats1.type=nats
 spring.cloud.stream.binders.nats1.environment.nats.spring.cloud.stream.binder.server=nats://localhost:4222
 ```
 
-works while the YAML equivalent will not.
+it works while the YAML equivalent will not.
 
-Snapshots are hosted on `oss.sonatype.org`, to access these within maven update your settings to include:
+Snapshots are hosted on `central.sonatype.org`, to access these within maven update your settings to include:
 
 ```xml
 <profiles>
@@ -55,8 +55,8 @@ Snapshots are hosted on `oss.sonatype.org`, to access these within maven update 
         </activation>
         <repositories>
             <repository>
-                <id>snapshots-repo</id>
-                <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                <id>sonatype-snapshots-repo</id>
+                <url>https://central.sonatype.com/repository/maven-snapshots</url>
                 <releases>
                     <enabled>false</enabled>
                 </releases>
@@ -69,13 +69,13 @@ Snapshots are hosted on `oss.sonatype.org`, to access these within maven update 
 </profiles>
 ```
 
-The released version should be available at:
+The released version should be available at maven central. If the release has not propagated yet, it can be found at 
 
 ```xml
 <repository>
-    <id>oss-sonatype</id>
-    <name>oss-sonatype</name>
-    <url>https://oss.sonatype.org/content/repositories/</url>
+    <id>central-sonatype</id>
+    <name>central-sonatype</name>
+    <url>https://repo1.maven.org/maven2/</url>
 </repository>
 ```
 
@@ -91,13 +91,13 @@ To include the starter, add the following dependency to your pom.xml:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
-    <version>0.6.2+3.1-SNAPSHOT</version>
+    <version>major.minor.patch[-SNAPSHOT]</version>
 </dependency>
 ```
 
 ## Using the NATS Modules <a name="using"></a>
 
-To depend on the autoconfigure module, simply add it as a dependency in your pom.xml:
+To depend on the autoconfigure module, add it as a dependency in your pom.xml:
 
 ```xml
 <dependency>
@@ -108,7 +108,7 @@ To depend on the autoconfigure module, simply add it as a dependency in your pom
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring</artifactId>
-    <version>0.6.2+3.1-SNAPSHOT</version>
+    <version>major.minor.patch[-SNAPSHOT]</version>
 </dependency>
 ```
 
@@ -122,7 +122,7 @@ By default, the autoconfigure modules will create a single NATS connection and t
 
 ## Using the NATS Cloud Stream Binder <a name="binder"></a>
 
-To use the binder, simply define a binding in your application.yml with the type `nats`:
+To use the binder, define a binding in your application.yml with the type `nats`:
 
 ```yaml
 spring:
@@ -143,7 +143,7 @@ and include a dependency on the library:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
-    <version>0.6.2+3.1-SNAPSHOT</version>
+    <version>major.minor.patch[-SNAPSHOT]</version>
 </dependency>
 ```
 
@@ -310,7 +310,8 @@ Signing and deploying requires that you set up your settings.xml file for maven:
 
 ### Adding New Configuration Properties
 
-All of the configuration properties are injected into the NatsProperties class in the autoconfigure module. This class provides a `toOptions()` method that spits out a valid options configuration from the NATS client library. To add new properties, simply add them to NatsProperties and update the `toOptions()` method appropriately.
+All the configuration properties are injected into the NatsProperties class in the autoconfigure module. This class provides a `toOptions()` method that spits out a valid options configuration from the NATS client library. 
+To add new properties, add them to NatsProperties and update the `toOptions()` method appropriately.
 
 ## External Resources <a name="resources"></a>
 

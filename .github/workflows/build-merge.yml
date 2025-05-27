@@ -10,11 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      BUILD_EVENT: ${{ github.event_name }}
       OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
       OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
       SIGN_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
-#      SIGN_KEY: ${{ secrets.SIGNING_KEY }}
       SIGN_KEY_PASS: ${{ secrets.SIGNING_PASSWORD }}
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       GODEBUG: x509sha1=1
@@ -26,7 +24,7 @@ jobs:
       - name: Generate Maven Settings
         uses: s4u/maven-settings-action@v3.1.0
         with:
-          servers: '[{"id": "${{ secrets.SIGNING_KEY_ID }}", "username": "${{ secrets.SIGNING_KEY_ID }}", "passphrase": "${{ secrets.SIGNING_PASSWORD }}", "privateKey": "sk.txt"}]'
+          servers: '[{"id": "${{ secrets.SIGNING_KEY_ID }}", "username": "${{ secrets.SIGNING_KEY_ID }}", "passphrase": "${{ secrets.SIGNING_PASSWORD }}", "privateKey": "k.txt"}]'
       - name: Install Nats Server
         run: |
           cd $GITHUB_WORKSPACE
@@ -43,7 +41,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Configuration
         run: |
-          printf '%s' '${{ secrets.SIGNING_KEY }}' > sk.txt
+          printf '%s' '${{ secrets.SIGNING_KEY }}' > k.txt
       - name: Setup Maven Action
         uses: s4u/setup-maven-action@v1.18.0
         with:
