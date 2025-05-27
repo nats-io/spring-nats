@@ -12,8 +12,11 @@ jobs:
     env:
       OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
       OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-      SIGN_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
-      SIGN_KEY_PASS: ${{ secrets.SIGNING_PASSWORD }}
+#      SIGN_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+#      SIGN_KEY_PASS: ${{ secrets.SIGNING_PASSWORD }}
+      MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+#      GPG_PASSPHRASE: ${{ secrets.SIGNING_KEY_ID }}
+#      MAVEN_GPG_KEY: ${{ secrets.SIGNING_KEY }}
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       GODEBUG: x509sha1=1
     steps:
@@ -21,10 +24,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21.4'
-      - name: Generate Maven Settings
-        uses: s4u/maven-settings-action@v3.1.0
-        with:
-          servers: '[{"id": "${{ secrets.SIGNING_KEY_ID }}", "username": "${{ secrets.SIGNING_KEY_ID }}", "passphrase": "${{ secrets.SIGNING_PASSWORD }}", "privateKey": "k.txt"}]'
+#      - name: Generate Maven Settings
+#        uses: s4u/maven-settings-action@v3.1.0
+#        with:
+#          servers: '[{"id": "${{ secrets.SIGNING_KEY_ID }}", "username": "${{ secrets.SIGNING_KEY_ID }}", "passphrase": "${{ secrets.SIGNING_PASSWORD }}", "privateKey": "k.txt"}]'
       - name: Install Nats Server
         run: |
           cd $GITHUB_WORKSPACE
@@ -54,6 +57,7 @@ jobs:
           mvn --no-transfer-progress --settings ../settings.xml -N clean package install
           cd ..
       - name: Publish
-        run: mvn --no-transfer-progress --settings ./settings.xml -N -X clean package sign:sign deploy
+        run: mvn --settings ./settings.xml -Dgpg.signer=bc -Dgpg.keyname=${{ secrets.SIGNING_KEY_ID }} -Dgpg.keyFilePath=./k.txt clean package gpg:sign install deploy
+
 
 

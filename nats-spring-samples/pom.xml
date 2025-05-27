@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <spring-cloud-stream.version>4.1.1</spring-cloud-stream.version>
+        <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
     </properties>
 
     <modules>
@@ -38,11 +38,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.simplify4u.plugins</groupId>
-                <artifactId>sign-maven-plugin</artifactId>
-                <version>1.1.0</version>
             </plugin>
         </plugins>
     </build>
