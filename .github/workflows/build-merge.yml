@@ -53,7 +53,7 @@ jobs:
       - name: Build and Install Samples
         run: |
           cd nats-spring-samples
-          mvn --no-transfer-progress --settings ./settings.xml -N clean package install
+          mvn --no-transfer-progress --settings ../settings.xml -N clean package install
           cd ..
       - name: Publish Snapshot
         run: mvn --no-transfer-progress --settings ./settings.xml clean package sign:sign deploy
