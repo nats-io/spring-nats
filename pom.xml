@@ -33,6 +33,17 @@
         <module>nats-spring-samples</module>
     </modules>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>central</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>central</id>
+            <url>https://ossrh-staging-api.central.sonatype.com/service/local</url>
+        </repository>
+    </distributionManagement>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -122,10 +133,6 @@
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
                 </plugin>
             </plugins>
         </pluginManagement>
