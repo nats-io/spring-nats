@@ -5,7 +5,7 @@
 
     <artifactId>nats-spring-parent</artifactId>
     <groupId>io.nats</groupId>
-    <version>0.6.2+3.1</version>
+    <version>0.6.2+3.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <parent>
@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <spring-boot.version>3.1.10</spring-boot.version>
+        <spring-boot.version>3.5.0</spring-boot.version>
         <spring-cloud-stream.version>4.1.1</spring-cloud-stream.version>
         <junit.version>4.13.2</junit.version>
         <java.version>17</java.version>

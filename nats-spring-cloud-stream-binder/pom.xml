@@ -5,7 +5,7 @@
 
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
     <description>Spring Cloud Stream Binder for NATS</description>
-    <version>0.6.2+3.1</version>
+    <version>0.6.2+3.5-SNAPSHOT</version>
     <organization>
         <name>CNCF</name>
         <url>https://www.nats.io</url>
@@ -14,10 +14,9 @@
     <parent>
         <groupId>io.nats</groupId>
         <artifactId>nats-spring-parent</artifactId>
-        <version>0.6.2+3.1</version>
+        <version>0.6.2+3.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
 
     <properties>
         <main.basedir>${basedir}/..</main.basedir>
@@ -27,12 +26,12 @@
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>jnats</artifactId>
-            <version>2.20.2</version>
+            <version>2.21.1</version>
         </dependency>
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>nats-spring</artifactId>
-            <version>0.6.2+3.1</version>
+            <version>0.6.2+3.5-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -63,4 +62,14 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.simplify4u.plugins</groupId>
+                <artifactId>sign-maven-plugin</artifactId>
+                <version>1.1.0</version>
+            </plugin>
+        </plugins>
+    </build>
 </project>

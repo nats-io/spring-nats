@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nats-spring-samples-multi-connect</artifactId>
-    <version>0.6.2+3.1</version>
+    <version>0.6.2+3.5-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>multi-connect-sample</name>
     <description>A simple sample for the nats cloud stream binder</description>
@@ -12,7 +12,7 @@
     <parent>
         <groupId>io.nats.nats-spring-samples</groupId>
         <artifactId>nats-spring-samples-parent</artifactId>
-        <version>0.6.2+3.1</version>
+        <version>0.6.2+3.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -32,6 +32,11 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.simplify4u.plugins</groupId>
+                <artifactId>sign-maven-plugin</artifactId>
+                <version>1.1.0</version>
             </plugin>
         </plugins>
     </build>

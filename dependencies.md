@@ -15,7 +15,7 @@ This file lists the dependencies used in this repository.
 | com.vaadin.external.google:android-json:jar:0.0.20131108.vaadin1        | Apache 2.0 License                      |
 | io.micrometer:micrometer-commons:jar:1.11.10                            | Apache 2.0 License                      |
 | io.micrometer:micrometer-observation:jar:1.11.10                        | Apache 2.0 License                      |
-| io.nats:jnats:jar:2.20.2                                                | Apache 2.0 License                      |
+| io.nats:jnats:jar:2.21.1                                                | Apache 2.0 License                      |
 | io.projectreactor:reactor-core:jar:3.5.15                               | Apache 2.0 License                      |
 | jakarta.annotation:jakarta.annotation-api:jar:2.1.1                     | BSD 3-Clause "New" or "Revised" License |
 | jakarta.validation:jakarta.validation-api:jar:3.0.2                     | BSD 3-Clause "New" or "Revised" License |
