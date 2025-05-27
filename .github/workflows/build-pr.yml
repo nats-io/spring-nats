@@ -11,6 +11,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+      MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+      MAVEN_GPG_KEY: ${{ secrets.SIGNING_KEY }}
       GODEBUG: x509sha1=1
     steps:
       - name: Setup GO
@@ -35,11 +39,11 @@ jobs:
         with:
           java-version: 17
       - name: Build and Install Parent Pom
-        run: mvn --no-transfer-progress -N clean install
+        run: mvn --no-transfer-progress --settings ./settings.xml -N clean install
       - name: Build and Install Samples
         run: |
           cd nats-spring-samples
-          mvn --no-transfer-progress -N clean install
+          mvn --no-transfer-progress --settings ../settings.xml -N clean install
           cd ..
       - name: Compile and Test
-        run: mvn --no-transfer-progress clean compile test
+        run: mvn --no-transfer-progress --settings ./settings.xml clean clean compile test
