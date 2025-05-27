@@ -14,7 +14,7 @@ jobs:
       OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
       OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
       SIGN_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
-      SIGN_KEY: ${{ secrets.SIGNING_KEY }}
+#      SIGN_KEY: ${{ secrets.SIGNING_KEY }}
       SIGN_KEY_PASS: ${{ secrets.SIGNING_PASSWORD }}
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       GODEBUG: x509sha1=1
