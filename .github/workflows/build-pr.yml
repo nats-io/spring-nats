@@ -41,5 +41,5 @@ jobs:
           cd nats-spring-samples
           mvn --no-transfer-progress -N clean install
           cd ..
-      - name: Publish Snapshot
+      - name: Compile and Test
         run: mvn --no-transfer-progress clean compile test
