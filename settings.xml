@@ -17,7 +17,7 @@
         </server>
 -->
     </servers>
-
+<!--
     <profiles>
         <profile>
             <id>gpg</id>
@@ -27,4 +27,5 @@
             </properties>
         </profile>
     </profiles>
+-->
 </settings>
