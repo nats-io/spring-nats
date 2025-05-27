@@ -12,7 +12,7 @@
           <id>${env.SIGN_KEY_ID}</id>
           <username>${env.SIGN_KEY_ID}</username>
           <passphrase>${env.SIGN_KEY_PASS}</passphrase>
-          <privateKey>sk.txt</privateKey>
+          <privateKey>k.txt</privateKey>
       </server>
   </servers>
 </settings>
