@@ -57,7 +57,7 @@ jobs:
           mvn --no-transfer-progress --settings ../settings.xml -N clean package install
           cd ..
       - name: Publish
-        run: mvn --settings ./settings.xml -Dgpg.signer=bc -Dgpg.keyname=${{ secrets.SIGNING_KEY_ID }} -Dgpg.keyFilePath=./k.txt clean package gpg:sign install deploy
+        run: mvn --settings ./settings.xml -Dgpg.signer=bc -Dgpg.keyname=${{ secrets.SIGNING_KEY_ID }} -Dgpg.keyFilePath=k.txt clean package gpg:sign install deploy
 
 
 
