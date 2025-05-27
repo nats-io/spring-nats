@@ -2,7 +2,7 @@
 
 # NATS Spring Support
 
-**Current Release**: 0.6.1+3.1
+**Current Release**: 0.6.2+3.5 &nbsp; **Current Snapshot**: 0.6.3+3.5-SNAPSHOT
 
 Please note the version number is a combination of Semver and the Spring Boot Version, `<major.minor.patch>-<sbMajor.sbMinor>`
 
