@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nats-spring-samples-connect-error</artifactId>
-    <version>0.6.2+3.5-SNAPSHOT</version>
+    <version>0.6.2+3.5</version>
     <packaging>jar</packaging>
     <name>connect-error-sample</name>
     <description>A sample that sets up a custom connection and error listener for the NATS binder</description>
@@ -12,7 +12,7 @@
     <parent>
         <groupId>io.nats.nats-spring-samples</groupId>
         <artifactId>nats-spring-samples-parent</artifactId>
-        <version>0.6.2+3.5-SNAPSHOT</version>
+        <version>0.6.2+3.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
