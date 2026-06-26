@@ -17,6 +17,7 @@
 package io.nats.cloud.stream.binder;
 
 import io.nats.client.Connection;
+import io.nats.client.impl.Headers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.integration.handler.AbstractMessageHandler;
@@ -74,7 +75,9 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 
         if (this.connection != null) {
             final Object replyChannel = message.getHeaders().get(MessageHeaders.REPLY_CHANNEL);
-            this.connection.publish(this.subject, replyChannel != null ? replyChannel.toString() : null, bytes);
+            Headers headers = NatsMessageConverter.toNatsHeaders(message);
+            this.connection.publish(this.subject, replyChannel != null ? replyChannel.toString() : null, headers, bytes);
         }
     }
+
 }

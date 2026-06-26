@@ -18,6 +18,7 @@ package io.nats.cloud.stream.binder;
 
 import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
+import io.nats.client.Message;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.Lifecycle;
@@ -27,6 +28,7 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,10 +88,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
             }
 
             try {
-                Map<String, Object> headers = new HashMap<>();
-                headers.put(SUBJECT, msg.getSubject());
-                headers.put(MessageHeaders.REPLY_CHANNEL, msg.getReplyTo());
-                GenericMessage<byte[]> m = new GenericMessage<byte[]>(msg.getData(), headers);
+                GenericMessage<byte[]> m = NatsMessageConverter.natsMessageToGenericMessage(msg);
                 this.output.send(m);
             } catch (Exception e) {
                 logger.warn("exception sending message to output channel", e);
@@ -105,6 +104,8 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
             this.dispatcher.subscribe(sub);
         }
     }
+
+
 
     @Override
     public void stop() {

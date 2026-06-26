@@ -23,12 +23,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.endpoint.AbstractMessageSource;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Message source for NATS connections, allowing synchronous polling.
@@ -63,10 +60,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
             Message m = this.sub.nextMessage(Duration.ZERO);
 
             if (m != null) {
-                Map<String, Object> headers = new HashMap<>();
-                headers.put(NatsMessageProducer.SUBJECT, m.getSubject());
-                headers.put(MessageHeaders.REPLY_CHANNEL, m.getReplyTo());
-                GenericMessage<byte[]> gm = new GenericMessage<byte[]>(m.getData(), headers);
+                GenericMessage<byte[]> gm = NatsMessageConverter.natsMessageToGenericMessage(m);
                 return gm;
             }
         } catch (InterruptedException exp) {
@@ -75,6 +69,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 
         return null;
     }
+
 
     @Override
     public boolean isRunning() {
