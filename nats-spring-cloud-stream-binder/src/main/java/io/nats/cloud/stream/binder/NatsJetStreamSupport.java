@@ -133,6 +133,9 @@ class NatsJetStreamSupport {
             throw new IllegalArgumentException(
                     "NATS JetStream push consumer flow-control and idle-heartbeat are not supported with consumer groups");
         }
+        if (Boolean.TRUE.equals(properties.getFlowControl()) && properties.getIdleHeartbeat() == null) {
+            throw new IllegalArgumentException("NATS JetStream flow-control requires idle-heartbeat");
+        }
 
         if (!Boolean.TRUE.equals(properties.getOrdered())) {
             return;

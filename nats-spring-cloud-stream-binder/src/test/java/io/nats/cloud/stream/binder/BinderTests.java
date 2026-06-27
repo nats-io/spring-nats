@@ -1772,6 +1772,34 @@ class BinderTests {
     }
 
     @Test
+    void jetStreamPushConsumerRejectsFlowControlWithoutHeartbeatForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_FLOW_WITHOUT_HEARTBEAT");
+                    String subject = uniqueSubject("jetstream.flow.without.heartbeat.issue52");
+                    addMemoryStream(conn, stream, subject);
+
+                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    consumerProperties.getExtension().setJetStream(true);
+                    consumerProperties.getExtension().setStreamName(stream);
+                    consumerProperties.getExtension().setFlowControl(true);
+
+                    assertThatThrownBy(() -> fixture.binder().bindConsumer(subject, "",
+                            new DirectChannel(), consumerProperties))
+                            .isInstanceOfAny(BinderException.class, IllegalArgumentException.class)
+                            .hasStackTraceContaining("flow-control requires idle-heartbeat");
+                }
+            });
+        }
+    }
+
+    @Test
     void jetStreamOrderedPushConsumerRejectsIncompatibleOptionsForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
