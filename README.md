@@ -150,6 +150,8 @@ and include a dependency on the library:
 
 See the [Spring Cloud Stream Documentation](https://spring.io/projects/spring-cloud-stream) for information about more complex configurations of the bindings.
 
+Spring Cloud Stream functional applications are supported. Bind `Consumer`, `Function`, or `StreamBridge` applications with the standard functional binding names such as `input-in-0`, `transform-in-0`, and `transform-out-0`; see `nats-spring-samples` and `demo` for working examples.
+
 The NATS binder leverages the autoconfigure module, or manual configuration to build a NATS connection. Standard properties are used to specify inputs and outputs. Inputs, specified with a destination and group name are mapped to subjects and queue names, with the destination becoming the subject, and the group becoming the queue. Outputs are specified with a destination name that becomes the subject.
 
 Consumers are implemented with a dispatcher. Each consumer will create its own dispatcher in the core library, resulting in a thread per consumer.
