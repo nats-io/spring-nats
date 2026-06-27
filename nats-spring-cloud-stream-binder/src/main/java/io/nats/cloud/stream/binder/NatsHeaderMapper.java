@@ -21,6 +21,7 @@ import io.nats.client.impl.Headers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.cloud.stream.binder.BinderHeaders;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.messaging.MessageHeaders;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ class NatsHeaderMapper {
             MessageHeaders.REPLY_CHANNEL.toLowerCase(Locale.ROOT),
             MessageHeaders.ERROR_CHANNEL.toLowerCase(Locale.ROOT),
             BinderHeaders.NATIVE_HEADERS_PRESENT.toLowerCase(Locale.ROOT),
+            IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK.toLowerCase(Locale.ROOT),
             NatsMessageProducer.SUBJECT.toLowerCase(Locale.ROOT)
     );
 

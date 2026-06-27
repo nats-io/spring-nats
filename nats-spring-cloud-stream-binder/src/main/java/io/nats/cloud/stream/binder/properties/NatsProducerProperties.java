@@ -17,4 +17,34 @@
 package io.nats.cloud.stream.binder.properties;
 
 public class NatsProducerProperties {
+    private boolean jetStream;
+    private String streamName;
+
+    /**
+     * @return whether this producer publishes through JetStream instead of core NATS
+     */
+    public boolean isJetStream() {
+        return this.jetStream;
+    }
+
+    /**
+     * @param jetStream whether this producer publishes through JetStream instead of core NATS
+     */
+    public void setJetStream(boolean jetStream) {
+        this.jetStream = jetStream;
+    }
+
+    /**
+     * @return optional JetStream stream name used for publish acknowledgements
+     */
+    public String getStreamName() {
+        return this.streamName;
+    }
+
+    /**
+     * @param streamName optional JetStream stream name used for publish acknowledgements
+     */
+    public void setStreamName(String streamName) {
+        this.streamName = streamName;
+    }
 }

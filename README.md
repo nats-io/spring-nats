@@ -15,6 +15,7 @@ Please note the version number is a combination of Semver and the Spring Boot Ve
 * [Using the NATS Modules](#using)
     * [Multiple NATS Connections](#multi)
 * [Using the Binder](#binder)
+    * [JetStream](#jetstream)
     * [Request-Reply](#reqreply)
     * [Partitions](#partition)
 * [Configuration](#configure)
@@ -158,6 +159,22 @@ Polled consumers are implemented with a subscription.
 > Currently, the polling code will wait forever for a message and is not configurable.
 
 Producers publish directly through the connection.
+
+### JetStream <a name="jetstream"></a>
+
+JetStream is opt-in per binding. The NATS stream must already exist; `stream-name` is optional when NATS can resolve one stream from the subject.
+
+```properties
+nats.spring.cloud.stream.bindings.output.producer.jet-stream=true
+nats.spring.cloud.stream.bindings.output.producer.stream-name=ORDERS
+nats.spring.cloud.stream.bindings.input.consumer.jet-stream=true
+nats.spring.cloud.stream.bindings.input.consumer.stream-name=ORDERS
+nats.spring.cloud.stream.bindings.input.consumer.durable-name=orders-worker
+```
+
+JetStream producers wait for the server publish acknowledgement. Event consumers acknowledge after the Spring output channel accepts the message. Polled consumers use a pull subscription and acknowledge through Spring's poll acknowledgement callback after the poll handler succeeds. For polled consumers, the binding group is used as the JetStream durable name when `durable-name` is not set.
+
+JetStream publishing does not support Spring reply channels because NATS uses the reply subject for JetStream publish acknowledgements. Use core NATS bindings for request-reply.
 
 ### Request-Reply <a name="reqreply"></a>
 

@@ -17,4 +17,49 @@
 package io.nats.cloud.stream.binder.properties;
 
 public class NatsConsumerProperties {
+    private boolean jetStream;
+    private String streamName;
+    private String durableName;
+
+    /**
+     * @return whether this consumer subscribes through JetStream instead of core NATS
+     */
+    public boolean isJetStream() {
+        return this.jetStream;
+    }
+
+    /**
+     * @param jetStream whether this consumer subscribes through JetStream instead of core NATS
+     */
+    public void setJetStream(boolean jetStream) {
+        this.jetStream = jetStream;
+    }
+
+    /**
+     * @return optional JetStream stream name used for subscriptions
+     */
+    public String getStreamName() {
+        return this.streamName;
+    }
+
+    /**
+     * @param streamName optional JetStream stream name used for subscriptions
+     */
+    public void setStreamName(String streamName) {
+        this.streamName = streamName;
+    }
+
+    /**
+     * @return optional JetStream durable consumer name used for subscriptions
+     */
+    public String getDurableName() {
+        return this.durableName;
+    }
+
+    /**
+     * @param durableName optional JetStream durable consumer name used for subscriptions
+     */
+    public void setDurableName(String durableName) {
+        this.durableName = durableName;
+    }
 }
