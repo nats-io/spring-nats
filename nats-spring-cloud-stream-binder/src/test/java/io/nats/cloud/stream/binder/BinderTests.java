@@ -1297,6 +1297,126 @@ class BinderTests {
     }
 
     @Test
+    void jetStreamConsumerNacksWhenOutputChannelRejectsMessageForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_REJECTED_SEND");
+                    String durable = uniqueNatsName("js_rejected_send");
+                    String subject = uniqueSubject("jetstream.rejected.send.issue52");
+                    String payload = "redeliver rejected send";
+                    addMemoryStream(conn, stream, subject);
+
+                    AtomicInteger attempts = new AtomicInteger();
+                    CompletableFuture<org.springframework.messaging.Message<?>> redelivered = new CompletableFuture<>();
+                    MessageChannel input = new MessageChannel() {
+                        @Override
+                        public boolean send(org.springframework.messaging.Message<?> message) {
+                            if (attempts.incrementAndGet() == 1) {
+                                return false;
+                            }
+                            redelivered.complete(message);
+                            return true;
+                        }
+
+                        @Override
+                        public boolean send(org.springframework.messaging.Message<?> message, long timeout) {
+                            return send(message);
+                        }
+                    };
+                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    consumerProperties.getExtension().setJetStream(true);
+                    consumerProperties.getExtension().setStreamName(stream);
+                    consumerProperties.getExtension().setDurableName(durable);
+                    Binding<MessageChannel> consumerBinding = null;
+
+                    try {
+                        consumerBinding = fixture.binder().bindConsumer(subject, "", input, consumerProperties);
+                        fixture.connection().flush(FLUSH_TIMEOUT);
+
+                        conn.jetStream().publish(subject, payload.getBytes(UTF_8));
+
+                        org.springframework.messaging.Message<?> message = redelivered.get(5, TimeUnit.SECONDS);
+                        assertThat(payloadText(message.getPayload())).isEqualTo(payload);
+                        assertThat(attempts).hasValue(2);
+                        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+                                assertThat(consumerInfo(conn, stream, durable).getNumAckPending()).isZero());
+                    } finally {
+                        if (consumerBinding != null) {
+                            consumerBinding.unbind();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    @Test
+    void jetStreamConsumerNacksWhenOutputChannelThrowsForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_THROWING_SEND");
+                    String durable = uniqueNatsName("js_throwing_send");
+                    String subject = uniqueSubject("jetstream.throwing.send.issue52");
+                    String payload = "redeliver thrown send";
+                    addMemoryStream(conn, stream, subject);
+
+                    AtomicInteger attempts = new AtomicInteger();
+                    CompletableFuture<org.springframework.messaging.Message<?>> redelivered = new CompletableFuture<>();
+                    MessageChannel input = new MessageChannel() {
+                        @Override
+                        public boolean send(org.springframework.messaging.Message<?> message) {
+                            if (attempts.incrementAndGet() == 1) {
+                                throw new MessageHandlingException(message, "fail once");
+                            }
+                            redelivered.complete(message);
+                            return true;
+                        }
+
+                        @Override
+                        public boolean send(org.springframework.messaging.Message<?> message, long timeout) {
+                            return send(message);
+                        }
+                    };
+                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    consumerProperties.getExtension().setJetStream(true);
+                    consumerProperties.getExtension().setStreamName(stream);
+                    consumerProperties.getExtension().setDurableName(durable);
+                    Binding<MessageChannel> consumerBinding = null;
+
+                    try {
+                        consumerBinding = fixture.binder().bindConsumer(subject, "", input, consumerProperties);
+                        fixture.connection().flush(FLUSH_TIMEOUT);
+
+                        conn.jetStream().publish(subject, payload.getBytes(UTF_8));
+
+                        org.springframework.messaging.Message<?> message = redelivered.get(5, TimeUnit.SECONDS);
+                        assertThat(payloadText(message.getPayload())).isEqualTo(payload);
+                        assertThat(attempts).hasValue(2);
+                        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+                                assertThat(consumerInfo(conn, stream, durable).getNumAckPending()).isZero());
+                    } finally {
+                        if (consumerBinding != null) {
+                            consumerBinding.unbind();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    @Test
     void jetStreamPolledConsumerReceivesAndAcknowledgesMessageForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
@@ -1335,6 +1455,48 @@ class BinderTests {
 
                         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
                                 assertThat(consumerInfo(conn, stream, durable).getNumAckPending()).isZero());
+                    } finally {
+                        source.stop();
+                        if (consumerBinding != null) {
+                            consumerBinding.unbind();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    @Test
+    void jetStreamPolledConsumerReturnsFalseWhenNoMessageIsAvailableForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_POLLED_EMPTY");
+                    String durable = uniqueNatsName("js_polled_empty");
+                    String subject = uniqueSubject("jetstream.polled.empty.issue52");
+                    addMemoryStream(conn, stream, subject);
+
+                    DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
+                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    consumerProperties.getExtension().setJetStream(true);
+                    consumerProperties.getExtension().setStreamName(stream);
+                    consumerProperties.getExtension().setDurableName(durable);
+                    Binding<?> consumerBinding = null;
+
+                    try {
+                        consumerBinding = fixture.binder().bindPollableConsumer(subject, "", source, consumerProperties);
+                        source.start();
+
+                        CompletableFuture<Boolean> emptyPoll = CompletableFuture.supplyAsync(() ->
+                                source.poll(message -> {
+                                    throw new AssertionError("unexpected message");
+                                }));
+                        assertThat(emptyPoll.get(2, TimeUnit.SECONDS)).isFalse();
                     } finally {
                         source.stop();
                         if (consumerBinding != null) {

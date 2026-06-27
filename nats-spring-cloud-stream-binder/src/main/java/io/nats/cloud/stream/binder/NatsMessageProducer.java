@@ -162,6 +162,9 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
     private void handleIncomingMessage(Message msg) {
         if (this.output == null) {
             logger.warn("skipping message, no output channel set for " + this.destination.getName());
+            if (this.jetStream) {
+                msg.nak();
+            }
             return;
         }
 
@@ -170,12 +173,19 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
                     msg,
                     this.includeNativeHeaders,
                     this.markNativeHeadersPresent);
-            GenericMessage<byte[]> m = new GenericMessage<byte[]>(msg.getData(), headers);
-            if (this.output.send(m) && this.jetStream) {
-                msg.ack();
+            GenericMessage<byte[]> m = new GenericMessage<>(msg.getData(), headers);
+            if (this.output.send(m)) {
+                if (this.jetStream) {
+                    msg.ack();
+                }
+            } else if (this.jetStream) {
+                msg.nak();
             }
         } catch (Exception e) {
             logger.warn("exception sending message to output channel", e);
+            if (this.jetStream) {
+                msg.nak();
+            }
         }
     }
 

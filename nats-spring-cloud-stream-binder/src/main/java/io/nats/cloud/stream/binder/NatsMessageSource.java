@@ -33,6 +33,7 @@ import org.springframework.messaging.support.GenericMessage;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class NatsMessageSource extends AbstractMessageSource<Object> implements Lifecycle {
     private static final Log logger = LogFactory.getLog(NatsMessageSource.class);
+    private static final Duration JETSTREAM_POLL_TIMEOUT = Duration.ofMillis(50);
 
     private NatsConsumerDestination destination;
     private Connection connection;
@@ -54,7 +56,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     /**
      * Create a message source. Once started, the source will have a subscription but no threads.
      * Calls to doReceive result in a nextMessage call at the NATS level. Currently nextMessage is
-     * called with Duration.ZERO and will wait forever.
+     * called with Duration.ZERO for core NATS and a short timeout for JetStream pull subscriptions.
      *
      * @param destination where to subscribe
      * @param nc          NATS connection
@@ -101,18 +103,22 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 
     @Override
     protected Object doReceive() {
-        if (this.sub == null) {
+        Subscription current = this.sub;
+        if (current == null) {
             return null;
         }
 
         try {
             Message m;
             if (this.jetStream) {
-                JetStreamSubscription jetStreamSub = (JetStreamSubscription) this.sub;
-                jetStreamSub.pull(1);
-                m = jetStreamSub.nextMessage(Duration.ZERO);
+                if (!(current instanceof JetStreamSubscription)) {
+                    throw new IllegalStateException("Expected JetStreamSubscription but got " + current.getClass());
+                }
+                JetStreamSubscription jetStreamSub = (JetStreamSubscription) current;
+                List<Message> messages = jetStreamSub.fetch(1, JETSTREAM_POLL_TIMEOUT);
+                m = messages.isEmpty() ? null : messages.get(0);
             } else {
-                m = this.sub.nextMessage(Duration.ZERO);
+                m = current.nextMessage(Duration.ZERO);
             }
 
             if (m != null && !m.isStatusMessage()) {
@@ -124,7 +130,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
                     headers.put(IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK,
                             new JetStreamAcknowledgmentCallback(m));
                 }
-                return new GenericMessage<byte[]>(m.getData(), headers);
+                return new GenericMessage<>(m.getData(), headers);
             }
         } catch (InterruptedException exp) {
             logger.info("wait for message interrupted");

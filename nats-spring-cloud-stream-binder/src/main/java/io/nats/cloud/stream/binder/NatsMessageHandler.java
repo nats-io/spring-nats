@@ -44,6 +44,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
     private boolean publishHeaders;
     private boolean jetStream;
     private String streamName;
+    private JetStream jetStreamContext;
 
     /**
      * Create a handler with a specific, unchanging subject, and a NATS connection.
@@ -81,6 +82,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         this.publishHeaders = publishHeaders;
         this.jetStream = jetStream;
         this.streamName = normalize(streamName);
+        this.jetStreamContext = jetStreamContext(nc, jetStream);
     }
 
     @Override
@@ -135,7 +137,10 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         }
 
         try {
-            JetStream js = this.connection.jetStream();
+            JetStream js = this.jetStreamContext;
+            if (js == null) {
+                throw new MessageHandlingException(message, "NATS JetStream context is not available");
+            }
             PublishOptions publishOptions = publishOptions();
             if (headers == null) {
                 if (publishOptions == null) {
@@ -170,6 +175,18 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         }
 
         return value.trim();
+    }
+
+    private static JetStream jetStreamContext(Connection nc, boolean jetStream) {
+        if (!jetStream || nc == null) {
+            return null;
+        }
+
+        try {
+            return nc.jetStream();
+        } catch (IOException exp) {
+            throw new IllegalStateException("Failed to create NATS JetStream context", exp);
+        }
     }
 
     private static boolean hasText(String value) {
