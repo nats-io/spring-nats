@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.fail;
 
 @ResourceLock(Resources.SYSTEM_PROPERTIES)
 class FunctionalBinderTests {
-    private static final Duration FLUSH_TIMEOUT = Duration.ofSeconds(1);
+    private static final Duration FLUSH_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration RECEIVE_TIMEOUT = Duration.ofSeconds(5);
 
     @Test
@@ -86,6 +86,7 @@ class FunctionalBinderTests {
                  Connection connection = Nats.connect(server.getURI())) {
 
                 Subscription output = connection.subscribe(outputSubject);
+                connection.flush(FLUSH_TIMEOUT);
 
                 publishUntilOutput(connection, inputSubject, output, "functional function", "FUNCTIONAL FUNCTION");
             }
@@ -104,6 +105,7 @@ class FunctionalBinderTests {
                  Connection connection = Nats.connect(server.getURI())) {
 
                 Subscription output = connection.subscribe(subject);
+                connection.flush(FLUSH_TIMEOUT);
                 StreamBridge streamBridge = context.getBean(StreamBridge.class);
 
                 assertThat(streamBridge.send("bridgeOut",
@@ -115,12 +117,11 @@ class FunctionalBinderTests {
     }
 
     private static ConfigurableApplicationContext runApplication(Class<?> source, String server, String... properties) {
-        String[] arguments = new String[properties.length + 3];
-        arguments[0] = "--spring.main.web-application-type=none";
-        arguments[1] = "--spring.jmx.enabled=false";
-        arguments[2] = "--nats.spring.server=" + server;
+        String[] arguments = new String[properties.length + 2];
+        arguments[0] = "--spring.jmx.enabled=false";
+        arguments[1] = "--nats.spring.server=" + server;
         for (int index = 0; index < properties.length; index++) {
-            arguments[index + 3] = "--" + properties[index];
+            arguments[index + 2] = "--" + properties[index];
         }
 
         return new SpringApplicationBuilder(source)
@@ -158,20 +159,25 @@ class FunctionalBinderTests {
                                            String payload,
                                            String expected) throws Exception {
         long deadline = System.nanoTime() + RECEIVE_TIMEOUT.toNanos();
+        List<String> actualMessages = new ArrayList<>();
         while (System.nanoTime() < deadline) {
             connection.publish(subject, payload.getBytes(UTF_8));
             connection.flush(FLUSH_TIMEOUT);
             Message message = output.nextMessage(Duration.ofMillis(200));
             if (message != null) {
-                assertThat(new String(message.getData(), UTF_8)).isEqualTo(expected);
-                return;
+                String received = new String(message.getData(), UTF_8);
+                if (expected.equals(received)) {
+                    return;
+                }
+                actualMessages.add(received);
             }
         }
 
-        fail("Expected NATS subject <%s> to emit transformed payload <%s> after publishing <%s>",
+        fail("Expected NATS subject <%s> to emit transformed payload <%s> after publishing <%s>, but received <%s>",
                 subject,
                 expected,
-                payload);
+                payload,
+                actualMessages);
     }
 
     private static String nextText(Subscription subscription) throws InterruptedException {

@@ -4,6 +4,8 @@ Standalone Spring Boot demo for the NATS Spring Cloud Stream binder.
 
 It uses the Spring Cloud Stream functional model with a `Function` bean named `transform`.
 
+Requires Java 17 and runs on Spring Boot 3.5.x with Spring Cloud Stream 4.2.x.
+
 To run:
 
 ```bash
