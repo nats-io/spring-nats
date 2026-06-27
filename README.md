@@ -172,7 +172,7 @@ nats.spring.cloud.stream.bindings.input.consumer.stream-name=ORDERS
 nats.spring.cloud.stream.bindings.input.consumer.durable-name=orders-worker
 ```
 
-JetStream producers wait for the server publish acknowledgement. Event consumers acknowledge after the Spring output channel accepts the message and negatively acknowledge when the output channel rejects the message. Polled consumers use a pull subscription and acknowledge through Spring's poll acknowledgement callback: successful polls acknowledge, `RequeueCurrentMessageException` negatively acknowledges for redelivery, and other rejected polls terminate redelivery. For polled consumers, the binding group is used as the JetStream durable name when `durable-name` is not set.
+JetStream producers wait for the server publish acknowledgement. Event consumers acknowledge after the Spring output channel accepts the message and negatively acknowledge when the output channel rejects the message. Polled consumers use a pull subscription and acknowledge through Spring's poll acknowledgement callback: successful polls acknowledge and rejected polls negatively acknowledge for redelivery. For polled consumers, the binding group is used as the JetStream durable name when `durable-name` is not set.
 
 JetStream publishing does not support Spring reply channels because NATS uses the reply subject for JetStream publish acknowledgements. Use core NATS bindings for request-reply.
 

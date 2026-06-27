@@ -1562,6 +1562,59 @@ class BinderTests {
     }
 
     @Test
+    void jetStreamPolledConsumerNacksWhenHandlerThrowsForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_POLLED_EXCEPTION");
+                    String durable = uniqueNatsName("js_polled_exception");
+                    String subject = uniqueSubject("jetstream.polled.exception.issue52");
+                    String payload = "retry after exception";
+                    addMemoryStream(conn, stream, subject);
+
+                    DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
+                    AtomicReference<org.springframework.messaging.Message<?>> redelivered = new AtomicReference<>();
+                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    consumerProperties.getExtension().setJetStream(true);
+                    consumerProperties.getExtension().setStreamName(stream);
+                    consumerProperties.getExtension().setDurableName(durable);
+                    Binding<?> consumerBinding = null;
+
+                    try {
+                        consumerBinding = fixture.binder().bindPollableConsumer(subject, "", source, consumerProperties);
+                        source.start();
+
+                        conn.jetStream().publish(subject, payload.getBytes(UTF_8));
+
+                        assertThatThrownBy(() -> source.poll(message -> {
+                            assertThat(payloadText(message.getPayload())).isEqualTo(payload);
+                            throw new IllegalStateException("transient");
+                        })).isInstanceOf(MessageHandlingException.class);
+
+                        CompletableFuture<Boolean> secondPoll =
+                                CompletableFuture.supplyAsync(() -> source.poll(redelivered::set));
+                        assertThat(secondPoll.get(5, TimeUnit.SECONDS)).isTrue();
+                        assertThat(payloadText(redelivered.get().getPayload())).isEqualTo(payload);
+
+                        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+                                assertThat(consumerInfo(conn, stream, durable).getNumAckPending()).isZero());
+                    } finally {
+                        source.stop();
+                        if (consumerBinding != null) {
+                            consumerBinding.unbind();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    @Test
     void jetStreamPolledConsumerUsesGroupAsDurableWhenDurableNameIsUnsetForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {

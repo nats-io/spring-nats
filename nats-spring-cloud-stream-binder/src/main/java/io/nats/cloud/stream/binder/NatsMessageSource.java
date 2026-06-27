@@ -229,10 +229,8 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 
             if (Status.ACCEPT.equals(status)) {
                 this.message.ack();
-            } else if (Status.REQUEUE.equals(status)) {
-                this.message.nak();
             } else {
-                this.message.term();
+                this.message.nak();
             }
         }
 
