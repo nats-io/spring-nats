@@ -152,6 +152,7 @@ public class NatsChannelBinder extends
     protected MessageHandler createProducerMessageHandler(ProducerDestination destination,
                                                           ExtendedProducerProperties<NatsProducerProperties> producerProperties, MessageChannel errorChannel) {
         NatsProducerProperties extension = producerExtension(producerProperties);
+        NatsJetStreamSupport.provisionStream(this.connection, destination.getName(), extension);
         return new NatsMessageHandler(destination.getName(), this.connection, shouldUseNativeHeaders(producerProperties),
                 isJetStream(extension), streamName(extension));
     }
@@ -160,29 +161,35 @@ public class NatsChannelBinder extends
     protected MessageProducer createConsumerEndpoint(ConsumerDestination destination, String group,
                                                      ExtendedConsumerProperties<NatsConsumerProperties> properties) {
         NatsConsumerProperties extension = consumerExtension(properties);
+        NatsConsumerDestination consumerDestination = (NatsConsumerDestination) destination;
+        NatsJetStreamSupport.provisionStream(this.connection, consumerDestination.getSubject(), extension);
         return new NatsMessageProducer(
-                (NatsConsumerDestination) destination,
+                consumerDestination,
                 this.connection,
                 shouldUseNativeHeaders(properties),
                 shouldMarkNativeHeadersPresent(properties),
                 isJetStream(extension),
                 streamName(extension),
-                durableName(extension));
+                durableName(extension),
+                extension);
     }
 
     @Override
     protected PolledConsumerResources createPolledConsumerResources(String name, String group,
                                                                     ConsumerDestination destination, ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties) {
         NatsConsumerProperties extension = consumerExtension(consumerProperties);
+        NatsConsumerDestination consumerDestination = (NatsConsumerDestination) destination;
+        NatsJetStreamSupport.provisionStream(this.connection, consumerDestination.getSubject(), extension);
         return new PolledConsumerResources(
                 new NatsMessageSource(
-                        (NatsConsumerDestination) destination,
+                        consumerDestination,
                         this.connection,
                         shouldUseNativeHeaders(consumerProperties),
                         shouldMarkNativeHeadersPresent(consumerProperties),
                         isJetStream(extension),
                         streamName(extension),
-                        durableName(extension)),
+                        durableName(extension),
+                        extension),
                 registerErrorInfrastructure(destination, group, consumerProperties, true));
     }
 

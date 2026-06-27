@@ -23,6 +23,8 @@ import io.nats.client.JetStreamSubscription;
 import io.nats.client.Message;
 import io.nats.client.PullSubscribeOptions;
 import io.nats.client.Subscription;
+import io.nats.client.api.ConsumerConfiguration;
+import io.nats.cloud.stream.binder.properties.NatsConsumerProperties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.Lifecycle;
@@ -42,7 +44,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class NatsMessageSource extends AbstractMessageSource<Object> implements Lifecycle {
     private static final Log logger = LogFactory.getLog(NatsMessageSource.class);
-    private static final Duration JETSTREAM_POLL_TIMEOUT = Duration.ofMillis(50);
 
     private NatsConsumerDestination destination;
     private Connection connection;
@@ -52,6 +53,8 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     private boolean jetStream;
     private String streamName;
     private String durableName;
+    private NatsConsumerProperties consumerProperties;
+    private Duration jetStreamPollTimeout;
 
     /**
      * Create a message source. Once started, the source will have a subscription but no threads.
@@ -92,13 +95,34 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     public NatsMessageSource(NatsConsumerDestination destination, Connection nc,
                              boolean includeNativeHeaders, boolean markNativeHeadersPresent,
                              boolean jetStream, String streamName, String durableName) {
+        this(destination, nc, includeNativeHeaders, markNativeHeadersPresent, jetStream, streamName, durableName, null);
+    }
+
+    /**
+     * Create a message source with explicit native header and JetStream behavior.
+     *
+     * @param destination              where to subscribe
+     * @param nc                       NATS connection
+     * @param includeNativeHeaders     whether native NATS headers should be copied to Spring headers
+     * @param markNativeHeadersPresent whether Spring Cloud Stream should be told native headers were present
+     * @param jetStream                whether messages should be consumed through JetStream
+     * @param streamName               optional JetStream stream name
+     * @param durableName              optional JetStream durable consumer name
+     * @param consumerProperties       optional JetStream consumer configuration properties
+     */
+    public NatsMessageSource(NatsConsumerDestination destination, Connection nc,
+                             boolean includeNativeHeaders, boolean markNativeHeadersPresent,
+                             boolean jetStream, String streamName, String durableName,
+                             NatsConsumerProperties consumerProperties) {
         this.destination = destination;
         this.connection = nc;
         this.includeNativeHeaders = includeNativeHeaders;
         this.markNativeHeadersPresent = markNativeHeadersPresent;
         this.jetStream = jetStream;
-        this.streamName = normalize(streamName);
-        this.durableName = normalize(durableName);
+        this.streamName = NatsJetStreamSupport.normalize(streamName);
+        this.durableName = NatsJetStreamSupport.normalize(durableName);
+        this.consumerProperties = consumerProperties;
+        this.jetStreamPollTimeout = NatsJetStreamSupport.pollTimeout(consumerProperties);
     }
 
     @Override
@@ -115,7 +139,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
                     throw new IllegalStateException("Expected JetStreamSubscription but got " + current.getClass());
                 }
                 JetStreamSubscription jetStreamSub = (JetStreamSubscription) current;
-                List<Message> messages = jetStreamSub.fetch(1, JETSTREAM_POLL_TIMEOUT);
+                List<Message> messages = jetStreamSub.fetch(1, this.jetStreamPollTimeout);
                 m = messages.isEmpty() ? null : messages.get(0);
             } else {
                 m = current.nextMessage(Duration.ZERO);
@@ -191,26 +215,20 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 
     private PullSubscribeOptions pullSubscribeOptions(String queue) {
         PullSubscribeOptions.Builder builder = PullSubscribeOptions.builder();
-        if (hasText(this.streamName)) {
+        if (NatsJetStreamSupport.hasText(this.streamName)) {
             builder.stream(this.streamName);
         }
-        String durable = hasText(this.durableName) ? this.durableName : normalize(queue);
-        if (hasText(durable)) {
+        String durable = NatsJetStreamSupport.hasText(this.durableName)
+                ? this.durableName
+                : NatsJetStreamSupport.normalize(queue);
+        if (NatsJetStreamSupport.hasText(durable)) {
             builder.durable(durable);
         }
-        return builder.build();
-    }
-
-    private static String normalize(String value) {
-        if (!hasText(value)) {
-            return null;
+        ConsumerConfiguration consumerConfiguration = NatsJetStreamSupport.consumerConfiguration(this.consumerProperties, true);
+        if (consumerConfiguration != null) {
+            builder.configuration(consumerConfiguration);
         }
-
-        return value.trim();
-    }
-
-    private static boolean hasText(String value) {
-        return value != null && value.trim().length() > 0;
+        return builder.build();
     }
 
     private static class JetStreamAcknowledgmentCallback implements AcknowledgmentCallback {

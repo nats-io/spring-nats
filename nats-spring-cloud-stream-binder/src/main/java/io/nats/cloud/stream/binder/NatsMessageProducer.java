@@ -22,6 +22,8 @@ import io.nats.client.JetStream;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.Message;
 import io.nats.client.PushSubscribeOptions;
+import io.nats.client.api.ConsumerConfiguration;
+import io.nats.cloud.stream.binder.properties.NatsConsumerProperties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.Lifecycle;
@@ -52,6 +54,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
     private boolean jetStream;
     private String streamName;
     private String durableName;
+    private NatsConsumerProperties consumerProperties;
 
     /**
      * Create a message producer. Once started the producer will use a dispatcher, and the associated thread, to
@@ -91,13 +94,33 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
     public NatsMessageProducer(NatsConsumerDestination destination, Connection nc,
                                boolean includeNativeHeaders, boolean markNativeHeadersPresent,
                                boolean jetStream, String streamName, String durableName) {
+        this(destination, nc, includeNativeHeaders, markNativeHeadersPresent, jetStream, streamName, durableName, null);
+    }
+
+    /**
+     * Create a message producer with explicit native header and JetStream behavior.
+     *
+     * @param destination              where to subscribe
+     * @param nc                       NATS connection
+     * @param includeNativeHeaders     whether native NATS headers should be copied to Spring headers
+     * @param markNativeHeadersPresent whether Spring Cloud Stream should be told native headers were present
+     * @param jetStream                whether messages should be consumed through JetStream
+     * @param streamName               optional JetStream stream name
+     * @param durableName              optional JetStream durable consumer name
+     * @param consumerProperties       optional JetStream consumer configuration properties
+     */
+    public NatsMessageProducer(NatsConsumerDestination destination, Connection nc,
+                               boolean includeNativeHeaders, boolean markNativeHeadersPresent,
+                               boolean jetStream, String streamName, String durableName,
+                               NatsConsumerProperties consumerProperties) {
         this.destination = destination;
         this.connection = nc;
         this.includeNativeHeaders = includeNativeHeaders;
         this.markNativeHeadersPresent = markNativeHeadersPresent;
         this.jetStream = jetStream;
-        this.streamName = normalize(streamName);
-        this.durableName = normalize(durableName);
+        this.streamName = NatsJetStreamSupport.normalize(streamName);
+        this.durableName = NatsJetStreamSupport.normalize(durableName);
+        this.consumerProperties = consumerProperties;
     }
 
     @Override
@@ -139,10 +162,11 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
     }
 
     private void startJetStream() {
-        this.dispatcher = this.connection.createDispatcher();
-
         String sub = this.destination.getSubject();
         String queue = this.destination.getQueueGroup();
+        NatsJetStreamSupport.validatePushConsumer(this.consumerProperties, queue, this.durableName);
+
+        this.dispatcher = this.connection.createDispatcher();
 
         try {
             JetStream js = this.connection.jetStream();
@@ -201,24 +225,19 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 
     private PushSubscribeOptions pushSubscribeOptions() {
         PushSubscribeOptions.Builder builder = PushSubscribeOptions.builder();
-        if (hasText(this.streamName)) {
+        if (NatsJetStreamSupport.hasText(this.streamName)) {
             builder.stream(this.streamName);
         }
-        if (hasText(this.durableName)) {
+        if (NatsJetStreamSupport.hasText(this.durableName)) {
             builder.durable(this.durableName);
         }
-        return builder.build();
-    }
-
-    private static String normalize(String value) {
-        if (!hasText(value)) {
-            return null;
+        ConsumerConfiguration consumerConfiguration = NatsJetStreamSupport.consumerConfiguration(this.consumerProperties, false);
+        if (consumerConfiguration != null) {
+            builder.configuration(consumerConfiguration);
         }
-
-        return value.trim();
-    }
-
-    private static boolean hasText(String value) {
-        return value != null && value.trim().length() > 0;
+        if (this.consumerProperties != null && Boolean.TRUE.equals(this.consumerProperties.getOrdered())) {
+            builder.ordered(true);
+        }
+        return builder.build();
     }
 }

@@ -154,25 +154,33 @@ The NATS binder leverages the autoconfigure module, or manual configuration to b
 
 Consumers are implemented with a dispatcher. Each consumer will create its own dispatcher in the core library, resulting in a thread per consumer.
 
-Polled consumers are implemented with a subscription.
-
-> Currently, the polling code will wait forever for a message and is not configurable.
+Polled consumers are implemented with a subscription. Core NATS polled consumers wait forever for a message; JetStream polled consumers use a configurable fetch timeout.
 
 Producers publish directly through the connection.
 
 ### JetStream <a name="jetstream"></a>
 
-JetStream is opt-in per binding. The NATS stream must already exist; `stream-name` is optional when NATS can resolve one stream from the subject.
+JetStream is opt-in per binding. The NATS stream must already exist unless `provision-stream=true` is set. `stream-name` is optional for normal publish/subscribe operations when NATS can resolve one stream from the subject, but it is required for stream provisioning.
 
 ```properties
 nats.spring.cloud.stream.bindings.output.producer.jet-stream=true
 nats.spring.cloud.stream.bindings.output.producer.stream-name=ORDERS
+nats.spring.cloud.stream.bindings.output.producer.provision-stream=true
+nats.spring.cloud.stream.bindings.output.producer.stream-storage-type=memory
+nats.spring.cloud.stream.bindings.output.producer.stream-replicas=1
 nats.spring.cloud.stream.bindings.input.consumer.jet-stream=true
 nats.spring.cloud.stream.bindings.input.consumer.stream-name=ORDERS
 nats.spring.cloud.stream.bindings.input.consumer.durable-name=orders-worker
+nats.spring.cloud.stream.bindings.input.consumer.ack-wait=30s
+nats.spring.cloud.stream.bindings.input.consumer.max-deliver=5
+nats.spring.cloud.stream.bindings.input.consumer.max-ack-pending=100
 ```
 
+When provisioning is enabled, the binder creates a missing stream for the binding destination subject. If the stream already exists, it must already cover the destination subject directly or through a NATS wildcard subject. `stream-storage-type` and `stream-replicas` are used only when creating a missing stream.
+
 JetStream producers wait for the server publish acknowledgement. Event consumers acknowledge after the Spring output channel accepts the message and negatively acknowledge when the output channel rejects the message. Polled consumers use a pull subscription and acknowledge through Spring's poll acknowledgement callback: successful polls acknowledge and rejected polls negatively acknowledge for redelivery. For polled consumers, the binding group is used as the JetStream durable name when `durable-name` is not set.
+
+JetStream consumers can also configure delivery behavior with `deliver-policy`, `replay-policy`, `ack-wait`, `max-deliver`, `max-ack-pending`, and `inactive-threshold`. Push consumers additionally support `ordered`, `flow-control`, and `idle-heartbeat`; `flow-control` and `idle-heartbeat` are only valid without a consumer group. Ordered push consumers cannot use `durable-name` or a consumer group, and `max-deliver` must be unset or `1`. Polled consumers additionally support `poll-timeout`, `max-pull-waiting`, `max-batch`, and `max-bytes`.
 
 JetStream publishing does not support Spring reply channels because NATS uses the reply subject for JetStream publish acknowledgements. Use core NATS bindings for request-reply.
 

@@ -16,9 +16,14 @@
 
 package io.nats.cloud.stream.binder.properties;
 
+import io.nats.client.api.StorageType;
+
 public class NatsProducerProperties {
     private boolean jetStream;
     private String streamName;
+    private boolean provisionStream;
+    private StorageType streamStorageType;
+    private Integer streamReplicas;
 
     /**
      * @return whether this producer publishes through JetStream instead of core NATS
@@ -46,5 +51,47 @@ public class NatsProducerProperties {
      */
     public void setStreamName(String streamName) {
         this.streamName = streamName;
+    }
+
+    /**
+     * @return whether the binder should create or update the configured JetStream stream for the producer destination
+     */
+    public boolean isProvisionStream() {
+        return this.provisionStream;
+    }
+
+    /**
+     * @param provisionStream whether the binder should create or update the configured JetStream stream for the producer destination
+     */
+    public void setProvisionStream(boolean provisionStream) {
+        this.provisionStream = provisionStream;
+    }
+
+    /**
+     * @return optional storage type used when a missing JetStream stream is provisioned
+     */
+    public StorageType getStreamStorageType() {
+        return this.streamStorageType;
+    }
+
+    /**
+     * @param streamStorageType optional storage type used when a missing JetStream stream is provisioned
+     */
+    public void setStreamStorageType(StorageType streamStorageType) {
+        this.streamStorageType = streamStorageType;
+    }
+
+    /**
+     * @return optional replica count used when a missing JetStream stream is provisioned
+     */
+    public Integer getStreamReplicas() {
+        return this.streamReplicas;
+    }
+
+    /**
+     * @param streamReplicas optional replica count used when a missing JetStream stream is provisioned
+     */
+    public void setStreamReplicas(Integer streamReplicas) {
+        this.streamReplicas = streamReplicas;
     }
 }

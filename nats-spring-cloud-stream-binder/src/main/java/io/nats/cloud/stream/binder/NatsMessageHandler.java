@@ -81,7 +81,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         this.connection = nc;
         this.publishHeaders = publishHeaders;
         this.jetStream = jetStream;
-        this.streamName = normalize(streamName);
+        this.streamName = NatsJetStreamSupport.normalize(streamName);
         this.jetStreamContext = jetStreamContext(nc, jetStream);
     }
 
@@ -160,21 +160,13 @@ public class NatsMessageHandler extends AbstractMessageHandler {
     }
 
     private PublishOptions publishOptions() {
-        if (!hasText(this.streamName)) {
+        if (!NatsJetStreamSupport.hasText(this.streamName)) {
             return null;
         }
 
         return PublishOptions.builder()
                 .stream(this.streamName)
                 .build();
-    }
-
-    private static String normalize(String value) {
-        if (!hasText(value)) {
-            return null;
-        }
-
-        return value.trim();
     }
 
     private static JetStream jetStreamContext(Connection nc, boolean jetStream) {
@@ -187,9 +179,5 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         } catch (IOException exp) {
             throw new IllegalStateException("Failed to create NATS JetStream context", exp);
         }
-    }
-
-    private static boolean hasText(String value) {
-        return value != null && value.trim().length() > 0;
     }
 }
