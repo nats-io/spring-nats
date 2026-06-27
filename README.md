@@ -327,3 +327,4 @@ To add new properties, add them to NatsProperties and update the `toOptions()` m
 ## License <a name="license"></a>
 
 Unless otherwise noted, the nats-account-server source files are distributed under the Apache Version 2.0 license found in the LICENSE file.
+## end of project
