@@ -22,7 +22,6 @@ import io.nats.cloud.stream.binder.properties.NatsBinderConfigurationProperties;
 import io.nats.cloud.stream.binder.properties.NatsExtendedBindingProperties;
 import io.nats.spring.boot.autoconfigure.NatsAutoConfiguration;
 import io.nats.spring.boot.autoconfigure.NatsProperties;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
@@ -30,6 +29,7 @@ import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProv
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.lang.Nullable;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -41,36 +41,42 @@ import java.util.Collections;
  * NatsChannelBinderConfiguration is used to parametrize a new NATS binder. This configuration provides custom error and connection listeners.
  */
 public class NatsChannelBinderConfiguration {
-
-    @Autowired(required = false)
     /**
      * A custom connection listener, otherwise a simple logging default is used.
      */
-    private ConnectionListener connectionListener;
+    private final ConnectionListener connectionListener;
 
-    @Autowired(required = false)
     /**
      * A custom error listener, otherwise a simple logging default is used.
      */
-    private ErrorListener errorListener;
+    private final ErrorListener errorListener;
 
-    @Autowired
     /**
      * The NatsProperties configured to define this binders NATS connections. These are configured globally.
      */
-    private NatsProperties natsProperties;
+    private final NatsProperties natsProperties;
 
-    @Autowired
     /**
      * Local configuration properties, with the same options as NatsProperties, but configured specifically for a binder.
      */
-    private NatsBinderConfigurationProperties natsBinderConfigurationProperties;
+    private final NatsBinderConfigurationProperties natsBinderConfigurationProperties;
 
-    @Autowired
     /**
      * Extended binding properties, unused currently.
      */
-    private NatsExtendedBindingProperties natsExtendedBindingProperties;
+    private final NatsExtendedBindingProperties natsExtendedBindingProperties;
+
+    public NatsChannelBinderConfiguration(@Nullable ConnectionListener connectionListener,
+                                          @Nullable ErrorListener errorListener,
+                                          NatsProperties natsProperties,
+                                          NatsBinderConfigurationProperties natsBinderConfigurationProperties,
+                                          NatsExtendedBindingProperties natsExtendedBindingProperties) {
+        this.connectionListener = connectionListener;
+        this.errorListener = errorListener;
+        this.natsProperties = natsProperties;
+        this.natsBinderConfigurationProperties = natsBinderConfigurationProperties;
+        this.natsExtendedBindingProperties = natsExtendedBindingProperties;
+    }
 
     /**
      * @return custom properties for this binding configuration
@@ -79,19 +85,8 @@ public class NatsChannelBinderConfiguration {
         return this.natsBinderConfigurationProperties;
     }
 
-    /**
-     * @param natsBinderConfigurationProperties custom properties for this configuration
-     */
-    public void setNatsBinderConfigurationProperties(NatsBinderConfigurationProperties natsBinderConfigurationProperties) {
-        this.natsBinderConfigurationProperties = natsBinderConfigurationProperties;
-    }
-
     public NatsExtendedBindingProperties getNatsExtendedBindingProperties() {
         return this.natsExtendedBindingProperties;
-    }
-
-    public void setNatsExtendedBindingProperties(NatsExtendedBindingProperties natsExtendedBindingProperties) {
-        this.natsExtendedBindingProperties = natsExtendedBindingProperties;
     }
 
     /**
@@ -99,14 +94,6 @@ public class NatsChannelBinderConfiguration {
      */
     public NatsProperties getNatsProperties() {
         return this.natsProperties;
-    }
-
-
-    /**
-     * @param natsProperties global NATS connection properties associated with this binder configuration
-     */
-    public void setNatsProperties(NatsProperties natsProperties) {
-        this.natsProperties = natsProperties;
     }
 
     @Bean

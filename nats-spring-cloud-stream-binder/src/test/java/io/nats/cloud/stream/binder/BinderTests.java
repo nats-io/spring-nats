@@ -139,11 +139,13 @@ class BinderTests {
 
     @Test
     void createBinderWithoutServerProperties() throws IOException, InterruptedException {
-        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration(
+                null,
+                null,
+                new NatsProperties(),
+                new NatsBinderConfigurationProperties(),
+                new NatsExtendedBindingProperties());
         NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-        config.setNatsProperties(new NatsProperties());
-        config.setNatsBinderConfigurationProperties(new NatsBinderConfigurationProperties());
-        config.setNatsExtendedBindingProperties(new NatsExtendedBindingProperties());
 
         assertThat(config.natsBinder(provisioner)).isNull();
     }
@@ -180,14 +182,15 @@ class BinderTests {
 
     @Test
     void binderConfigurationExposesAccessorsAndDefaultMappings() {
-        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
         NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
         NatsExtendedBindingProperties extendedProps = new NatsExtendedBindingProperties();
         NatsProperties natsProperties = new NatsProperties();
-
-        config.setNatsBinderConfigurationProperties(binderProps);
-        config.setNatsExtendedBindingProperties(extendedProps);
-        config.setNatsProperties(natsProperties);
+        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration(
+                null,
+                null,
+                natsProperties,
+                binderProps,
+                extendedProps);
 
         ConfigurationPropertyName streamPrefix = ConfigurationPropertyName.of("nats.spring.cloud.stream");
         Map<ConfigurationPropertyName, ConfigurationPropertyName> mappings =
@@ -305,14 +308,16 @@ class BinderTests {
     @Test
     void createBinderReturnsNullWhenAuthenticationFails() throws IOException, InterruptedException {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"--auth", "secret"}, false)) {
-            NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
-            NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
             NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
             binderProps.setServer(ts.getURI());
             binderProps.setConnectionTimeout(Duration.ofSeconds(1));
-            config.setNatsProperties(new NatsProperties());
-            config.setNatsBinderConfigurationProperties(binderProps);
-            config.setNatsExtendedBindingProperties(new NatsExtendedBindingProperties());
+            NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration(
+                    null,
+                    null,
+                    new NatsProperties(),
+                    binderProps,
+                    new NatsExtendedBindingProperties());
+            NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
 
             assertThat(config.natsBinder(provisioner)).isNull();
         }
@@ -321,14 +326,16 @@ class BinderTests {
     @Test
     void createBinderReturnsNullWhenServerIsUnreachable() throws IOException, InterruptedException {
         int unusedPort = NatsBinderTestServer.nextPort();
-        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
-        NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
         NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
         binderProps.setServer("nats://127.0.0.1:" + unusedPort);
         binderProps.setConnectionTimeout(Duration.ofMillis(250));
-        config.setNatsProperties(new NatsProperties());
-        config.setNatsBinderConfigurationProperties(binderProps);
-        config.setNatsExtendedBindingProperties(new NatsExtendedBindingProperties());
+        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration(
+                null,
+                null,
+                new NatsProperties(),
+                binderProps,
+                new NatsExtendedBindingProperties());
+        NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
 
         assertThat(config.natsBinder(provisioner)).isNull();
     }
@@ -2949,11 +2956,13 @@ class BinderTests {
                                            NatsBinderConfigurationProperties binderProperties)
             throws IOException, InterruptedException {
         NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
-        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration();
+        NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration(
+                null,
+                null,
+                natsProperties,
+                binderProperties,
+                props);
         NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
-        config.setNatsProperties(natsProperties);
-        config.setNatsBinderConfigurationProperties(binderProperties);
-        config.setNatsExtendedBindingProperties(props);
 
         NatsChannelBinder binder = config.natsBinder(provisioner);
         assertThat(binder).isNotNull();
