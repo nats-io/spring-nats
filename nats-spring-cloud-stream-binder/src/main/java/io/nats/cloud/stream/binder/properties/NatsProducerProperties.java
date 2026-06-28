@@ -54,14 +54,14 @@ public class NatsProducerProperties {
     }
 
     /**
-     * @return whether the binder should create or update the configured JetStream stream for the producer destination
+     * @return whether the binder should create the configured JetStream stream when missing and validate subject coverage when it already exists
      */
     public boolean isProvisionStream() {
         return this.provisionStream;
     }
 
     /**
-     * @param provisionStream whether the binder should create or update the configured JetStream stream for the producer destination
+     * @param provisionStream whether the binder should create the configured JetStream stream when missing and validate subject coverage when it already exists
      */
     public void setProvisionStream(boolean provisionStream) {
         this.provisionStream = provisionStream;
