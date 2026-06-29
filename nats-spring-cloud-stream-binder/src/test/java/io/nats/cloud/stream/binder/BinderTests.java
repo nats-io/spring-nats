@@ -804,6 +804,7 @@ class BinderTests {
         assertThatCode(() -> handler.handleMessage(new GenericMessage<>("ignored"))).doesNotThrowAnyException();
     }
 
+    @Test
     void testMessageHandler() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
@@ -1954,6 +1955,48 @@ class BinderTests {
                             consumer);
 
                     assertThat(source.receive()).isNull();
+                }
+            });
+        }
+    }
+
+    @Test
+    void jetStreamPolledConsumerStopUnblocksIdleReceiveForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    String stream = uniqueNatsName("JS_POLLED_STOP_IDLE");
+                    String consumer = uniqueNatsName("js_polled_stop_idle");
+                    String subject = uniqueSubject("jetstream.polled.stop.idle.issue52");
+                    addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, consumer, subject);
+                    NatsConsumerDestination from = (NatsConsumerDestination) fixture.provisioner()
+                            .provisionConsumerDestination(subject, "", null);
+                    NatsMessageSource source = new NatsMessageSource(
+                            from,
+                            fixture.connection(),
+                            true,
+                            true,
+                            true,
+                            stream,
+                            consumer);
+
+                    try {
+                        source.start();
+                        CompletableFuture<org.springframework.messaging.Message<Object>> receive =
+                                CompletableFuture.supplyAsync(source::receive);
+                        Thread.sleep(100);
+                        assertThat(receive).isNotDone();
+
+                        source.stop();
+
+                        assertThat(receive.get(500, TimeUnit.MILLISECONDS)).isNull();
+                    } finally {
+                        source.stop();
+                    }
                 }
             });
         }

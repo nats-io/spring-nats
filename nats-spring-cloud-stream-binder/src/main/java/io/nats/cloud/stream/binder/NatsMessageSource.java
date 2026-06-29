@@ -18,6 +18,8 @@ package io.nats.cloud.stream.binder;
 
 import io.nats.client.Connection;
 import io.nats.client.ConsumerContext;
+import io.nats.client.FetchConsumeOptions;
+import io.nats.client.FetchConsumer;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.JetStreamStatusCheckedException;
 import io.nats.client.Message;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Message source for NATS connections, allowing synchronous polling.
@@ -44,7 +47,8 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     private NatsConsumerDestination destination;
     private Connection connection;
     private Subscription sub;
-    private ConsumerContext consumerContext;
+    private AtomicReference<ConsumerContext> consumerContext = new AtomicReference<>();
+    private AtomicReference<FetchConsumer> fetchConsumer = new AtomicReference<>();
     private boolean includeNativeHeaders;
     private boolean markNativeHeadersPresent;
     private boolean jetStream;
@@ -101,19 +105,24 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 
     @Override
     protected Object doReceive() {
+        ConsumerContext context = this.consumerContext.get();
         if (!this.jetStream && this.sub == null) {
             return null;
         }
-        if (this.jetStream && this.consumerContext == null) {
+        if (this.jetStream && context == null) {
             return null;
         }
 
         try {
             Message m;
             if (this.jetStream) {
-                m = this.consumerContext.next(NatsJetStreamSupport.DEFAULT_JETSTREAM_POLL_TIMEOUT);
+                m = receiveJetStreamMessage(context);
             } else {
                 m = this.sub.nextMessage(Duration.ZERO);
+            }
+
+            if (this.jetStream && this.consumerContext.get() != context) {
+                return null;
             }
 
             if (m != null && !m.isStatusMessage()) {
@@ -128,6 +137,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
                 return new GenericMessage<>(m.getData(), headers);
             }
         } catch (InterruptedException exp) {
+            Thread.currentThread().interrupt();
             logger.info("wait for message interrupted");
         } catch (IOException | JetStreamApiException | JetStreamStatusCheckedException exp) {
             logger.warn("exception receiving JetStream message", exp);
@@ -138,7 +148,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 
     @Override
     public boolean isRunning() {
-        return this.jetStream ? this.consumerContext != null : this.sub != null;
+        return this.jetStream ? this.consumerContext.get() != null : this.sub != null;
     }
 
     @Override
@@ -174,7 +184,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
         }
 
         try {
-            this.consumerContext = this.connection.jetStream().getConsumerContext(this.streamName, consumer);
+            this.consumerContext.set(this.connection.jetStream().getConsumerContext(this.streamName, consumer));
         } catch (IOException | JetStreamApiException | IllegalArgumentException exp) {
             throw new IllegalStateException("Failed to subscribe to NATS JetStream subject " + sub, exp);
         }
@@ -183,7 +193,8 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     @Override
     public void stop() {
         if (this.jetStream) {
-            this.consumerContext = null;
+            this.consumerContext.set(null);
+            closeFetchConsumer(this.fetchConsumer.getAndSet(null));
             return;
         }
 
@@ -198,6 +209,35 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     @Override
     public String getComponentType() {
         return "nats:message-source";
+    }
+
+    private Message receiveJetStreamMessage(ConsumerContext context)
+            throws IOException, JetStreamApiException, InterruptedException, JetStreamStatusCheckedException {
+        FetchConsumer consumer = context.fetch(FetchConsumeOptions.builder()
+                .maxMessages(1)
+                .expiresIn(NatsJetStreamSupport.DEFAULT_JETSTREAM_POLL_TIMEOUT.toMillis())
+                .build());
+        this.fetchConsumer.set(consumer);
+        try {
+            if (this.consumerContext.get() != context) {
+                return null;
+            }
+            return consumer.nextMessage();
+        } finally {
+            this.fetchConsumer.compareAndSet(consumer, null);
+            closeFetchConsumer(consumer);
+        }
+    }
+
+    private static void closeFetchConsumer(FetchConsumer consumer) {
+        if (consumer == null) {
+            return;
+        }
+        try {
+            consumer.close();
+        } catch (Exception exp) {
+            logger.debug("exception closing JetStream fetch consumer", exp);
+        }
     }
 
     private static class JetStreamAcknowledgmentCallback implements AcknowledgmentCallback {

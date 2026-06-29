@@ -177,6 +177,8 @@ When producer provisioning is enabled, the binder creates a missing stream for t
 
 JetStream producers wait for the server publish acknowledgement. Event consumers acknowledge after the Spring output channel accepts the message and negatively acknowledge when the output channel rejects the message. Polled consumers use the jnats consumer context and acknowledge through Spring's poll acknowledgement callback: successful polls acknowledge and rejected polls negatively acknowledge for redelivery.
 
+Consumer delivery settings such as acknowledgement wait, maximum deliveries, flow control, replay policy, and pull limits are configured on the JetStream consumer itself. Applications that previously configured those settings as binder consumer properties should create or update the JetStream consumer before the binding starts and set `consumer-name` to that consumer name.
+
 JetStream publishing does not support Spring reply channels because NATS uses the reply subject for JetStream publish acknowledgements. Use core NATS bindings for request-reply.
 
 ### Request-Reply <a name="reqreply"></a>
