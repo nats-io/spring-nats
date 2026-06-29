@@ -31,8 +31,6 @@ import io.nats.client.PullSubscribeOptions;
 import io.nats.client.Subscription;
 import io.nats.client.api.ConsumerConfiguration;
 import io.nats.client.api.ConsumerInfo;
-import io.nats.client.api.DeliverPolicy;
-import io.nats.client.api.ReplayPolicy;
 import io.nats.client.api.StorageType;
 import io.nats.client.api.StreamConfiguration;
 import io.nats.client.impl.Headers;
@@ -66,6 +64,8 @@ import org.springframework.cloud.stream.binder.RequeueCurrentMessageException;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.integration.IntegrationMessageHeaderAccessor;
+import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -221,24 +221,7 @@ class BinderTests {
                 .withPropertyValues(
                         "nats.spring.cloud.stream.bindings.input.consumer.jet-stream=true",
                         "nats.spring.cloud.stream.bindings.input.consumer.stream-name=ORDERS",
-                        "nats.spring.cloud.stream.bindings.input.consumer.durable-name=orders-worker",
-                        "nats.spring.cloud.stream.bindings.input.consumer.provision-stream=true",
-                        "nats.spring.cloud.stream.bindings.input.consumer.stream-storage-type=memory",
-                        "nats.spring.cloud.stream.bindings.input.consumer.stream-replicas=1",
-                        "nats.spring.cloud.stream.bindings.input.consumer.ack-wait=500ms",
-                        "nats.spring.cloud.stream.bindings.input.consumer.max-deliver=3",
-                        "nats.spring.cloud.stream.bindings.input.consumer.max-ack-pending=4",
-                        "nats.spring.cloud.stream.bindings.input.consumer.deliver-policy=new",
-                        "nats.spring.cloud.stream.bindings.input.consumer.replay-policy=instant",
-                        "nats.spring.cloud.stream.bindings.input.consumer.idle-heartbeat=5s",
-                        "nats.spring.cloud.stream.bindings.input.consumer.flow-control=true",
-                        "nats.spring.cloud.stream.bindings.input.consumer.inactive-threshold=30s",
-                        "nats.spring.cloud.stream.bindings.input.consumer.max-pull-waiting=2",
-                        "nats.spring.cloud.stream.bindings.input.consumer.max-batch=1",
-                        "nats.spring.cloud.stream.bindings.input.consumer.max-bytes=1024",
-                        "nats.spring.cloud.stream.bindings.input.consumer.poll-timeout=75ms",
-                        "nats.spring.cloud.stream.bindings.orderedInput.consumer.jet-stream=true",
-                        "nats.spring.cloud.stream.bindings.orderedInput.consumer.ordered=true",
+                        "nats.spring.cloud.stream.bindings.input.consumer.consumer-name=orders-worker",
                         "nats.spring.cloud.stream.bindings.output.producer.jet-stream=true",
                         "nats.spring.cloud.stream.bindings.output.producer.stream-name=ORDERS",
                         "nats.spring.cloud.stream.bindings.output.producer.provision-stream=true",
@@ -250,26 +233,7 @@ class BinderTests {
                     NatsConsumerProperties consumer = properties.getExtendedConsumerProperties("input");
                     assertThat(consumer.isJetStream()).isTrue();
                     assertThat(consumer.getStreamName()).isEqualTo("ORDERS");
-                    assertThat(consumer.getDurableName()).isEqualTo("orders-worker");
-                    assertThat(consumer.isProvisionStream()).isTrue();
-                    assertThat(consumer.getStreamStorageType()).isEqualTo(StorageType.Memory);
-                    assertThat(consumer.getStreamReplicas()).isEqualTo(1);
-                    assertThat(consumer.getAckWait()).isEqualTo(Duration.ofMillis(500));
-                    assertThat(consumer.getMaxDeliver()).isEqualTo(3L);
-                    assertThat(consumer.getMaxAckPending()).isEqualTo(4L);
-                    assertThat(consumer.getDeliverPolicy()).isEqualTo(DeliverPolicy.New);
-                    assertThat(consumer.getReplayPolicy()).isEqualTo(ReplayPolicy.Instant);
-                    assertThat(consumer.getIdleHeartbeat()).isEqualTo(Duration.ofSeconds(5));
-                    assertThat(consumer.getFlowControl()).isTrue();
-                    assertThat(consumer.getInactiveThreshold()).isEqualTo(Duration.ofSeconds(30));
-                    assertThat(consumer.getMaxPullWaiting()).isEqualTo(2L);
-                    assertThat(consumer.getMaxBatch()).isEqualTo(1L);
-                    assertThat(consumer.getMaxBytes()).isEqualTo(1024L);
-                    assertThat(consumer.getPollTimeout()).isEqualTo(Duration.ofMillis(75));
-
-                    NatsConsumerProperties orderedConsumer = properties.getExtendedConsumerProperties("orderedInput");
-                    assertThat(orderedConsumer.isJetStream()).isTrue();
-                    assertThat(orderedConsumer.getOrdered()).isTrue();
+                    assertThat(consumer.getConsumerName()).isEqualTo("orders-worker");
 
                     NatsProducerProperties producer = properties.getExtendedProducerProperties("output");
                     assertThat(producer.isJetStream()).isTrue();
@@ -500,6 +464,39 @@ class BinderTests {
                     producer.stop();
                     producer.stop();
                     assertThat(producer.isRunning()).isFalse();
+                }
+            });
+        }
+    }
+
+    @Test
+    void messageProducerSimpleConstructorReceivesMessage() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    String subject = "producer.simple.constructor";
+                    NatsConsumerDestination from =
+                            (NatsConsumerDestination) fixture.provisioner().provisionConsumerDestination(subject, "", null);
+                    NatsMessageProducer producer = new NatsMessageProducer(from, fixture.connection());
+                    CompletableFuture<String> received = new CompletableFuture<>();
+                    DirectChannel output = new DirectChannel();
+                    output.subscribe(msg -> received.complete(payloadText(msg.getPayload())));
+                    producer.setOutputChannel(output);
+
+                    try {
+                        producer.start();
+                        fixture.connection().flush(FLUSH_TIMEOUT);
+
+                        conn.publish(subject, "simple".getBytes(UTF_8));
+                        conn.flush(FLUSH_TIMEOUT);
+
+                        assertThat(received.get(5, TimeUnit.SECONDS)).isEqualTo("simple");
+                    } finally {
+                        producer.stop();
+                    }
                 }
             });
         }
@@ -807,7 +804,6 @@ class BinderTests {
         assertThatCode(() -> handler.handleMessage(new GenericMessage<>("ignored"))).doesNotThrowAnyException();
     }
 
-    @Test
     void testMessageHandler() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer()) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
@@ -1315,6 +1311,36 @@ class BinderTests {
     }
 
     @Test
+    void jetStreamProducerProvisioningAppliesStreamOptionsForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_PROVISION_OPTIONS");
+                    String subject = uniqueSubject("jetstream.provision.options.issue52");
+                    Binding<MessageChannel> producerBinding = null;
+
+                    try {
+                        producerBinding = bindProvisionedJetStreamProducer(fixture, subject, stream, StorageType.Memory, 1);
+
+                        StreamConfiguration configuration = streamInfo(conn, stream).getConfiguration();
+                        assertThat(configuration.getSubjects()).containsExactly(subject);
+                        assertThat(configuration.getStorageType()).isEqualTo(StorageType.Memory);
+                        assertThat(configuration.getReplicas()).isEqualTo(1);
+                    } finally {
+                        if (producerBinding != null) {
+                            producerBinding.unbind();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    @Test
     void jetStreamProducerProvisioningReportsInvalidStreamConfigurationForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
@@ -1528,6 +1554,7 @@ class BinderTests {
                     String subject = uniqueSubject("jetstream.consumer.issue52");
                     String payload = "deliver then ack";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, durable, subject);
 
                     JetStream js = conn.jetStream();
                     js.publish(subject, headersWithTrace("js-consumer"), payload.getBytes(UTF_8));
@@ -1539,7 +1566,7 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
+                    consumerProperties.getExtension().setConsumerName(durable);
                     Binding<MessageChannel> consumerBinding = null;
 
                     try {
@@ -1573,11 +1600,11 @@ class BinderTests {
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
                     fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
                     String stream = uniqueNatsName("JS_GROUP");
-                    String durable = uniqueNatsName("js_group_consumer");
                     String group = uniqueNatsName("js_group");
                     String subject = uniqueSubject("jetstream.group.issue52");
                     String payload = "deliver to group";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, group, subject);
 
                     DirectChannel input = new DirectChannel();
                     CompletableFuture<org.springframework.messaging.Message<?>> received = new CompletableFuture<>();
@@ -1586,7 +1613,6 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
                     Binding<MessageChannel> consumerBinding = null;
 
                     try {
@@ -1609,7 +1635,7 @@ class BinderTests {
     }
 
     @Test
-    void jetStreamConsumerProvisioningCreatesStreamAndAppliesConsumerConfigurationForIssue52() throws Exception {
+    void jetStreamConsumerRequiresStreamAndConsumerIdentityForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
                 Connection conn = context.getBean(Connection.class);
@@ -1617,10 +1643,84 @@ class BinderTests {
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
                     fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String stream = uniqueNatsName("JS_PROVISION_CONSUMER");
-                    String durable = uniqueNatsName("js_provision_consumer");
-                    String subject = uniqueSubject("jetstream.provision.consumer.issue52");
-                    String payload = "configured consumer";
+                    String stream = uniqueNatsName("JS_CONSUMER_IDENTITY");
+                    String consumer = uniqueNatsName("js_consumer_identity");
+                    String subject = uniqueSubject("jetstream.consumer.identity.issue52");
+                    DirectChannel input = new DirectChannel();
+                    ExtendedConsumerProperties<NatsConsumerProperties> missingStreamProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    missingStreamProperties.getExtension().setJetStream(true);
+                    missingStreamProperties.getExtension().setConsumerName(consumer);
+
+                    assertThatThrownBy(() -> fixture.binder().bindConsumer(subject, "", input, missingStreamProperties))
+                            .isInstanceOf(BinderException.class)
+                            .satisfies(exp -> assertThat(exp.getCause())
+                                    .isInstanceOf(IllegalStateException.class)
+                                    .hasMessage("NATS JetStream consumers require stream-name"));
+
+                    addMemoryStream(conn, stream, subject);
+                    ExtendedConsumerProperties<NatsConsumerProperties> missingConsumerProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    missingConsumerProperties.getExtension().setJetStream(true);
+                    missingConsumerProperties.getExtension().setStreamName(stream);
+
+                    assertThatThrownBy(() -> fixture.binder().bindConsumer(subject, "", input, missingConsumerProperties))
+                            .isInstanceOf(BinderException.class)
+                            .satisfies(exp -> assertThat(exp.getCause())
+                                    .isInstanceOf(IllegalStateException.class)
+                                    .hasMessage("NATS JetStream consumers require consumer-name or a consumer group"));
+                }
+            });
+        }
+    }
+
+    @Test
+    void jetStreamConsumerRequiresExistingNamedConsumerForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_MISSING_CONSUMER");
+                    String consumer = uniqueNatsName("js_missing_consumer");
+                    String subject = uniqueSubject("jetstream.missing.consumer.issue52");
+                    addMemoryStream(conn, stream, subject);
+                    DirectChannel input = new DirectChannel();
+                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
+                    consumerProperties.getExtension().setJetStream(true);
+                    consumerProperties.getExtension().setStreamName(stream);
+                    consumerProperties.getExtension().setConsumerName(consumer);
+
+                    assertThatThrownBy(() -> fixture.binder().bindConsumer(subject, "", input, consumerProperties))
+                            .isInstanceOf(BinderException.class)
+                            .satisfies(exp -> assertThat(exp.getCause())
+                                    .isInstanceOf(IllegalStateException.class)
+                                    .hasMessageContaining("Failed to subscribe to NATS JetStream subject " + subject));
+                }
+            });
+        }
+    }
+
+    @Test
+    void jetStreamConsumerBindsExistingConsumerConfigurationForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
+                    String stream = uniqueNatsName("JS_EXISTING_CONSUMER");
+                    String consumer = uniqueNatsName("js_existing_consumer");
+                    String subject = uniqueSubject("jetstream.existing.consumer.issue52");
+                    String payload = "configured externally";
+                    addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, consumer, subject, ConsumerConfiguration.builder()
+                            .ackWait(Duration.ofMillis(500))
+                            .maxDeliver(3));
 
                     DirectChannel input = new DirectChannel();
                     CompletableFuture<org.springframework.messaging.Message<?>> received = new CompletableFuture<>();
@@ -1629,269 +1729,23 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
-                    consumerProperties.getExtension().setProvisionStream(true);
-                    consumerProperties.getExtension().setStreamStorageType(StorageType.Memory);
-                    consumerProperties.getExtension().setStreamReplicas(1);
-                    consumerProperties.getExtension().setAckWait(Duration.ofMillis(500));
-                    consumerProperties.getExtension().setMaxDeliver(3L);
-                    consumerProperties.getExtension().setMaxAckPending(7L);
-                    consumerProperties.getExtension().setDeliverPolicy(DeliverPolicy.New);
-                    consumerProperties.getExtension().setReplayPolicy(ReplayPolicy.Instant);
+                    consumerProperties.getExtension().setConsumerName(consumer);
                     Binding<MessageChannel> consumerBinding = null;
 
                     try {
                         consumerBinding = fixture.binder().bindConsumer(subject, "", input, consumerProperties);
                         fixture.connection().flush(FLUSH_TIMEOUT);
 
-                        StreamConfiguration streamConfiguration = streamInfo(conn, stream).getConfiguration();
-                        assertThat(streamConfiguration.getSubjects()).containsExactly(subject);
-                        assertThat(streamConfiguration.getStorageType()).isEqualTo(StorageType.Memory);
-                        assertThat(streamConfiguration.getReplicas()).isEqualTo(1);
+                        conn.jetStream().publish(subject, payload.getBytes(UTF_8));
 
-                        ConsumerConfiguration configuration = consumerInfo(conn, stream, durable).getConsumerConfiguration();
+                        org.springframework.messaging.Message<?> message = received.get(5, TimeUnit.SECONDS);
+                        assertThat(payloadText(message.getPayload())).isEqualTo(payload);
+                        ConsumerConfiguration configuration =
+                                consumerInfo(conn, stream, consumer).getConsumerConfiguration();
                         assertThat(configuration.getAckWait()).isEqualTo(Duration.ofMillis(500));
                         assertThat(configuration.getMaxDeliver()).isEqualTo(3);
-                        assertThat(configuration.getMaxAckPending()).isEqualTo(7);
-                        assertThat(configuration.getDeliverPolicy()).isEqualTo(DeliverPolicy.New);
-                        assertThat(configuration.getReplayPolicy()).isEqualTo(ReplayPolicy.Instant);
-
-                        conn.jetStream().publish(subject, payload.getBytes(UTF_8));
-
-                        org.springframework.messaging.Message<?> message = received.get(5, TimeUnit.SECONDS);
-                        assertThat(payloadText(message.getPayload())).isEqualTo(payload);
                         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
-                                assertThat(consumerInfo(conn, stream, durable).getNumAckPending()).isZero());
-                    } finally {
-                        if (consumerBinding != null) {
-                            consumerBinding.unbind();
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    @Test
-    void jetStreamPushConsumerAppliesHeartbeatAndFlowControlConfigurationForIssue52() throws Exception {
-        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
-                Connection conn = context.getBean(Connection.class);
-                assertConnected(conn, ts.getURI());
-
-                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String heartbeatStream = uniqueNatsName("JS_PUSH_HEARTBEAT");
-                    String heartbeatDurable = uniqueNatsName("js_push_heartbeat");
-                    String heartbeatSubject = uniqueSubject("jetstream.push.heartbeat.issue52");
-                    String flowControlStream = uniqueNatsName("JS_PUSH_FLOW");
-                    String flowControlDurable = uniqueNatsName("js_push_flow");
-                    String flowControlSubject = uniqueSubject("jetstream.push.flow.issue52");
-                    addMemoryStream(conn, heartbeatStream, heartbeatSubject);
-                    addMemoryStream(conn, flowControlStream, flowControlSubject);
-
-                    DirectChannel heartbeatInput = new DirectChannel();
-                    DirectChannel flowControlInput = new DirectChannel();
-                    ExtendedConsumerProperties<NatsConsumerProperties> heartbeatProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    heartbeatProperties.getExtension().setJetStream(true);
-                    heartbeatProperties.getExtension().setStreamName(heartbeatStream);
-                    heartbeatProperties.getExtension().setDurableName(heartbeatDurable);
-                    heartbeatProperties.getExtension().setIdleHeartbeat(Duration.ofMillis(500));
-                    heartbeatProperties.getExtension().setInactiveThreshold(Duration.ofSeconds(30));
-                    ExtendedConsumerProperties<NatsConsumerProperties> flowControlProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    flowControlProperties.getExtension().setJetStream(true);
-                    flowControlProperties.getExtension().setStreamName(flowControlStream);
-                    flowControlProperties.getExtension().setDurableName(flowControlDurable);
-                    flowControlProperties.getExtension().setIdleHeartbeat(Duration.ofMillis(500));
-                    flowControlProperties.getExtension().setFlowControl(true);
-                    Binding<MessageChannel> heartbeatBinding = null;
-                    Binding<MessageChannel> flowControlBinding = null;
-
-                    try {
-                        heartbeatBinding = fixture.binder().bindConsumer(heartbeatSubject, "", heartbeatInput, heartbeatProperties);
-                        flowControlBinding = fixture.binder().bindConsumer(flowControlSubject, "", flowControlInput, flowControlProperties);
-                        fixture.connection().flush(FLUSH_TIMEOUT);
-
-                        ConsumerConfiguration heartbeatConfiguration =
-                                consumerInfo(conn, heartbeatStream, heartbeatDurable).getConsumerConfiguration();
-                        assertThat(heartbeatConfiguration.getIdleHeartbeat()).isEqualTo(Duration.ofMillis(500));
-                        assertThat(heartbeatConfiguration.isFlowControl()).isFalse();
-                        assertThat(heartbeatConfiguration.getInactiveThreshold()).isEqualTo(Duration.ofSeconds(30));
-
-                        ConsumerConfiguration flowControlConfiguration =
-                                consumerInfo(conn, flowControlStream, flowControlDurable).getConsumerConfiguration();
-                        assertThat(flowControlConfiguration.getIdleHeartbeat()).isEqualTo(Duration.ofMillis(500));
-                        assertThat(flowControlConfiguration.isFlowControl()).isTrue();
-                    } finally {
-                        if (flowControlBinding != null) {
-                            flowControlBinding.unbind();
-                        }
-                        if (heartbeatBinding != null) {
-                            heartbeatBinding.unbind();
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    @Test
-    void jetStreamGroupedPushConsumerRejectsHeartbeatAndFlowControlForIssue52() throws Exception {
-        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
-                Connection conn = context.getBean(Connection.class);
-                assertConnected(conn, ts.getURI());
-
-                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String heartbeatStream = uniqueNatsName("JS_GROUP_HEARTBEAT");
-                    String heartbeatSubject = uniqueSubject("jetstream.group.heartbeat.issue52");
-                    String flowControlStream = uniqueNatsName("JS_GROUP_FLOW");
-                    String flowControlSubject = uniqueSubject("jetstream.group.flow.issue52");
-                    String group = uniqueNatsName("js_group_validation");
-                    addMemoryStream(conn, heartbeatStream, heartbeatSubject);
-                    addMemoryStream(conn, flowControlStream, flowControlSubject);
-
-                    ExtendedConsumerProperties<NatsConsumerProperties> heartbeatProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    heartbeatProperties.getExtension().setJetStream(true);
-                    heartbeatProperties.getExtension().setStreamName(heartbeatStream);
-                    heartbeatProperties.getExtension().setIdleHeartbeat(Duration.ofMillis(500));
-                    ExtendedConsumerProperties<NatsConsumerProperties> flowControlProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    flowControlProperties.getExtension().setJetStream(true);
-                    flowControlProperties.getExtension().setStreamName(flowControlStream);
-                    flowControlProperties.getExtension().setFlowControl(true);
-
-                    assertThatThrownBy(() -> fixture.binder().bindConsumer(heartbeatSubject, group,
-                            new DirectChannel(), heartbeatProperties))
-                            .isInstanceOfAny(BinderException.class, IllegalArgumentException.class)
-                            .hasStackTraceContaining("flow-control and idle-heartbeat are not supported with consumer groups");
-                    assertThatThrownBy(() -> fixture.binder().bindConsumer(flowControlSubject, group,
-                            new DirectChannel(), flowControlProperties))
-                            .isInstanceOfAny(BinderException.class, IllegalArgumentException.class)
-                            .hasStackTraceContaining("flow-control and idle-heartbeat are not supported with consumer groups");
-                }
-            });
-        }
-    }
-
-    @Test
-    void jetStreamPushConsumerRejectsFlowControlWithoutHeartbeatForIssue52() throws Exception {
-        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
-                Connection conn = context.getBean(Connection.class);
-                assertConnected(conn, ts.getURI());
-
-                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String stream = uniqueNatsName("JS_FLOW_WITHOUT_HEARTBEAT");
-                    String subject = uniqueSubject("jetstream.flow.without.heartbeat.issue52");
-                    addMemoryStream(conn, stream, subject);
-
-                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    consumerProperties.getExtension().setJetStream(true);
-                    consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setFlowControl(true);
-
-                    assertThatThrownBy(() -> fixture.binder().bindConsumer(subject, "",
-                            new DirectChannel(), consumerProperties))
-                            .isInstanceOfAny(BinderException.class, IllegalArgumentException.class)
-                            .hasStackTraceContaining("flow-control requires idle-heartbeat");
-                }
-            });
-        }
-    }
-
-    @Test
-    void jetStreamOrderedPushConsumerRejectsIncompatibleOptionsForIssue52() throws Exception {
-        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
-                Connection conn = context.getBean(Connection.class);
-                assertConnected(conn, ts.getURI());
-
-                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String durableStream = uniqueNatsName("JS_ORDERED_DURABLE");
-                    String durableSubject = uniqueSubject("jetstream.ordered.durable.issue52");
-                    String groupStream = uniqueNatsName("JS_ORDERED_GROUP");
-                    String groupSubject = uniqueSubject("jetstream.ordered.group.issue52");
-                    String maxDeliverStream = uniqueNatsName("JS_ORDERED_MAX_DELIVER");
-                    String maxDeliverSubject = uniqueSubject("jetstream.ordered.max.deliver.issue52");
-                    addMemoryStream(conn, durableStream, durableSubject);
-                    addMemoryStream(conn, groupStream, groupSubject);
-                    addMemoryStream(conn, maxDeliverStream, maxDeliverSubject);
-
-                    ExtendedConsumerProperties<NatsConsumerProperties> durableProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    durableProperties.getExtension().setJetStream(true);
-                    durableProperties.getExtension().setStreamName(durableStream);
-                    durableProperties.getExtension().setDurableName(uniqueNatsName("js_ordered_durable"));
-                    durableProperties.getExtension().setOrdered(true);
-                    ExtendedConsumerProperties<NatsConsumerProperties> groupProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    groupProperties.getExtension().setJetStream(true);
-                    groupProperties.getExtension().setStreamName(groupStream);
-                    groupProperties.getExtension().setOrdered(true);
-                    ExtendedConsumerProperties<NatsConsumerProperties> maxDeliverProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    maxDeliverProperties.getExtension().setJetStream(true);
-                    maxDeliverProperties.getExtension().setStreamName(maxDeliverStream);
-                    maxDeliverProperties.getExtension().setOrdered(true);
-                    maxDeliverProperties.getExtension().setMaxDeliver(2L);
-
-                    assertThatThrownBy(() -> fixture.binder().bindConsumer(durableSubject, "",
-                            new DirectChannel(), durableProperties))
-                            .isInstanceOfAny(BinderException.class, IllegalArgumentException.class)
-                            .hasStackTraceContaining("ordered consumers cannot use durable-name");
-                    assertThatThrownBy(() -> fixture.binder().bindConsumer(groupSubject, uniqueNatsName("js_ordered_group"),
-                            new DirectChannel(), groupProperties))
-                            .isInstanceOfAny(BinderException.class, IllegalArgumentException.class)
-                            .hasStackTraceContaining("ordered consumers cannot use consumer groups");
-                    assertThatThrownBy(() -> fixture.binder().bindConsumer(maxDeliverSubject, "",
-                            new DirectChannel(), maxDeliverProperties))
-                            .isInstanceOfAny(BinderException.class, IllegalArgumentException.class)
-                            .hasStackTraceContaining("ordered consumers require max-deliver to be unset or 1");
-                }
-            });
-        }
-    }
-
-    @Test
-    void jetStreamOrderedPushConsumerReceivesMessageForIssue52() throws Exception {
-        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
-                Connection conn = context.getBean(Connection.class);
-                assertConnected(conn, ts.getURI());
-
-                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String stream = uniqueNatsName("JS_ORDERED");
-                    String subject = uniqueSubject("jetstream.ordered.issue52");
-                    String payload = "ordered delivery";
-                    addMemoryStream(conn, stream, subject);
-
-                    DirectChannel input = new DirectChannel();
-                    CompletableFuture<org.springframework.messaging.Message<?>> received = new CompletableFuture<>();
-                    input.subscribe(received::complete);
-                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    consumerProperties.getExtension().setJetStream(true);
-                    consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setOrdered(true);
-                    Binding<MessageChannel> consumerBinding = null;
-
-                    try {
-                        consumerBinding = fixture.binder().bindConsumer(subject, "", input, consumerProperties);
-                        fixture.connection().flush(FLUSH_TIMEOUT);
-
-                        conn.jetStream().publish(subject, payload.getBytes(UTF_8));
-
-                        org.springframework.messaging.Message<?> message = received.get(5, TimeUnit.SECONDS);
-                        assertThat(payloadText(message.getPayload())).isEqualTo(payload);
+                                assertThat(consumerInfo(conn, stream, consumer).getNumAckPending()).isZero());
                     } finally {
                         if (consumerBinding != null) {
                             consumerBinding.unbind();
@@ -1916,6 +1770,7 @@ class BinderTests {
                     String subject = uniqueSubject("jetstream.rejected.send.issue52");
                     String payload = "redeliver rejected send";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, durable, subject);
 
                     AtomicInteger attempts = new AtomicInteger();
                     CompletableFuture<org.springframework.messaging.Message<?>> redelivered = new CompletableFuture<>();
@@ -1938,7 +1793,7 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
+                    consumerProperties.getExtension().setConsumerName(durable);
                     Binding<MessageChannel> consumerBinding = null;
 
                     try {
@@ -1976,6 +1831,7 @@ class BinderTests {
                     String subject = uniqueSubject("jetstream.throwing.send.issue52");
                     String payload = "redeliver thrown send";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, durable, subject);
 
                     AtomicInteger attempts = new AtomicInteger();
                     CompletableFuture<org.springframework.messaging.Message<?>> redelivered = new CompletableFuture<>();
@@ -1998,7 +1854,7 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
+                    consumerProperties.getExtension().setConsumerName(durable);
                     Binding<MessageChannel> consumerBinding = null;
 
                     try {
@@ -2036,6 +1892,7 @@ class BinderTests {
                     String subject = uniqueSubject("jetstream.polled.issue52");
                     String payload = "poll then ack";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, durable, subject);
 
                     JetStream js = conn.jetStream();
                     js.publish(subject, headersWithTrace("js-polled"), payload.getBytes(UTF_8));
@@ -2046,7 +1903,7 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
+                    consumerProperties.getExtension().setConsumerName(durable);
                     Binding<?> consumerBinding = null;
 
                     try {
@@ -2073,6 +1930,88 @@ class BinderTests {
     }
 
     @Test
+    void jetStreamPolledConsumerReceiveReturnsNullWhenStoppedForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    String stream = uniqueNatsName("JS_POLLED_STOPPED");
+                    String consumer = uniqueNatsName("js_polled_stopped");
+                    String subject = uniqueSubject("jetstream.polled.stopped.issue52");
+                    addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, consumer, subject);
+                    NatsConsumerDestination from = (NatsConsumerDestination) fixture.provisioner()
+                            .provisionConsumerDestination(subject, "", null);
+                    NatsMessageSource source = new NatsMessageSource(
+                            from,
+                            fixture.connection(),
+                            true,
+                            true,
+                            true,
+                            stream,
+                            consumer);
+
+                    assertThat(source.receive()).isNull();
+                }
+            });
+        }
+    }
+
+    @Test
+    void jetStreamPolledConsumerAcknowledgmentCallbackIgnoresRepeatForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    String stream = uniqueNatsName("JS_POLLED_REPEAT_ACK");
+                    String consumer = uniqueNatsName("js_polled_repeat_ack");
+                    String subject = uniqueSubject("jetstream.polled.repeat.ack.issue52");
+                    String payload = "ack once";
+                    addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, consumer, subject);
+                    NatsConsumerDestination from = (NatsConsumerDestination) fixture.provisioner()
+                            .provisionConsumerDestination(subject, "", null);
+                    NatsMessageSource source = new NatsMessageSource(
+                            from,
+                            fixture.connection(),
+                            true,
+                            true,
+                            true,
+                            stream,
+                            consumer);
+
+                    try {
+                        source.start();
+                        conn.jetStream().publish(subject, payload.getBytes(UTF_8));
+
+                        org.springframework.messaging.Message<Object> message = source.receive();
+                        assertThat(message).isNotNull();
+                        assertThat(payloadText(message.getPayload())).isEqualTo(payload);
+                        AcknowledgmentCallback callback = message.getHeaders().get(
+                                IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK,
+                                AcknowledgmentCallback.class);
+                        assertThat(callback).isNotNull();
+                        assertThat(callback.isAcknowledged()).isFalse();
+
+                        callback.acknowledge(AcknowledgmentCallback.Status.ACCEPT);
+                        callback.acknowledge(AcknowledgmentCallback.Status.ACCEPT);
+
+                        assertThat(callback.isAcknowledged()).isTrue();
+                        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+                                assertThat(consumerInfo(conn, stream, consumer).getNumAckPending()).isZero());
+                    } finally {
+                        source.stop();
+                    }
+                }
+            });
+        }
+    }
+
+    @Test
     void jetStreamPolledConsumerReturnsFalseWhenNoMessageIsAvailableForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
@@ -2085,13 +2024,14 @@ class BinderTests {
                     String durable = uniqueNatsName("js_polled_empty");
                     String subject = uniqueSubject("jetstream.polled.empty.issue52");
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, durable, subject);
 
                     DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
                     ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
+                    consumerProperties.getExtension().setConsumerName(durable);
                     Binding<?> consumerBinding = null;
 
                     try {
@@ -2115,7 +2055,7 @@ class BinderTests {
     }
 
     @Test
-    void jetStreamPolledConsumerUsesConfiguredPollTimeoutForIssue52() throws Exception {
+    void jetStreamPolledConsumerRequiresStreamAndConsumerIdentityForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
                 Connection conn = context.getBean(Connection.class);
@@ -2123,113 +2063,32 @@ class BinderTests {
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
                     fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String stream = uniqueNatsName("JS_POLLED_TIMEOUT");
-                    String durable = uniqueNatsName("js_polled_timeout");
-                    String subject = uniqueSubject("jetstream.polled.timeout.issue52");
-                    addMemoryStream(conn, stream, subject);
+                    String stream = uniqueNatsName("JS_POLLED_IDENTITY");
+                    String consumer = uniqueNatsName("js_polled_identity");
+                    String subject = uniqueSubject("jetstream.polled.identity.issue52");
 
-                    DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
-                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                    DefaultPollableMessageSource missingStreamSource = new DefaultPollableMessageSource(null);
+                    ExtendedConsumerProperties<NatsConsumerProperties> missingStreamProperties =
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    consumerProperties.getExtension().setJetStream(true);
-                    consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
-                    consumerProperties.getExtension().setPollTimeout(Duration.ofMillis(800));
-                    Binding<?> consumerBinding = null;
+                    missingStreamProperties.getExtension().setJetStream(true);
+                    missingStreamProperties.getExtension().setConsumerName(consumer);
 
-                    try {
-                        consumerBinding = fixture.binder().bindPollableConsumer(subject, "", source, consumerProperties);
-                        source.start();
+                    assertThatThrownBy(() -> fixture.binder().bindPollableConsumer(subject, "",
+                            missingStreamSource, missingStreamProperties))
+                            .isInstanceOf(IllegalStateException.class)
+                            .hasMessage("NATS JetStream polled consumers require stream-name");
 
-                        long started = System.nanoTime();
-                        assertThat(source.poll(message -> {
-                            throw new AssertionError("unexpected message");
-                        })).isFalse();
-                        long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
-                        assertThat(elapsedMillis).isGreaterThanOrEqualTo(650);
-                    } finally {
-                        source.stop();
-                        if (consumerBinding != null) {
-                            consumerBinding.unbind();
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    @Test
-    void jetStreamPolledConsumerRejectsNonPositivePollTimeoutForIssue52() throws Exception {
-        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
-                Connection conn = context.getBean(Connection.class);
-                assertConnected(conn, ts.getURI());
-
-                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String stream = uniqueNatsName("JS_POLLED_BAD_TIMEOUT");
-                    String durable = uniqueNatsName("js_polled_bad_timeout");
-                    String subject = uniqueSubject("jetstream.polled.bad.timeout.issue52");
                     addMemoryStream(conn, stream, subject);
-
-                    DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
-                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
+                    DefaultPollableMessageSource missingConsumerSource = new DefaultPollableMessageSource(null);
+                    ExtendedConsumerProperties<NatsConsumerProperties> missingConsumerProperties =
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    consumerProperties.getExtension().setJetStream(true);
-                    consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
-                    consumerProperties.getExtension().setPollTimeout(Duration.ZERO);
+                    missingConsumerProperties.getExtension().setJetStream(true);
+                    missingConsumerProperties.getExtension().setStreamName(stream);
 
-                    assertThatThrownBy(() -> fixture.binder().bindPollableConsumer(subject, "", source, consumerProperties))
-                            .isInstanceOf(IllegalArgumentException.class)
-                            .hasMessage("NATS JetStream poll-timeout must be greater than zero");
-                }
-            });
-        }
-    }
-
-    @Test
-    void jetStreamPolledConsumerAppliesPullConsumerConfigurationForIssue52() throws Exception {
-        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
-                Connection conn = context.getBean(Connection.class);
-                assertConnected(conn, ts.getURI());
-
-                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    fixture.binder().setApplicationContext(context.getSourceApplicationContext(GenericApplicationContext.class));
-                    String stream = uniqueNatsName("JS_POLLED_CONFIG");
-                    String durable = uniqueNatsName("js_polled_config");
-                    String subject = uniqueSubject("jetstream.polled.config.issue52");
-                    addMemoryStream(conn, stream, subject);
-
-                    DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
-                    ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties =
-                            new ExtendedConsumerProperties<>(new NatsConsumerProperties());
-                    consumerProperties.getExtension().setJetStream(true);
-                    consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
-                    consumerProperties.getExtension().setInactiveThreshold(Duration.ofSeconds(30));
-                    consumerProperties.getExtension().setMaxPullWaiting(2L);
-                    consumerProperties.getExtension().setMaxBatch(1L);
-                    consumerProperties.getExtension().setMaxBytes(1024L);
-                    Binding<?> consumerBinding = null;
-
-                    try {
-                        consumerBinding = fixture.binder().bindPollableConsumer(subject, "", source, consumerProperties);
-                        source.start();
-
-                        ConsumerConfiguration configuration =
-                                consumerInfo(conn, stream, durable).getConsumerConfiguration();
-                        assertThat(configuration.getInactiveThreshold()).isEqualTo(Duration.ofSeconds(30));
-                        assertThat(configuration.getMaxPullWaiting()).isEqualTo(2);
-                        assertThat(configuration.getMaxBatch()).isEqualTo(1);
-                        assertThat(configuration.getMaxBytes()).isEqualTo(1024);
-                    } finally {
-                        source.stop();
-                        if (consumerBinding != null) {
-                            consumerBinding.unbind();
-                        }
-                    }
+                    assertThatThrownBy(() -> fixture.binder().bindPollableConsumer(subject, "",
+                            missingConsumerSource, missingConsumerProperties))
+                            .isInstanceOf(IllegalStateException.class)
+                            .hasMessage("NATS JetStream polled consumers require consumer-name or a consumer group");
                 }
             });
         }
@@ -2249,6 +2108,7 @@ class BinderTests {
                     String subject = uniqueSubject("jetstream.polled.requeue.issue52");
                     String payload = "requeue me";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, durable, subject);
 
                     DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
                     AtomicReference<org.springframework.messaging.Message<?>> redelivered = new AtomicReference<>();
@@ -2256,7 +2116,7 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
+                    consumerProperties.getExtension().setConsumerName(durable);
                     Binding<?> consumerBinding = null;
 
                     try {
@@ -2302,6 +2162,7 @@ class BinderTests {
                     String subject = uniqueSubject("jetstream.polled.exception.issue52");
                     String payload = "retry after exception";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, durable, subject);
 
                     DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
                     AtomicReference<org.springframework.messaging.Message<?>> redelivered = new AtomicReference<>();
@@ -2309,7 +2170,7 @@ class BinderTests {
                             new ExtendedConsumerProperties<>(new NatsConsumerProperties());
                     consumerProperties.getExtension().setJetStream(true);
                     consumerProperties.getExtension().setStreamName(stream);
-                    consumerProperties.getExtension().setDurableName(durable);
+                    consumerProperties.getExtension().setConsumerName(durable);
                     Binding<?> consumerBinding = null;
 
                     try {
@@ -2342,7 +2203,7 @@ class BinderTests {
     }
 
     @Test
-    void jetStreamPolledConsumerUsesGroupAsDurableWhenDurableNameIsUnsetForIssue52() throws Exception {
+    void jetStreamPolledConsumerUsesGroupAsConsumerNameWhenConsumerNameIsUnsetForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
                 Connection conn = context.getBean(Connection.class);
@@ -2353,8 +2214,9 @@ class BinderTests {
                     String stream = uniqueNatsName("JS_POLLED_GROUP");
                     String group = uniqueNatsName("js_polled_group");
                     String subject = uniqueSubject("jetstream.polled.group.issue52");
-                    String payload = "group durable";
+                    String payload = "group consumer";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, group, subject);
 
                     DefaultPollableMessageSource source = new DefaultPollableMessageSource(null);
                     AtomicReference<org.springframework.messaging.Message<?>> received = new AtomicReference<>();
@@ -2387,17 +2249,19 @@ class BinderTests {
     }
 
     @Test
-    void jetStreamPolledConsumerCanResolveStreamFromSubjectForIssue52() throws Exception {
+    void jetStreamPolledConsumerUsesNamedConsumerContextForIssue52() throws Exception {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
             this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
                 Connection conn = context.getBean(Connection.class);
                 assertConnected(conn, ts.getURI());
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
-                    String stream = uniqueNatsName("JS_POLLED_RESOLVE");
-                    String subject = uniqueSubject("jetstream.polled.resolve.issue52");
-                    String payload = "poll resolved stream";
+                    String stream = uniqueNatsName("JS_POLLED_CONTEXT");
+                    String consumer = uniqueNatsName("js_polled_context");
+                    String subject = uniqueSubject("jetstream.polled.context.issue52");
+                    String payload = "poll named consumer";
                     addMemoryStream(conn, stream, subject);
+                    addConsumer(conn, stream, consumer, subject);
 
                     NatsConsumerDestination from = (NatsConsumerDestination) fixture.provisioner()
                             .provisionConsumerDestination(subject, "", null);
@@ -2407,8 +2271,8 @@ class BinderTests {
                             true,
                             true,
                             true,
-                            null,
-                            null);
+                            stream,
+                            consumer);
 
                     try {
                         src.start();
@@ -2451,6 +2315,31 @@ class BinderTests {
                             .build()))
                             .isInstanceOf(MessageHandlingException.class)
                             .hasMessageContaining("JetStream publishing does not support reply channels");
+                }
+            });
+        }
+    }
+
+    @Test
+    void jetStreamProducerReportsServerPublishFailureForIssue52() throws Exception {
+        try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"-js"}, false)) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+                Connection conn = context.getBean(Connection.class);
+                assertConnected(conn, ts.getURI());
+
+                try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    String stream = uniqueNatsName("JS_MISSING_PUBLISH");
+                    String subject = uniqueSubject("jetstream.missing.publish.issue52");
+                    ExtendedProducerProperties<NatsProducerProperties> producerProperties =
+                            new ExtendedProducerProperties<>(new NatsProducerProperties());
+                    producerProperties.getExtension().setJetStream(true);
+                    producerProperties.getExtension().setStreamName(stream);
+                    ProducerDestination to = fixture.provisioner().provisionProducerDestination(subject, null);
+                    MessageHandler handler = fixture.binder().createProducerMessageHandler(to, producerProperties, null);
+
+                    assertThatThrownBy(() -> handler.handleMessage(MessageBuilder.withPayload("missing stream").build()))
+                            .isInstanceOf(MessageHandlingException.class)
+                            .hasMessageContaining("Failed to publish message to NATS JetStream subject " + subject);
                 }
             });
         }
@@ -2898,9 +2787,23 @@ class BinderTests {
                 .build());
     }
 
-    private static ConsumerInfo consumerInfo(Connection connection, String stream, String durable) {
+    private static ConsumerInfo addConsumer(Connection connection, String stream, String consumer, String subject)
+            throws IOException, JetStreamApiException {
+        return addConsumer(connection, stream, consumer, subject, ConsumerConfiguration.builder());
+    }
+
+    private static ConsumerInfo addConsumer(Connection connection, String stream, String consumer, String subject,
+                                            ConsumerConfiguration.Builder builder)
+            throws IOException, JetStreamApiException {
+        return connection.jetStreamManagement().addOrUpdateConsumer(stream, builder
+                .durable(consumer)
+                .filterSubject(subject)
+                .build());
+    }
+
+    private static ConsumerInfo consumerInfo(Connection connection, String stream, String consumer) {
         try {
-            return connection.jetStreamManagement().getConsumerInfo(stream, durable);
+            return connection.jetStreamManagement().getConsumerInfo(stream, consumer);
         } catch (IOException | JetStreamApiException exp) {
             throw new AssertionError(exp);
         }

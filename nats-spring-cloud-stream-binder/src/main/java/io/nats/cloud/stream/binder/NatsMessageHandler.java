@@ -138,9 +138,6 @@ public class NatsMessageHandler extends AbstractMessageHandler {
 
         try {
             JetStream js = this.jetStreamContext;
-            if (js == null) {
-                throw new MessageHandlingException(message, "NATS JetStream context is not available");
-            }
             PublishOptions publishOptions = publishOptions();
             if (headers == null) {
                 if (publishOptions == null) {
