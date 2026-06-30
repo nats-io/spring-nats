@@ -162,7 +162,6 @@ public class NatsChannelBinder extends
                                                      ExtendedConsumerProperties<NatsConsumerProperties> properties) {
         NatsConsumerProperties extension = consumerExtension(properties);
         NatsConsumerDestination consumerDestination = (NatsConsumerDestination) destination;
-        NatsJetStreamSupport.provisionStream(this.connection, consumerDestination.getSubject(), extension);
         return new NatsMessageProducer(
                 consumerDestination,
                 this.connection,
@@ -170,8 +169,7 @@ public class NatsChannelBinder extends
                 shouldMarkNativeHeadersPresent(properties),
                 isJetStream(extension),
                 streamName(extension),
-                durableName(extension),
-                extension);
+                consumerName(extension));
     }
 
     @Override
@@ -179,7 +177,6 @@ public class NatsChannelBinder extends
                                                                     ConsumerDestination destination, ExtendedConsumerProperties<NatsConsumerProperties> consumerProperties) {
         NatsConsumerProperties extension = consumerExtension(consumerProperties);
         NatsConsumerDestination consumerDestination = (NatsConsumerDestination) destination;
-        NatsJetStreamSupport.provisionStream(this.connection, consumerDestination.getSubject(), extension);
         return new PolledConsumerResources(
                 new NatsMessageSource(
                         consumerDestination,
@@ -188,8 +185,7 @@ public class NatsChannelBinder extends
                         shouldMarkNativeHeadersPresent(consumerProperties),
                         isJetStream(extension),
                         streamName(extension),
-                        durableName(extension),
-                        extension),
+                        consumerName(extension)),
                 registerErrorInfrastructure(destination, group, consumerProperties, true));
     }
 
@@ -217,8 +213,8 @@ public class NatsChannelBinder extends
         return properties == null ? null : properties.getStreamName();
     }
 
-    private static String durableName(NatsConsumerProperties properties) {
-        return properties == null ? null : properties.getDurableName();
+    private static String consumerName(NatsConsumerProperties properties) {
+        return properties == null ? null : properties.getConsumerName();
     }
 
     private static boolean shouldUseNativeHeaders(ExtendedProducerProperties<NatsProducerProperties> producerProperties) {

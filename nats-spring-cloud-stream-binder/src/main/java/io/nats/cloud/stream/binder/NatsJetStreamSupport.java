@@ -19,11 +19,9 @@ package io.nats.cloud.stream.binder;
 import io.nats.client.Connection;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.JetStreamManagement;
-import io.nats.client.api.ConsumerConfiguration;
 import io.nats.client.api.StorageType;
 import io.nats.client.api.StreamConfiguration;
 import io.nats.client.api.StreamInfo;
-import io.nats.cloud.stream.binder.properties.NatsConsumerProperties;
 import io.nats.cloud.stream.binder.properties.NatsProducerProperties;
 
 import java.io.IOException;
@@ -31,7 +29,7 @@ import java.time.Duration;
 import java.util.List;
 
 class NatsJetStreamSupport {
-    static final Duration DEFAULT_JETSTREAM_POLL_TIMEOUT = Duration.ofMillis(50);
+    static final Duration DEFAULT_JETSTREAM_POLL_TIMEOUT = Duration.ofSeconds(1);
 
     private static final int HTTP_NOT_FOUND = 404;
     private static final int STREAM_NOT_FOUND = 10059;
@@ -51,120 +49,7 @@ class NatsJetStreamSupport {
         return value != null && value.trim().length() > 0;
     }
 
-    static Duration pollTimeout(NatsConsumerProperties properties) {
-        if (properties == null || properties.getPollTimeout() == null) {
-            return DEFAULT_JETSTREAM_POLL_TIMEOUT;
-        }
-
-        Duration pollTimeout = properties.getPollTimeout();
-        if (pollTimeout.isZero() || pollTimeout.isNegative()) {
-            throw new IllegalArgumentException("NATS JetStream poll-timeout must be greater than zero");
-        }
-
-        return pollTimeout;
-    }
-
-    static ConsumerConfiguration consumerConfiguration(NatsConsumerProperties properties, boolean pullConsumer) {
-        if (properties == null) {
-            return null;
-        }
-
-        ConsumerConfiguration.Builder builder = ConsumerConfiguration.builder();
-        boolean configured = false;
-
-        if (properties.getDeliverPolicy() != null) {
-            builder.deliverPolicy(properties.getDeliverPolicy());
-            configured = true;
-        }
-        if (properties.getReplayPolicy() != null) {
-            builder.replayPolicy(properties.getReplayPolicy());
-            configured = true;
-        }
-        if (properties.getAckWait() != null) {
-            builder.ackWait(properties.getAckWait());
-            configured = true;
-        }
-        if (properties.getMaxDeliver() != null) {
-            builder.maxDeliver(properties.getMaxDeliver());
-            configured = true;
-        }
-        if (properties.getMaxAckPending() != null) {
-            builder.maxAckPending(properties.getMaxAckPending());
-            configured = true;
-        }
-        if (!pullConsumer) {
-            if (Boolean.TRUE.equals(properties.getFlowControl())) {
-                builder.flowControl(properties.getIdleHeartbeat());
-                configured = true;
-            } else if (properties.getIdleHeartbeat() != null) {
-                builder.idleHeartbeat(properties.getIdleHeartbeat());
-                configured = true;
-            }
-        }
-        if (properties.getInactiveThreshold() != null) {
-            builder.inactiveThreshold(properties.getInactiveThreshold());
-            configured = true;
-        }
-        if (pullConsumer) {
-            if (properties.getMaxPullWaiting() != null) {
-                builder.maxPullWaiting(properties.getMaxPullWaiting());
-                configured = true;
-            }
-            if (properties.getMaxBatch() != null) {
-                builder.maxBatch(properties.getMaxBatch());
-                configured = true;
-            }
-            if (properties.getMaxBytes() != null) {
-                builder.maxBytes(properties.getMaxBytes());
-                configured = true;
-            }
-        }
-
-        return configured ? builder.build() : null;
-    }
-
-    static void validatePushConsumer(NatsConsumerProperties properties, String queue, String durableName) {
-        if (properties == null) {
-            return;
-        }
-
-        String group = normalize(queue);
-        if (hasText(group) && (Boolean.TRUE.equals(properties.getFlowControl()) || properties.getIdleHeartbeat() != null)) {
-            throw new IllegalArgumentException(
-                    "NATS JetStream push consumer flow-control and idle-heartbeat are not supported with consumer groups");
-        }
-        if (Boolean.TRUE.equals(properties.getFlowControl()) && properties.getIdleHeartbeat() == null) {
-            throw new IllegalArgumentException("NATS JetStream flow-control requires idle-heartbeat");
-        }
-
-        if (!Boolean.TRUE.equals(properties.getOrdered())) {
-            return;
-        }
-
-        if (hasText(durableName)) {
-            throw new IllegalArgumentException("NATS JetStream ordered consumers cannot use durable-name");
-        }
-        if (hasText(group)) {
-            throw new IllegalArgumentException("NATS JetStream ordered consumers cannot use consumer groups");
-        }
-        if (properties.getMaxDeliver() != null && properties.getMaxDeliver() > 1) {
-            throw new IllegalArgumentException("NATS JetStream ordered consumers require max-deliver to be unset or 1");
-        }
-    }
-
     static void provisionStream(Connection connection, String subject, NatsProducerProperties properties) {
-        if (properties == null || !properties.isJetStream() || !properties.isProvisionStream()) {
-            return;
-        }
-
-        provisionStream(connection,
-                subject,
-                properties.getStreamName(),
-                properties.getStreamStorageType(),
-                properties.getStreamReplicas());
-    }
-
-    static void provisionStream(Connection connection, String subject, NatsConsumerProperties properties) {
         if (properties == null || !properties.isJetStream() || !properties.isProvisionStream()) {
             return;
         }

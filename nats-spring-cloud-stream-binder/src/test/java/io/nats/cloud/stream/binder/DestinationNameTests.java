@@ -51,6 +51,11 @@ public class DestinationNameTests {
 
         assertEquals(subject, dest.getSubject());
         assertEquals("", dest.getQueueGroup());
+
+        dest = new NatsConsumerDestination(subject);
+
+        assertEquals(subject, dest.getSubject());
+        assertEquals("", dest.getQueueGroup());
     }
 
     @Test
