@@ -21,9 +21,12 @@ import org.springframework.lang.Nullable;
 
 public class NatsProducerProperties {
     private boolean jetStream;
+    @Nullable
     private String streamName;
     private boolean provisionStream;
+    @Nullable
     private StorageType streamStorageType;
+    @Nullable
     private Integer streamReplicas;
 
     /**
@@ -41,7 +44,7 @@ public class NatsProducerProperties {
     }
 
     /**
-     * @return optional JetStream stream name used for publish acknowledgements
+     * @return JetStream stream name used for publish acknowledgements, or {@code null} when no stream name was configured
      */
     @Nullable
     public String getStreamName() {
@@ -49,7 +52,7 @@ public class NatsProducerProperties {
     }
 
     /**
-     * @param streamName optional JetStream stream name used for publish acknowledgements
+     * @param streamName JetStream stream name used for publish acknowledgements, or {@code null} to leave it unset
      */
     public void setStreamName(@Nullable String streamName) {
         this.streamName = streamName;
@@ -70,7 +73,7 @@ public class NatsProducerProperties {
     }
 
     /**
-     * @return optional storage type used when a missing JetStream stream is provisioned
+     * @return storage type used when a missing JetStream stream is provisioned, or {@code null} to use the NATS client default
      */
     @Nullable
     public StorageType getStreamStorageType() {
@@ -78,14 +81,14 @@ public class NatsProducerProperties {
     }
 
     /**
-     * @param streamStorageType optional storage type used when a missing JetStream stream is provisioned
+     * @param streamStorageType storage type used when a missing JetStream stream is provisioned, or {@code null} to use the NATS client default
      */
     public void setStreamStorageType(@Nullable StorageType streamStorageType) {
         this.streamStorageType = streamStorageType;
     }
 
     /**
-     * @return optional replica count used when a missing JetStream stream is provisioned
+     * @return replica count used when a missing JetStream stream is provisioned, or {@code null} to use the NATS client default
      */
     @Nullable
     public Integer getStreamReplicas() {
@@ -93,7 +96,7 @@ public class NatsProducerProperties {
     }
 
     /**
-     * @param streamReplicas optional replica count used when a missing JetStream stream is provisioned
+     * @param streamReplicas replica count used when a missing JetStream stream is provisioned, or {@code null} to use the NATS client default
      */
     public void setStreamReplicas(@Nullable Integer streamReplicas) {
         this.streamReplicas = streamReplicas;

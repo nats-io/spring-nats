@@ -36,6 +36,7 @@ import org.springframework.messaging.support.GenericMessage;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -46,7 +47,9 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     private static final Log logger = LogFactory.getLog(NatsMessageSource.class);
 
     private NatsConsumerDestination destination;
+    @Nullable
     private Connection connection;
+    @Nullable
     private Subscription sub;
     private AtomicReference<ConsumerContext> consumerContext = new AtomicReference<>();
     private AtomicReference<FetchConsumer> fetchConsumer = new AtomicReference<>();
@@ -63,22 +66,24 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
      * Calls to doReceive result in a nextMessage call at the NATS level. Core NATS uses a
      * subscription, while JetStream uses a named ConsumerContext.
      *
-     * @param destination where to subscribe
-     * @param nc          NATS connection
+     * @param destination destination to subscribe to; must not be {@code null}
+     * @param nc          NATS connection, or {@code null} when connection setup failed
+     * @throws NullPointerException if {@code destination} is {@code null}
      */
-    public NatsMessageSource(NatsConsumerDestination destination, Connection nc) {
+    public NatsMessageSource(NatsConsumerDestination destination, @Nullable Connection nc) {
         this(destination, nc, true, true);
     }
 
     /**
      * Create a message source with explicit native header behavior.
      *
-     * @param destination              where to subscribe
-     * @param nc                       NATS connection
+     * @param destination              destination to subscribe to; must not be {@code null}
+     * @param nc                       NATS connection, or {@code null} when connection setup failed
      * @param includeNativeHeaders     whether native NATS headers should be copied to Spring headers
      * @param markNativeHeadersPresent whether Spring Cloud Stream should be told native headers were present
+     * @throws NullPointerException if {@code destination} is {@code null}
      */
-    public NatsMessageSource(NatsConsumerDestination destination, Connection nc,
+    public NatsMessageSource(NatsConsumerDestination destination, @Nullable Connection nc,
                              boolean includeNativeHeaders, boolean markNativeHeadersPresent) {
         this(destination, nc, includeNativeHeaders, markNativeHeadersPresent, false, null, null);
     }
@@ -86,18 +91,19 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     /**
      * Create a message source with explicit native header and JetStream behavior.
      *
-     * @param destination              where to subscribe
-     * @param nc                       NATS connection
+     * @param destination              destination to subscribe to; must not be {@code null}
+     * @param nc                       NATS connection, or {@code null} when connection setup failed
      * @param includeNativeHeaders     whether native NATS headers should be copied to Spring headers
      * @param markNativeHeadersPresent whether Spring Cloud Stream should be told native headers were present
      * @param jetStream                whether messages should be consumed through JetStream
-     * @param streamName               optional JetStream stream name
-     * @param consumerName             optional JetStream consumer name
+     * @param streamName               optional JetStream stream name; required before start when JetStream mode is enabled
+     * @param consumerName             optional JetStream consumer name; required before start when JetStream mode is enabled and no consumer group exists
+     * @throws NullPointerException if {@code destination} is {@code null}
      */
-    public NatsMessageSource(NatsConsumerDestination destination, Connection nc,
+    public NatsMessageSource(NatsConsumerDestination destination, @Nullable Connection nc,
                              boolean includeNativeHeaders, boolean markNativeHeadersPresent,
                              boolean jetStream, @Nullable String streamName, @Nullable String consumerName) {
-        this.destination = destination;
+        this.destination = Objects.requireNonNull(destination, "destination must not be null");
         this.connection = nc;
         this.includeNativeHeaders = includeNativeHeaders;
         this.markNativeHeadersPresent = markNativeHeadersPresent;
@@ -106,11 +112,15 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
         this.consumerName = NatsJetStreamSupport.normalize(consumerName);
     }
 
+    /**
+     * @return a Spring message for the next available NATS message, or {@code null} when no message is available
+     */
     @Override
     @Nullable
     protected Object doReceive() {
         ConsumerContext context = this.consumerContext.get();
-        if (!this.jetStream && this.sub == null) {
+        Subscription subscription = this.sub;
+        if (!this.jetStream && subscription == null) {
             return null;
         }
         if (this.jetStream && context == null) {
@@ -122,7 +132,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
             if (this.jetStream) {
                 m = receiveJetStreamMessage(context);
             } else {
-                m = this.sub.nextMessage(Duration.ZERO);
+                m = subscription.nextMessage(Duration.ZERO);
             }
 
             if (this.jetStream && this.consumerContext.get() != context) {
@@ -161,22 +171,29 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
             return;
         }
 
+        Connection nc = this.connection;
+        if (nc == null) {
+            logger.warn("cannot start NATS message source, no connection available for "
+                    + this.destination.getName());
+            return;
+        }
+
         String sub = this.destination.getSubject();
         String queue = this.destination.getQueueGroup();
 
         if (this.jetStream) {
-            startJetStream(sub, queue);
+            startJetStream(nc, sub, queue);
             return;
         }
 
         if (queue != null && queue.length() > 0) {
-            this.sub = this.connection.subscribe(sub, queue);
+            this.sub = nc.subscribe(sub, queue);
         } else {
-            this.sub = this.connection.subscribe(sub);
+            this.sub = nc.subscribe(sub);
         }
     }
 
-    private void startJetStream(String sub, String queue) {
+    private void startJetStream(Connection nc, String sub, String queue) {
         String consumer = NatsJetStreamSupport.hasText(this.consumerName)
                 ? this.consumerName
                 : NatsJetStreamSupport.normalize(queue);
@@ -188,7 +205,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
         }
 
         try {
-            this.consumerContext.set(this.connection.jetStream().getConsumerContext(this.streamName, consumer));
+            this.consumerContext.set(nc.jetStream().getConsumerContext(this.streamName, consumer));
         } catch (IOException | JetStreamApiException | IllegalArgumentException exp) {
             throw new IllegalStateException("Failed to subscribe to NATS JetStream subject " + sub, exp);
         }
@@ -202,11 +219,12 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
             return;
         }
 
-        if (this.sub == null) {
+        Subscription subscription = this.sub;
+        if (subscription == null) {
             return;
         }
 
-        this.sub.unsubscribe();
+        subscription.unsubscribe();
         this.sub = null;
     }
 

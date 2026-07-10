@@ -49,7 +49,10 @@ public class NatsAutoConfiguration {
     private static final Log logger = LogFactory.getLog(NatsAutoConfiguration.class);
 
     /**
-     * @return NATS connection created with the provided properties. If no server URL is set the method will return null.
+     * @param properties         NATS connection properties, or {@code null} when called directly without bound properties
+     * @param connectionListener optional listener for connection state changes
+     * @param errorListener      optional listener for connection errors
+     * @return NATS connection created with the provided properties, or {@code null} when no server URL is configured
      * @throws IOException              when a connection error occurs
      * @throws InterruptedException     in the unusual case of a thread interruption during connect
      * @throws GeneralSecurityException if there is a problem authenticating the connection

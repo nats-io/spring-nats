@@ -22,16 +22,23 @@ import org.springframework.lang.Nullable;
 
 @ConfigurationProperties(prefix = "nats.spring.cloud.stream.binder")
 public class NatsBinderConfigurationProperties extends NatsConnectionProperties {
+    @Nullable
     private String[] headersToEmbed;
 
     public NatsBinderConfigurationProperties() {
     }
 
+    /**
+     * @return custom Spring header names to embed when embedded headers are used, or {@code null} to use Spring Cloud Stream defaults
+     */
     @Nullable
     public String[] getHeadersToEmbed() {
         return this.headersToEmbed;
     }
 
+    /**
+     * @param headersToEmbed custom Spring header names to embed, or {@code null} to use Spring Cloud Stream defaults
+     */
     public void setHeadersToEmbed(@Nullable String[] headersToEmbed) {
         this.headersToEmbed = headersToEmbed;
     }

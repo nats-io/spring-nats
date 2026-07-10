@@ -45,6 +45,7 @@ import org.springframework.messaging.MessageHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A NATS channel binder provides a NATS connection to the code attached to it.
@@ -67,12 +68,13 @@ public class NatsChannelBinder extends
      * The NatsProperties are considered global and a backup. If a connection or error listener is provided it is used, otherwise a default logging listener is assigned to avoid
      * silent errors.
      *
-     * @param bindingProperties    extended properties for future use
-     * @param properties           primary properties
-     * @param natsProperties       backup global properties
-     * @param provisioningProvider provisioner for destination names
-     * @param connectionListener   custom connection listener
-     * @param errorListener        custom error listener
+     * @param bindingProperties    extended binding properties; must not be {@code null}
+     * @param properties           primary binder properties, or {@code null} when only global properties are available
+     * @param natsProperties       backup global properties, or {@code null} when only binder properties are available
+     * @param provisioningProvider provisioner for destination names; must not be {@code null}
+     * @param connectionListener   optional custom connection listener
+     * @param errorListener        optional custom error listener
+     * @throws NullPointerException if {@code bindingProperties} or {@code provisioningProvider} is {@code null}
      */
     public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
                              @Nullable NatsBinderConfigurationProperties properties,
@@ -80,8 +82,9 @@ public class NatsChannelBinder extends
                              NatsChannelProvisioner provisioningProvider,
                              @Nullable ConnectionListener connectionListener,
                              @Nullable ErrorListener errorListener) {
-        super(headersToEmbed(properties), provisioningProvider);
-        this.bindingProperties = bindingProperties;
+        super(headersToEmbed(properties), Objects.requireNonNull(provisioningProvider,
+                "provisioningProvider must not be null"));
+        this.bindingProperties = Objects.requireNonNull(bindingProperties, "bindingProperties must not be null");
         this.properties = properties;
         this.natsProperties = natsProperties;
 
@@ -146,7 +149,7 @@ public class NatsChannelBinder extends
     }
 
     /**
-     * @return NATS connection
+     * @return NATS connection, or {@code null} when no server was configured or connection setup failed
      */
     @Nullable
     public Connection getConnection() {
