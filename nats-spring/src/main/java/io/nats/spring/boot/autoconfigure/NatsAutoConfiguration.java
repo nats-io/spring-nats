@@ -30,6 +30,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.lang.Nullable;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -54,7 +56,10 @@ public class NatsAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public Connection natsConnection(NatsProperties properties, ConnectionListener connectionListener, ErrorListener errorListener)
+    @Conditional(NatsServerConfiguredCondition.class)
+    @Nullable
+    public Connection natsConnection(@Nullable NatsProperties properties, @Nullable ConnectionListener connectionListener,
+                                     @Nullable ErrorListener errorListener)
             throws IOException, InterruptedException, GeneralSecurityException {
         Connection nc = null;
         String serverProp = (properties != null) ? properties.getServer() : null;
@@ -83,7 +88,7 @@ public class NatsAutoConfiguration {
     @ConditionalOnMissingBean
     public ConnectionListener defaultConnectionListener() {
         return new ConnectionListener() {
-            public void connectionEvent(Connection conn, Events type) {
+            public void connectionEvent(@Nullable Connection conn, Events type) {
                 logger.info("NATS connection status changed " + type);
             }
         };
@@ -94,17 +99,17 @@ public class NatsAutoConfiguration {
     public ErrorListener defaultErrorListener() {
         return new ErrorListener() {
             @Override
-            public void slowConsumerDetected(Connection conn, Consumer consumer) {
+            public void slowConsumerDetected(@Nullable Connection conn, @Nullable Consumer consumer) {
                 logger.info("NATS connection slow consumer detected");
             }
 
             @Override
-            public void exceptionOccurred(Connection conn, Exception exp) {
+            public void exceptionOccurred(@Nullable Connection conn, Exception exp) {
                 logger.info("NATS connection exception occurred", exp);
             }
 
             @Override
-            public void errorOccurred(Connection conn, String error) {
+            public void errorOccurred(@Nullable Connection conn, String error) {
                 logger.info("NATS connection error occurred " + error);
             }
         };

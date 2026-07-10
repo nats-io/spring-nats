@@ -30,6 +30,7 @@ import org.springframework.context.Lifecycle;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
 import org.springframework.integration.endpoint.AbstractMessageSource;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.io.IOException;
@@ -52,7 +53,9 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     private boolean includeNativeHeaders;
     private boolean markNativeHeadersPresent;
     private boolean jetStream;
+    @Nullable
     private String streamName;
+    @Nullable
     private String consumerName;
 
     /**
@@ -93,7 +96,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
      */
     public NatsMessageSource(NatsConsumerDestination destination, Connection nc,
                              boolean includeNativeHeaders, boolean markNativeHeadersPresent,
-                             boolean jetStream, String streamName, String consumerName) {
+                             boolean jetStream, @Nullable String streamName, @Nullable String consumerName) {
         this.destination = destination;
         this.connection = nc;
         this.includeNativeHeaders = includeNativeHeaders;
@@ -104,6 +107,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
     }
 
     @Override
+    @Nullable
     protected Object doReceive() {
         ConsumerContext context = this.consumerContext.get();
         if (!this.jetStream && this.sub == null) {
@@ -211,6 +215,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
         return "nats:message-source";
     }
 
+    @Nullable
     private Message receiveJetStreamMessage(ConsumerContext context)
             throws IOException, JetStreamApiException, InterruptedException, JetStreamStatusCheckedException {
         FetchConsumer consumer = context.fetch(FetchConsumeOptions.builder()
@@ -229,7 +234,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
         }
     }
 
-    private static void closeFetchConsumer(FetchConsumer consumer) {
+    private static void closeFetchConsumer(@Nullable FetchConsumer consumer) {
         if (consumer == null) {
             return;
         }

@@ -81,6 +81,17 @@ class AutoconfigureTests {
     }
 
     @Test
+    void springContextDoesNotCreateConnectionWithoutServerProperties() {
+        this.contextRunner.run(context -> assertThat(context).doesNotHaveBean(Connection.class));
+    }
+
+    @Test
+    void springContextDoesNotCreateConnectionWithBlankServerProperty() {
+        this.contextRunner.withPropertyValues("nats.spring.server= ").run(context ->
+                assertThat(context).doesNotHaveBean(Connection.class));
+    }
+
+    @Test
     void directConnectionFactoryUsesProgrammaticProperties() throws Exception {
         try (NatsTestServer ts = new NatsTestServer()) {
             NatsProperties properties = new NatsProperties();

@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
@@ -45,13 +46,16 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 
     private NatsConsumerDestination destination;
     private Connection connection;
+    @Nullable
     private MessageChannel output;
     private AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
     private AtomicReference<io.nats.client.MessageConsumer> jetStreamConsumer = new AtomicReference<>();
     private boolean includeNativeHeaders;
     private boolean markNativeHeadersPresent;
     private boolean jetStream;
+    @Nullable
     private String streamName;
+    @Nullable
     private String consumerName;
 
     /**
@@ -91,7 +95,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
      */
     public NatsMessageProducer(NatsConsumerDestination destination, Connection nc,
                                boolean includeNativeHeaders, boolean markNativeHeadersPresent,
-                               boolean jetStream, String streamName, String consumerName) {
+                               boolean jetStream, @Nullable String streamName, @Nullable String consumerName) {
         this.destination = destination;
         this.connection = nc;
         this.includeNativeHeaders = includeNativeHeaders;
@@ -102,6 +106,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
     }
 
     @Override
+    @Nullable
     public MessageChannel getOutputChannel() {
         return this.output;
     }

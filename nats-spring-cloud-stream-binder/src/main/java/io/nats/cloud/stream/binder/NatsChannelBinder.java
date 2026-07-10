@@ -39,6 +39,7 @@ import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
@@ -53,8 +54,11 @@ public class NatsChannelBinder extends
         implements ExtendedPropertiesBinder<MessageChannel, NatsConsumerProperties, NatsProducerProperties> {
     private static final Log logger = LogFactory.getLog(NatsChannelBinder.class);
     private final NatsExtendedBindingProperties bindingProperties;
+    @Nullable
     private NatsBinderConfigurationProperties properties;
+    @Nullable
     private NatsProperties natsProperties;
+    @Nullable
     private Connection connection;
 
     /**
@@ -71,11 +75,11 @@ public class NatsChannelBinder extends
      * @param errorListener        custom error listener
      */
     public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
-                             NatsBinderConfigurationProperties properties,
-                             NatsProperties natsProperties,
+                             @Nullable NatsBinderConfigurationProperties properties,
+                             @Nullable NatsProperties natsProperties,
                              NatsChannelProvisioner provisioningProvider,
-                             ConnectionListener connectionListener,
-                             ErrorListener errorListener) {
+                             @Nullable ConnectionListener connectionListener,
+                             @Nullable ErrorListener errorListener) {
         super(headersToEmbed(properties), provisioningProvider);
         this.bindingProperties = bindingProperties;
         this.properties = properties;
@@ -103,7 +107,7 @@ public class NatsChannelBinder extends
                 builder = builder.connectionListener(connectionListener);
             } else {
                 builder = builder.connectionListener(new ConnectionListener() {
-                    public void connectionEvent(Connection conn, Events type) {
+                    public void connectionEvent(@Nullable Connection conn, Events type) {
                         logger.info("NATS connection status changed " + type);
                     }
                 });
@@ -114,17 +118,17 @@ public class NatsChannelBinder extends
             } else {
                 builder = builder.errorListener(new ErrorListener() {
                     @Override
-                    public void slowConsumerDetected(Connection conn, Consumer consumer) {
+                    public void slowConsumerDetected(@Nullable Connection conn, @Nullable Consumer consumer) {
                         logger.info("NATS connection slow consumer detected");
                     }
 
                     @Override
-                    public void exceptionOccurred(Connection conn, Exception exp) {
+                    public void exceptionOccurred(@Nullable Connection conn, Exception exp) {
                         logger.info("NATS connection exception occurred", exp);
                     }
 
                     @Override
-                    public void errorOccurred(Connection conn, String error) {
+                    public void errorOccurred(@Nullable Connection conn, String error) {
                         logger.info("NATS connection error occurred " + error);
                     }
                 });
@@ -144,6 +148,7 @@ public class NatsChannelBinder extends
     /**
      * @return NATS connection
      */
+    @Nullable
     public Connection getConnection() {
         return this.connection;
     }

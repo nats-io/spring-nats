@@ -19,6 +19,7 @@ package io.nats.spring.boot.autoconfigure;
 import io.nats.client.Nats;
 import io.nats.client.Options;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.lang.Nullable;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -212,6 +213,7 @@ public class NatsConnectionProperties {
     /**
      * @return url for the nats server
      */
+    @Nullable
     public String getServer() {
         return this.server;
     }
@@ -219,13 +221,14 @@ public class NatsConnectionProperties {
     /**
      * @param server url for the nats server
      */
-    public void setServer(String server) {
+    public void setServer(@Nullable String server) {
         this.server = server;
     }
 
     /**
      * @return a name used for the connection
      */
+    @Nullable
     public String getConnectionName() {
         return this.connectionName;
     }
@@ -233,7 +236,7 @@ public class NatsConnectionProperties {
     /**
      * @param connectionName a name to associate with the connection
      */
-    public void setConnectionName(String connectionName) {
+    public void setConnectionName(@Nullable String connectionName) {
         this.connectionName = connectionName;
     }
 
@@ -313,6 +316,7 @@ public class NatsConnectionProperties {
     /**
      * @return username to use with password for authenticaiton
      */
+    @Nullable
     public String getUsername() {
         return this.username;
     }
@@ -320,13 +324,14 @@ public class NatsConnectionProperties {
     /**
      * @param username to use with password for authenticaiton
      */
-    public void setUsername(String username) {
+    public void setUsername(@Nullable String username) {
         this.username = username;
     }
 
     /**
      * @return password to use with username for authenticaiton
      */
+    @Nullable
     public String getPassword() {
         return this.password;
     }
@@ -334,13 +339,14 @@ public class NatsConnectionProperties {
     /**
      * @param password to use with username for authenticaiton
      */
-    public void setPassword(String password) {
+    public void setPassword(@Nullable String password) {
         this.password = password;
     }
 
     /**
      * @return authentication token to use with the server
      */
+    @Nullable
     public String getToken() {
         return this.token;
     }
@@ -348,13 +354,14 @@ public class NatsConnectionProperties {
     /**
      * @param token authentication token to use with the server
      */
-    public void setToken(String token) {
+    public void setToken(@Nullable String token) {
         this.token = token;
     }
 
     /**
      * @return private key (seed) for NKey authentication with the server
      */
+    @Nullable
     public String getNkey() {
         return nkey;
     }
@@ -362,13 +369,14 @@ public class NatsConnectionProperties {
     /**
      * @param nkey private key (seed) for NKey authentication with the server
      */
-    public void setNkey(String nkey) {
+    public void setNkey(@Nullable String nkey) {
         this.nkey = nkey;
     }
 
     /**
      * @return user jwt for authentication with the server
      */
+    @Nullable
     public String getJwt() {
         return jwt;
     }
@@ -376,7 +384,7 @@ public class NatsConnectionProperties {
     /**
      * @param jwt user jwt for authentication with the server
      */
-    public void setJwt(String jwt) {
+    public void setJwt(@Nullable String jwt) {
         this.jwt = jwt;
     }
 
@@ -486,6 +494,7 @@ public class NatsConnectionProperties {
      * @return path to the credentials file to use for authentication with an
      * account enabled server
      */
+    @Nullable
     public String getCredentials() {
         return this.credentials;
     }
@@ -494,13 +503,14 @@ public class NatsConnectionProperties {
      * @param credentials path to the credentials file to use for authentication
      *                    with an account enabled server
      */
-    public void setCredentials(String credentials) {
+    public void setCredentials(@Nullable String credentials) {
         this.credentials = credentials;
     }
 
     /**
      * @return path to the SSL Keystore
      */
+    @Nullable
     public String getKeyStorePath() {
         return this.keyStorePath;
     }
@@ -508,13 +518,14 @@ public class NatsConnectionProperties {
     /**
      * @param keyStorePath file path for the SSL Keystore
      */
-    public void setKeyStorePath(String keyStorePath) {
+    public void setKeyStorePath(@Nullable String keyStorePath) {
         this.keyStorePath = keyStorePath;
     }
 
     /**
      * @return password used to unlock the keystore
      */
+    @Nullable
     public char[] getKeyStorePassword() {
         return this.keyStorePassword;
     }
@@ -522,13 +533,14 @@ public class NatsConnectionProperties {
     /**
      * @param keyStorePassword used to unlock the keystore
      */
-    public void setKeyStorePassword(char[] keyStorePassword) {
+    public void setKeyStorePassword(@Nullable char[] keyStorePassword) {
         this.keyStorePassword = keyStorePassword;
     }
 
     /**
      * @return type of keystore to use for SSL connections
      */
+    @Nullable
     public String getKeyStoreType() {
         return this.keyStoreType;
     }
@@ -537,13 +549,14 @@ public class NatsConnectionProperties {
      * @param keyStoreType generally the default, but available for special keystore
      *                     formats/types
      */
-    public void setKeyStoreType(String keyStoreType) {
+    public void setKeyStoreType(@Nullable String keyStoreType) {
         this.keyStoreType = keyStoreType;
     }
 
     /**
      * @return file path for the SSL trust store
      */
+    @Nullable
     public String getTrustStorePath() {
         return this.trustStorePath;
     }
@@ -551,13 +564,14 @@ public class NatsConnectionProperties {
     /**
      * @param trustStorePath file path for the SSL trust store
      */
-    public void setTrustStorePath(String trustStorePath) {
+    public void setTrustStorePath(@Nullable String trustStorePath) {
         this.trustStorePath = trustStorePath;
     }
 
     /**
      * @return password used to unlock the trust store
      */
+    @Nullable
     public char[] getTrustStorePassword() {
         return this.trustStorePassword;
     }
@@ -565,13 +579,14 @@ public class NatsConnectionProperties {
     /**
      * @param trustStorePassword used to unlock the trust store
      */
-    public void setTrustStorePassword(char[] trustStorePassword) {
+    public void setTrustStorePassword(@Nullable char[] trustStorePassword) {
         this.trustStorePassword = trustStorePassword;
     }
 
     /**
      * @return type of keystore to use for SSL connections
      */
+    @Nullable
     public String getTrustStoreType() {
         return this.trustStoreType;
     }
@@ -580,13 +595,14 @@ public class NatsConnectionProperties {
      * @param trustStoreType generally the default, but available for special trust
      *                       store formats/types
      */
-    public void setTrustStoreType(String trustStoreType) {
+    public void setTrustStoreType(@Nullable String trustStoreType) {
         this.trustStoreType = trustStoreType;
     }
 
     /**
      * @return keyStoreProvider of keystore to use for SSL connections
      */
+    @Nullable
     public String getKeyStoreProvider() {
         return keyStoreProvider;
     }
@@ -594,13 +610,14 @@ public class NatsConnectionProperties {
     /**
      * @param keyStoreProvider defaults to SunX509. Alternatives include PKIX.
      */
-    public void setKeyStoreProvider(String keyStoreProvider) {
+    public void setKeyStoreProvider(@Nullable String keyStoreProvider) {
         this.keyStoreProvider = keyStoreProvider;
     }
 
     /**
      * @return trustStoreProvider of keystore to use for SSL connections
      */
+    @Nullable
     public String getTrustStoreProvider() {
         return trustStoreProvider;
     }
@@ -608,13 +625,14 @@ public class NatsConnectionProperties {
     /**
      * @param trustStoreProvider defaults to SunX509. Alternatives include PKIX.
      */
-    public void setTrustStoreProvider(String trustStoreProvider) {
+    public void setTrustStoreProvider(@Nullable String trustStoreProvider) {
         this.trustStoreProvider = trustStoreProvider;
     }
 
     /**
      * @return tlsProtocol to be used in TLS handshake
      */
+    @Nullable
     public String getTlsProtocol() {
         return tlsProtocol;
     }
@@ -622,7 +640,7 @@ public class NatsConnectionProperties {
     /**
      * @param tlsProtocol the tls protocol
      */
-    public void setTlsProtocol(String tlsProtocol) {
+    public void setTlsProtocol(@Nullable String tlsProtocol) {
         this.tlsProtocol = tlsProtocol;
     }
 
@@ -654,7 +672,7 @@ public class NatsConnectionProperties {
      *                  separated list
      * @return chainable properties
      */
-    public NatsConnectionProperties server(String serverURL) {
+    public NatsConnectionProperties server(@Nullable String serverURL) {
         this.server = serverURL;
         return this;
     }
@@ -663,7 +681,7 @@ public class NatsConnectionProperties {
      * @param connectionName used for the underlying nats connection
      * @return chainable properties
      */
-    public NatsConnectionProperties connectionName(String connectionName) {
+    public NatsConnectionProperties connectionName(@Nullable String connectionName) {
         this.connectionName = connectionName;
         return this;
     }
@@ -720,7 +738,7 @@ public class NatsConnectionProperties {
      * @param username for authentication
      * @return chainable properties
      */
-    public NatsConnectionProperties username(String username) {
+    public NatsConnectionProperties username(@Nullable String username) {
         this.username = username;
         return this;
     }
@@ -729,7 +747,7 @@ public class NatsConnectionProperties {
      * @param password for authentication
      * @return chainable properties
      */
-    public NatsConnectionProperties password(String password) {
+    public NatsConnectionProperties password(@Nullable String password) {
         this.password = password;
         return this;
     }
@@ -738,7 +756,7 @@ public class NatsConnectionProperties {
      * @param token for authentication
      * @return chainable properties
      */
-    public NatsConnectionProperties token(String token) {
+    public NatsConnectionProperties token(@Nullable String token) {
         this.token = token;
         return this;
     }
@@ -747,7 +765,7 @@ public class NatsConnectionProperties {
      * @param nkey private key (seed) for NKey authentication
      * @return chainable properties
      */
-    public NatsConnectionProperties nkey(String nkey) {
+    public NatsConnectionProperties nkey(@Nullable String nkey) {
         this.nkey = nkey;
         return this;
     }
@@ -756,7 +774,7 @@ public class NatsConnectionProperties {
      * @param jwt user jwt for authentication with the server
      * @return chainable properties
      */
-    public NatsConnectionProperties jwt(String jwt) {
+    public NatsConnectionProperties jwt(@Nullable String jwt) {
         this.jwt = jwt;
         return this;
     }
@@ -812,7 +830,7 @@ public class NatsConnectionProperties {
      *                    authentication
      * @return chainable properties
      */
-    public NatsConnectionProperties credentials(String credentials) {
+    public NatsConnectionProperties credentials(@Nullable String credentials) {
         this.credentials = credentials;
         return this;
     }
@@ -821,7 +839,7 @@ public class NatsConnectionProperties {
      * @param keyStorePath file path to SSL Key Store
      * @return chainable properties
      */
-    public NatsConnectionProperties keyStorePath(String keyStorePath) {
+    public NatsConnectionProperties keyStorePath(@Nullable String keyStorePath) {
         this.keyStorePath = keyStorePath;
         return this;
     }
@@ -830,7 +848,7 @@ public class NatsConnectionProperties {
      * @param keyStorePassword required to unlock the SSL Key Store
      * @return chainable properties
      */
-    public NatsConnectionProperties keyStorePassword(char[] keyStorePassword) {
+    public NatsConnectionProperties keyStorePassword(@Nullable char[] keyStorePassword) {
         this.keyStorePassword = keyStorePassword;
         return this;
     }
@@ -839,7 +857,7 @@ public class NatsConnectionProperties {
      * @param trustStorePath file path to SSL Trust Store
      * @return chainable properties
      */
-    public NatsConnectionProperties trustStorePath(String trustStorePath) {
+    public NatsConnectionProperties trustStorePath(@Nullable String trustStorePath) {
         this.trustStorePath = trustStorePath;
         return this;
     }
@@ -848,7 +866,7 @@ public class NatsConnectionProperties {
      * @param trustStorePassword required to unlock the SSL Trust Store
      * @return chainable properties
      */
-    public NatsConnectionProperties trustStorePassword(char[] trustStorePassword) {
+    public NatsConnectionProperties trustStorePassword(@Nullable char[] trustStorePassword) {
         setTrustStorePassword(trustStorePassword);
         return this;
     }
@@ -857,7 +875,7 @@ public class NatsConnectionProperties {
      * @param keyStoreType type/format of the SSL Key Store
      * @return chainable properties
      */
-    public NatsConnectionProperties keyStoreType(String keyStoreType) {
+    public NatsConnectionProperties keyStoreType(@Nullable String keyStoreType) {
         this.keyStoreType = keyStoreType;
         return this;
     }
@@ -866,7 +884,7 @@ public class NatsConnectionProperties {
      * @param keyStoreProvider of the SSL Key Store
      * @return chainable properties
      */
-    public NatsConnectionProperties keyStoreProvider(String keyStoreProvider) {
+    public NatsConnectionProperties keyStoreProvider(@Nullable String keyStoreProvider) {
         this.keyStoreProvider = keyStoreProvider;
         return this;
     }
@@ -875,7 +893,7 @@ public class NatsConnectionProperties {
      * @param trustStoreType type/format of the SSL Trust Store
      * @return chainable properties
      */
-    public NatsConnectionProperties trustStoreType(String trustStoreType) {
+    public NatsConnectionProperties trustStoreType(@Nullable String trustStoreType) {
         this.trustStoreType = trustStoreType;
         return this;
     }
@@ -884,7 +902,7 @@ public class NatsConnectionProperties {
      * @param trustStoreProvider of the SSL Trust Store
      * @return chainable properties
      */
-    public NatsConnectionProperties trustStoreProvider(String trustStoreProvider) {
+    public NatsConnectionProperties trustStoreProvider(@Nullable String trustStoreProvider) {
         this.trustStoreProvider = trustStoreProvider;
         return this;
     }
@@ -893,7 +911,7 @@ public class NatsConnectionProperties {
      * @param tlsProtocol the tls protocol
      * @return chainable properties
      */
-    public NatsConnectionProperties tlsProtocol(String tlsProtocol) {
+    public NatsConnectionProperties tlsProtocol(@Nullable String tlsProtocol) {
         this.tlsProtocol = tlsProtocol;
         return this;
     }

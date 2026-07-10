@@ -18,6 +18,7 @@ package io.nats.cloud.stream.binder.properties;
 
 import io.nats.spring.boot.autoconfigure.NatsConnectionProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.lang.Nullable;
 
 @ConfigurationProperties(prefix = "nats.spring.cloud.stream.binder")
 public class NatsBinderConfigurationProperties extends NatsConnectionProperties {
@@ -26,11 +27,12 @@ public class NatsBinderConfigurationProperties extends NatsConnectionProperties 
     public NatsBinderConfigurationProperties() {
     }
 
+    @Nullable
     public String[] getHeadersToEmbed() {
         return this.headersToEmbed;
     }
 
-    public void setHeadersToEmbed(String[] headersToEmbed) {
+    public void setHeadersToEmbed(@Nullable String[] headersToEmbed) {
         this.headersToEmbed = headersToEmbed;
     }
 }

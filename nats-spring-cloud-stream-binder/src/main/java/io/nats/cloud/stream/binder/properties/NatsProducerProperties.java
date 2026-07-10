@@ -17,6 +17,7 @@
 package io.nats.cloud.stream.binder.properties;
 
 import io.nats.client.api.StorageType;
+import org.springframework.lang.Nullable;
 
 public class NatsProducerProperties {
     private boolean jetStream;
@@ -42,6 +43,7 @@ public class NatsProducerProperties {
     /**
      * @return optional JetStream stream name used for publish acknowledgements
      */
+    @Nullable
     public String getStreamName() {
         return this.streamName;
     }
@@ -49,7 +51,7 @@ public class NatsProducerProperties {
     /**
      * @param streamName optional JetStream stream name used for publish acknowledgements
      */
-    public void setStreamName(String streamName) {
+    public void setStreamName(@Nullable String streamName) {
         this.streamName = streamName;
     }
 
@@ -70,6 +72,7 @@ public class NatsProducerProperties {
     /**
      * @return optional storage type used when a missing JetStream stream is provisioned
      */
+    @Nullable
     public StorageType getStreamStorageType() {
         return this.streamStorageType;
     }
@@ -77,13 +80,14 @@ public class NatsProducerProperties {
     /**
      * @param streamStorageType optional storage type used when a missing JetStream stream is provisioned
      */
-    public void setStreamStorageType(StorageType streamStorageType) {
+    public void setStreamStorageType(@Nullable StorageType streamStorageType) {
         this.streamStorageType = streamStorageType;
     }
 
     /**
      * @return optional replica count used when a missing JetStream stream is provisioned
      */
+    @Nullable
     public Integer getStreamReplicas() {
         return this.streamReplicas;
     }
@@ -91,7 +95,7 @@ public class NatsProducerProperties {
     /**
      * @param streamReplicas optional replica count used when a missing JetStream stream is provisioned
      */
-    public void setStreamReplicas(Integer streamReplicas) {
+    public void setStreamReplicas(@Nullable Integer streamReplicas) {
         this.streamReplicas = streamReplicas;
     }
 }

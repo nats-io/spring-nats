@@ -27,6 +27,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.lang.Nullable;
@@ -44,11 +45,13 @@ public class NatsChannelBinderConfiguration {
     /**
      * A custom connection listener, otherwise a simple logging default is used.
      */
+    @Nullable
     private final ConnectionListener connectionListener;
 
     /**
      * A custom error listener, otherwise a simple logging default is used.
      */
+    @Nullable
     private final ErrorListener errorListener;
 
     /**
@@ -105,9 +108,11 @@ public class NatsChannelBinderConfiguration {
     }
 
     @Bean
+    @Conditional(NatsBinderServerConfiguredCondition.class)
     /**
      * @return binder, based on the channel provisioner, using the properties associated with this configuration
      */
+    @Nullable
     public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) throws IOException, InterruptedException {
         NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties,
                 this.natsBinderConfigurationProperties,

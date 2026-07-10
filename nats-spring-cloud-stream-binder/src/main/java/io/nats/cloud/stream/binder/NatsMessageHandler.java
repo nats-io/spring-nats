@@ -24,6 +24,7 @@ import io.nats.client.impl.Headers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.integration.handler.AbstractMessageHandler;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandlingException;
 import org.springframework.messaging.MessageHeaders;
@@ -40,10 +41,13 @@ public class NatsMessageHandler extends AbstractMessageHandler {
     private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
 
     private String subject;
+    @Nullable
     private Connection connection;
     private boolean publishHeaders;
     private boolean jetStream;
+    @Nullable
     private String streamName;
+    @Nullable
     private JetStream jetStreamContext;
 
     /**
@@ -52,7 +56,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
      * @param subject where to send message to by default
      * @param nc      NATS connection
      */
-    public NatsMessageHandler(String subject, Connection nc) {
+    public NatsMessageHandler(String subject, @Nullable Connection nc) {
         this(subject, nc, true);
     }
 
@@ -63,7 +67,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
      * @param nc             NATS connection
      * @param publishHeaders whether Spring headers should be published as native NATS headers
      */
-    public NatsMessageHandler(String subject, Connection nc, boolean publishHeaders) {
+    public NatsMessageHandler(String subject, @Nullable Connection nc, boolean publishHeaders) {
         this(subject, nc, publishHeaders, false, null);
     }
 
@@ -76,7 +80,8 @@ public class NatsMessageHandler extends AbstractMessageHandler {
      * @param jetStream      whether messages should be published through JetStream
      * @param streamName     optional JetStream stream name
      */
-    public NatsMessageHandler(String subject, Connection nc, boolean publishHeaders, boolean jetStream, String streamName) {
+    public NatsMessageHandler(String subject, @Nullable Connection nc, boolean publishHeaders, boolean jetStream,
+                              @Nullable String streamName) {
         this.subject = subject;
         this.connection = nc;
         this.publishHeaders = publishHeaders;
@@ -118,7 +123,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         }
     }
 
-    private void publishMessage(Message<?> message, byte[] bytes, String replyTo, Headers headers) {
+    private void publishMessage(Message<?> message, byte[] bytes, @Nullable String replyTo, @Nullable Headers headers) {
         if (this.jetStream) {
             publishJetStreamMessage(message, bytes, replyTo, headers);
             return;
@@ -131,7 +136,8 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         }
     }
 
-    private void publishJetStreamMessage(Message<?> message, byte[] bytes, String replyTo, Headers headers) {
+    private void publishJetStreamMessage(Message<?> message, byte[] bytes, @Nullable String replyTo,
+                                         @Nullable Headers headers) {
         if (replyTo != null) {
             throw new MessageHandlingException(message, "JetStream publishing does not support reply channels");
         }
@@ -156,6 +162,7 @@ public class NatsMessageHandler extends AbstractMessageHandler {
         }
     }
 
+    @Nullable
     private PublishOptions publishOptions() {
         if (!NatsJetStreamSupport.hasText(this.streamName)) {
             return null;
@@ -166,7 +173,8 @@ public class NatsMessageHandler extends AbstractMessageHandler {
                 .build();
     }
 
-    private static JetStream jetStreamContext(Connection nc, boolean jetStream) {
+    @Nullable
+    private static JetStream jetStreamContext(@Nullable Connection nc, boolean jetStream) {
         if (!jetStream || nc == null) {
             return null;
         }

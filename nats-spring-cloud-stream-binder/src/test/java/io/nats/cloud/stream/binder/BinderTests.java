@@ -377,6 +377,24 @@ class BinderTests {
     }
 
     @Test
+    void springContextDoesNotCreateBinderWithoutServerProperties() {
+        this.binderContextRunner.run(context -> {
+            assertThat(context).doesNotHaveBean(Connection.class);
+            assertThat(context).doesNotHaveBean(NatsChannelBinder.class);
+        });
+    }
+
+    @Test
+    void springContextDoesNotCreateBinderWithBlankServerProperties() {
+        this.binderContextRunner.withPropertyValues(
+                "nats.spring.server= ",
+                "nats.spring.cloud.stream.binder.server= ").run(context -> {
+            assertThat(context).doesNotHaveBean(Connection.class);
+            assertThat(context).doesNotHaveBean(NatsChannelBinder.class);
+        });
+    }
+
+    @Test
     void binderPropertiesWinOverGlobalProperties() throws IOException, InterruptedException {
         try (NatsBinderTestServer global = new NatsBinderTestServer();
              NatsBinderTestServer binderSpecific = new NatsBinderTestServer()) {
