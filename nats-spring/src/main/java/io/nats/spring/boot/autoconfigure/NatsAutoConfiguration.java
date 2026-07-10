@@ -32,6 +32,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.lang.Nullable;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -64,10 +65,9 @@ public class NatsAutoConfiguration {
     public Connection natsConnection(@Nullable NatsProperties properties, @Nullable ConnectionListener connectionListener,
                                      @Nullable ErrorListener errorListener)
             throws IOException, InterruptedException, GeneralSecurityException {
-        Connection nc = null;
-        String serverProp = (properties != null) ? properties.getServer() : null;
-
-        if (serverProp == null || serverProp.length() == 0) {
+        // Defensive for direct programmatic calls; bean creation is already gated by
+        // NatsServerConfiguredCondition when Spring creates this bean.
+        if (properties == null || !StringUtils.hasText(properties.getServer())) {
             return null;
         }
 
@@ -79,12 +79,11 @@ public class NatsAutoConfiguration {
 
             builder = builder.errorListener(errorListener);
 
-            nc = Nats.connect(builder.build());
+            return Nats.connect(builder.build());
         } catch (Exception e) {
             logger.info("error connecting to nats", e);
             throw e;
         }
-        return nc;
     }
 
     @Bean
