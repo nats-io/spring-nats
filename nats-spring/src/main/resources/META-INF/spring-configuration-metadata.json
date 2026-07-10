@@ -75,6 +75,13 @@
             "defaultValue": false
         },
         {
+            "name": "nats.spring.no-no-responders",
+            "type": "java.lang.Boolean",
+            "description": "Whether or not to disable no responders support.",
+            "sourceType": "io.nats.spring.boot.autoconfigure.NatsProperties",
+            "defaultValue": false
+        },
+        {
             "name": "nats.spring.password",
             "type": "java.lang.String",
             "description": "Authentication password. Requires the username, but not the token, or credentials, or NKey.",

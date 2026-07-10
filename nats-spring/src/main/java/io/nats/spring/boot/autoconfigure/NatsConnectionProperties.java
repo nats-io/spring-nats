@@ -103,6 +103,11 @@ public class NatsConnectionProperties {
     private boolean noEcho;
 
     /**
+     * Whether or not to disable no responders support.
+     */
+    private boolean noNoResponders;
+
+    /**
      * Whether or not to treat subjects as UTF-8, the default is ASCII.
      */
     private boolean utf8Support;
@@ -435,6 +440,27 @@ public class NatsConnectionProperties {
     }
 
     /**
+     * @return whether or not to disable no responders support, see {@link Options.Builder#noNoResponders() noNoResponders()} in the builder doc
+     */
+    public boolean isNoNoResponders() {
+        return this.noNoResponders;
+    }
+
+    /**
+     * @return whether or not to disable no responders support, see {@link Options.Builder#noNoResponders() noNoResponders()} in the builder doc
+     */
+    public boolean getNoNoResponders() {
+        return this.noNoResponders;
+    }
+
+    /**
+     * @param noNoResponders whether or not to disable no responders support, see {@link Options.Builder#noNoResponders() noNoResponders()} in the builder doc
+     */
+    public void setNoNoResponders(boolean noNoResponders) {
+        this.noNoResponders = noNoResponders;
+    }
+
+    /**
      * @return whether or not the client should support for UTF8 subject names
      */
     public boolean isUtf8Support() {
@@ -764,6 +790,15 @@ public class NatsConnectionProperties {
     }
 
     /**
+     * @param noNoResponders whether or not to disable no responders support
+     * @return chainable properties
+     */
+    public NatsConnectionProperties noNoResponders(boolean noNoResponders) {
+        this.noNoResponders = noNoResponders;
+        return this;
+    }
+
+    /**
      * @param utf8Support whether or not to support utf8 subject names
      * @return chainable properties
      */
@@ -1005,6 +1040,10 @@ public class NatsConnectionProperties {
             builder = builder.noEcho();
         }
 
+        if (this.noNoResponders) {
+            builder = builder.noNoResponders();
+        }
+
         if (this.utf8Support) {
             builder = builder.supportUTF8Subjects();
         }
@@ -1047,6 +1086,7 @@ public class NatsConnectionProperties {
                 + " reconnectBufferSize='" + getReconnectBufferSize() + "',"
                 + " noResolveHostnames='" + getNoResolveHostnames() + "',"
                 + " noEcho='" + getNoEcho() + "',"
+                + " noNoResponders='" + getNoNoResponders() + "',"
                 + " tlsFirst='" + getTlsFirst() + "',"
                 + " utf8='" + getUtf8Support() + "',"
                 + " user=" + redact(getUsername()) + ","

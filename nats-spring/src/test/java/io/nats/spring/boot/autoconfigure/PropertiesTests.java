@@ -144,6 +144,44 @@ public class PropertiesTests {
     }
 
     @Test
+    public void noNoRespondersDefaultsToFalseInOptions() throws Exception {
+        NatsConnectionProperties props = new NatsConnectionProperties();
+        props.setServer("nats://alphabet:4222");
+
+        Options options = props.toOptions();
+
+        assertFalse(props.getNoNoResponders());
+        assertFalse(props.isNoNoResponders());
+        assertFalse(options.isNoNoResponders());
+    }
+
+    @Test
+    public void noNoRespondersSetterDisablesNoRespondersSupportInOptions() throws Exception {
+        NatsConnectionProperties props = new NatsConnectionProperties();
+        props.setServer("nats://alphabet:4222");
+        props.setNoNoResponders(true);
+
+        Options options = props.toOptions();
+
+        assertTrue(props.getNoNoResponders());
+        assertTrue(props.isNoNoResponders());
+        assertTrue(options.isNoNoResponders());
+    }
+
+    @Test
+    public void noNoRespondersFluentPropertyDisablesNoRespondersSupportInOptions() throws Exception {
+        NatsConnectionProperties props = new NatsConnectionProperties()
+                .server("nats://alphabet:4222")
+                .noNoResponders(true);
+
+        Options options = props.toOptions();
+
+        assertTrue(props.getNoNoResponders());
+        assertTrue(props.isNoNoResponders());
+        assertTrue(options.isNoNoResponders());
+    }
+
+    @Test
     public void testFluentProperties() throws Exception {
         String server = "nats://alphabet:4222";
         String connectionName = "alpha";

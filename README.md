@@ -202,6 +202,7 @@ By default, properties are configured using the `nats.spring` prefix:
 * `nats.spring.reconnect-buffer-size` the size in bytes for the reconnect buffer
 * `nats.spring.inbox-prefix` a custom inbox prefix
 * `nats.spring.no-echo` turn off echo from the server
+* `nats.spring.no-no-responders` disable no responders support
 * `nats.spring.utf8-support` enable UTF-8 subject names (warning this is an experimental feature, not all language clients will support it)
 * `nats.spring.username`, `nats.spring.password` the user name and password to authenticate with
 * `nats.spring.token` an authentication token, takes precedence over the username/password

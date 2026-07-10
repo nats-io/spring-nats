@@ -146,6 +146,20 @@ class AutoconfigureTests {
     }
 
     @Test
+    void noNoRespondersBindsToRealConnectionOptions() throws IOException, InterruptedException {
+        try (NatsTestServer ts = new NatsTestServer()) {
+            this.contextRunner.withPropertyValues(
+                    "nats.spring.server=" + ts.getURI(),
+                    "nats.spring.no-no-responders=true").run(context -> {
+                Connection conn = context.getBean(Connection.class);
+
+                assertThat(conn.getStatus()).isSameAs(Connection.Status.CONNECTED);
+                assertThat(conn.getOptions().isNoNoResponders()).isTrue();
+            });
+        }
+    }
+
+    @Test
     void utf8SubjectsCanRoundTripThroughRealServer() throws IOException, InterruptedException {
         try (NatsTestServer ts = new NatsTestServer()) {
             this.contextRunner.withPropertyValues(
