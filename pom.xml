@@ -21,8 +21,8 @@
         <java.version>17</java.version>
         <jacoco.version>0.8.13</jacoco.version>
         <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
-        <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.release>17</maven.compiler.release>
+        <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
         <!-- Unique entry point for version number management -->
         <revision>0.6.0</revision>
     </properties>
@@ -150,8 +150,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>${maven.compiler.release}</release>
                     <compilerArgument>-parameters</compilerArgument>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                 </configuration>
