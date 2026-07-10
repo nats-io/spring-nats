@@ -23,7 +23,6 @@
         <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
         <git-commit-id-maven-plugin.version>9.2.0</git-commit-id-maven-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
-        <maven.compiler.release>17</maven.compiler.release>
         <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
         <!-- Unique entry point for version number management -->
         <revision>0.6.0</revision>
@@ -128,6 +127,7 @@
                     <version>${maven-javadoc-plugin.version}</version>
                     <configuration>
                         <quiet>true</quiet>
+                        <source>${java.version}</source>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -178,7 +178,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <release>${maven.compiler.release}</release>
+                    <release>${java.version}</release>
                     <compilerArgument>-parameters</compilerArgument>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                 </configuration>
