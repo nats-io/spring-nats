@@ -812,6 +812,7 @@ class BinderTests {
                 assertConnected(conn, ts.getURI());
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext());
                     String theMessage = "hello world";
                     String out = "out";
                     ProducerDestination to = fixture.provisioner().provisionProducerDestination(out, null);
@@ -849,6 +850,7 @@ class BinderTests {
                 assertConnected(conn, ts.getURI());
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext());
                     String subject = "handler.headers.issue65";
                     String payload = "headers survive publish";
                     ProducerDestination to = fixture.provisioner().provisionProducerDestination(subject, null);
@@ -888,6 +890,7 @@ class BinderTests {
                 assertConnected(conn, ts.getURI());
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext());
                     String subject = "handler.headers.skipped";
                     String payload = "only payload";
                     ProducerDestination to = fixture.provisioner().provisionProducerDestination(subject, null);
@@ -2342,6 +2345,7 @@ class BinderTests {
                 assertConnected(conn, ts.getURI());
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext());
                     String stream = uniqueNatsName("JS_REPLY");
                     String subject = uniqueSubject("jetstream.reply.issue52");
                     addMemoryStream(conn, stream, subject);
@@ -2371,6 +2375,7 @@ class BinderTests {
                 assertConnected(conn, ts.getURI());
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext());
                     String stream = uniqueNatsName("JS_MISSING_PUBLISH");
                     String subject = uniqueSubject("jetstream.missing.publish.issue52");
                     ExtendedProducerProperties<NatsProducerProperties> producerProperties =
@@ -2714,6 +2719,7 @@ class BinderTests {
                 assertConnected(conn, ts.getURI());
 
                 try (BinderFixture fixture = newGlobalBinder(ts.getURI())) {
+                    fixture.binder().setApplicationContext(context.getSourceApplicationContext());
                     String request = "hello request";
                     String reply = "hello reply";
                     String req2rep = "req2rep";
@@ -2902,6 +2908,7 @@ class BinderTests {
                                            NatsBinderConfigurationProperties binderProperties)
             throws IOException, InterruptedException {
         NatsExtendedBindingProperties props = new NatsExtendedBindingProperties();
+        props.setApplicationContext(new GenericApplicationContext());
         NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration(
                 null,
                 null,

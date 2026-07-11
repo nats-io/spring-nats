@@ -153,8 +153,10 @@ public class NatsChannelBinder extends
                                                           ExtendedProducerProperties<NatsProducerProperties> producerProperties, MessageChannel errorChannel) {
         NatsProducerProperties extension = producerExtension(producerProperties);
         NatsJetStreamSupport.provisionStream(this.connection, destination.getName(), extension);
-        return new NatsMessageHandler(destination.getName(), this.connection, shouldUseNativeHeaders(producerProperties),
+        NatsMessageHandler natsMessageHandler = new NatsMessageHandler(destination.getName(), this.connection, shouldUseNativeHeaders(producerProperties),
                 isJetStream(extension), streamName(extension));
+        natsMessageHandler.setBeanFactory(getBeanFactory());
+        return natsMessageHandler;
     }
 
     @Override
