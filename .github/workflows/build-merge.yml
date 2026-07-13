@@ -1,0 +1,239 @@
+name: Build Merge
+
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build
+        required: false
+        default: main
+        type: string
+      nats_server_version:
+        description: NATS server version to build for tests
+        required: false
+        default: v2.14.3
+        type: string
+      publish_snapshot:
+        description: Publish snapshot after verify
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: build-merge-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      checkout_ref: ${{ steps.context.outputs.checkout_ref }}
+      nats_server_version: ${{ steps.context.outputs.nats_server_version }}
+      publish_snapshot: ${{ steps.context.outputs.publish_snapshot }}
+      java_version: ${{ steps.java_info.outputs.java_version }}
+    steps:
+      - name: "📄 Create context"
+        id: context
+        shell: sh
+        run: |
+          set -eu
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            checkout_ref='${{ inputs.ref }}'
+            nats_server_version='${{ inputs.nats_server_version }}'
+            publish_snapshot='${{ inputs.publish_snapshot }}'
+          else
+            checkout_ref='${{ github.event.pull_request.merge_commit_sha }}'
+            nats_server_version='v2.14.3'
+            publish_snapshot='true'
+          fi
+          printf 'checkout_ref=%s\n' "${checkout_ref}" >> "${GITHUB_OUTPUT}"
+          printf 'nats_server_version=%s\n' "${nats_server_version}" >> "${GITHUB_OUTPUT}"
+          printf 'publish_snapshot=%s\n' "${publish_snapshot}" >> "${GITHUB_OUTPUT}"
+
+      - name: "🧑‍💻 Checkout [${{ steps.context.outputs.checkout_ref }}]"
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.context.outputs.checkout_ref }}
+
+      - name: "🔍 Read Java Info"
+        id: java_info
+        uses: YunaBraska/java-info-action@main
+        with:
+          jv-fallback: '17'
+
+      - name: "📦 Clone NATS Server [${{ steps.context.outputs.nats_server_version }}]"
+        shell: sh
+        run: |
+          set -eu
+          git clone --depth 1 --branch "${{ steps.context.outputs.nats_server_version }}" \
+            https://github.com/nats-io/nats-server.git "${RUNNER_TEMP}/nats-server-src"
+
+      - name: "🔍 Read Go Info"
+        id: go_info
+        shell: sh
+        run: |
+          set -eu
+          go_version=$(awk '/^toolchain / { sub(/^toolchain go/, "", $2); print $2; exit } /^go / && found != 1 { found = 1; print $2 }' \
+            "${RUNNER_TEMP}/nats-server-src/go.mod")
+          if [ -z "${go_version}" ]; then
+            echo "Unable to determine Go version from NATS go.mod" >&2
+            exit 1
+          fi
+          printf 'go_version=%s\n' "${go_version}" >> "${GITHUB_OUTPUT}"
+
+      - name: "♻️ Restore NATS Server Cache [${{ steps.context.outputs.nats_server_version }}]"
+        id: nats_cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}
+          key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ steps.context.outputs.nats_server_version }}
+
+      - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
+        if: steps.nats_cache.outputs.cache-hit != 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.go_info.outputs.go_version }}
+          cache-dependency-path: ${{ runner.temp }}/nats-server-src/go.mod
+
+      - name: "🔨 Build NATS Server [${{ steps.context.outputs.nats_server_version }}]"
+        if: steps.nats_cache.outputs.cache-hit != 'true'
+        shell: sh
+        run: |
+          set -eu
+          mkdir -p "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}"
+          cd "${RUNNER_TEMP}/nats-server-src"
+          go build -o "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}/nats-server" ./main.go
+
+      - name: "📍 Expose NATS Server"
+        shell: sh
+        run: |
+          set -eu
+          chmod +x "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}/nats-server"
+          printf '%s\n' "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}" >> "${GITHUB_PATH}"
+          "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}/nats-server" -v
+
+      - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java_info.outputs.java_version }}
+          cache: maven
+
+      - name: "🧪 Verify"
+        run: ./mvnw -B verify
+
+  publish-snapshot:
+    if: needs.verify.outputs.publish_snapshot == 'true'
+    needs:
+      - verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: "🔐 Check publish secrets"
+        shell: sh
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -eu
+          for name in OSSRH_USERNAME OSSRH_PASSWORD SIGNING_KEY SIGNING_PASSWORD; do
+            eval "value=\${$name}"
+            if [ -z "${value}" ]; then
+              echo "Missing required secret: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: "🧑‍💻 Checkout [${{ needs.verify.outputs.checkout_ref }}]"
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.verify.outputs.checkout_ref }}
+
+      - name: "📦 Clone NATS Server [${{ needs.verify.outputs.nats_server_version }}]"
+        shell: sh
+        run: |
+          set -eu
+          git clone --depth 1 --branch "${{ needs.verify.outputs.nats_server_version }}" \
+            https://github.com/nats-io/nats-server.git "${RUNNER_TEMP}/nats-server-src"
+
+      - name: "🔍 Read Go Info"
+        id: go_info
+        shell: sh
+        run: |
+          set -eu
+          go_version=$(awk '/^toolchain / { sub(/^toolchain go/, "", $2); print $2; exit } /^go / && found != 1 { found = 1; print $2 }' \
+            "${RUNNER_TEMP}/nats-server-src/go.mod")
+          if [ -z "${go_version}" ]; then
+            echo "Unable to determine Go version from NATS go.mod" >&2
+            exit 1
+          fi
+          printf 'go_version=%s\n' "${go_version}" >> "${GITHUB_OUTPUT}"
+
+      - name: "♻️ Restore NATS Server Cache [${{ needs.verify.outputs.nats_server_version }}]"
+        id: nats_cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/nats-server/${{ needs.verify.outputs.nats_server_version }}
+          key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ needs.verify.outputs.nats_server_version }}
+
+      - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
+        if: steps.nats_cache.outputs.cache-hit != 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.go_info.outputs.go_version }}
+          cache-dependency-path: ${{ runner.temp }}/nats-server-src/go.mod
+
+      - name: "🔨 Build NATS Server [${{ needs.verify.outputs.nats_server_version }}]"
+        if: steps.nats_cache.outputs.cache-hit != 'true'
+        shell: sh
+        run: |
+          set -eu
+          mkdir -p "${HOME}/.cache/nats-server/${{ needs.verify.outputs.nats_server_version }}"
+          cd "${RUNNER_TEMP}/nats-server-src"
+          go build -o "${HOME}/.cache/nats-server/${{ needs.verify.outputs.nats_server_version }}/nats-server" ./main.go
+
+      - name: "📍 Expose NATS Server"
+        shell: sh
+        run: |
+          set -eu
+          chmod +x "${HOME}/.cache/nats-server/${{ needs.verify.outputs.nats_server_version }}/nats-server"
+          printf '%s\n' "${HOME}/.cache/nats-server/${{ needs.verify.outputs.nats_server_version }}" >> "${GITHUB_PATH}"
+          "${HOME}/.cache/nats-server/${{ needs.verify.outputs.nats_server_version }}/nats-server" -v
+
+      - name: "☕ Setup Java [${{ needs.verify.outputs.java_version }}]"
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ needs.verify.outputs.java_version }}
+          cache: maven
+          server-id: central
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_PASSWORD
+          gpg-private-key: ${{ secrets.SIGNING_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+
+      - name: "🚀 Publish Snapshot"
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+        run: ./mvnw -B -Ppublish -DskipTests deploy

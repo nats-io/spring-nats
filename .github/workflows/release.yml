@@ -12,31 +12,29 @@ on:
         required: false
         default: main
         type: string
+      nats_server_version:
+        description: NATS server version to build for tests
+        required: false
+        default: v2.14.3
+        type: string
   release:
     types:
       - published
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: release-${{ github.event.release.tag_name || inputs.release_version || github.run_id }}
   cancel-in-progress: false
 
-env:
-  JAVA_VERSION: '17'
-  NATS_SERVER_VERSION: 'v2.14.3'
-
 jobs:
   publish-release:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-      OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-      MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+    permissions:
+      contents: read
     steps:
-      - name: Resolve release inputs
+      - name: "📄 Create context"
         id: release
         shell: sh
         run: |
@@ -44,9 +42,11 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             version='${{ inputs.release_version }}'
             ref_name='${{ inputs.ref }}'
+            nats_server_version='${{ inputs.nats_server_version }}'
           else
             version='${{ github.event.release.tag_name }}'
             ref_name='${{ github.event.release.tag_name }}'
+            nats_server_version='v2.14.3'
           fi
           version=${version#v}
           if [ -z "${version}" ]; then
@@ -61,34 +61,112 @@ jobs:
           esac
           printf 'version=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
           printf 'ref=%s\n' "${ref_name}" >> "${GITHUB_OUTPUT}"
+          printf 'nats_server_version=%s\n' "${nats_server_version}" >> "${GITHUB_OUTPUT}"
 
-      - name: Check out code
+      - name: "🔐 Check publish secrets"
+        shell: sh
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -eu
+          for name in OSSRH_USERNAME OSSRH_PASSWORD SIGNING_KEY SIGNING_PASSWORD; do
+            eval "value=\${$name}"
+            if [ -z "${value}" ]; then
+              echo "Missing required secret: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: "🧑‍💻 Checkout [${{ steps.release.outputs.ref }}]"
         uses: actions/checkout@v7
         with:
           ref: ${{ steps.release.outputs.ref }}
 
-      - name: Set up Java
+      - name: "🔍 Read Java Info"
+        id: java_info
+        uses: YunaBraska/java-info-action@main
+        with:
+          jv-fallback: '17'
+
+      - name: "📦 Clone NATS Server [${{ steps.release.outputs.nats_server_version }}]"
+        shell: sh
+        run: |
+          set -eu
+          git clone --depth 1 --branch "${{ steps.release.outputs.nats_server_version }}" \
+            https://github.com/nats-io/nats-server.git "${RUNNER_TEMP}/nats-server-src"
+
+      - name: "🔍 Read Go Info"
+        id: go_info
+        shell: sh
+        run: |
+          set -eu
+          go_version=$(awk '/^toolchain / { sub(/^toolchain go/, "", $2); print $2; exit } /^go / && found != 1 { found = 1; print $2 }' \
+            "${RUNNER_TEMP}/nats-server-src/go.mod")
+          if [ -z "${go_version}" ]; then
+            echo "Unable to determine Go version from NATS go.mod" >&2
+            exit 1
+          fi
+          printf 'go_version=%s\n' "${go_version}" >> "${GITHUB_OUTPUT}"
+
+      - name: "♻️ Restore NATS Server Cache [${{ steps.release.outputs.nats_server_version }}]"
+        id: nats_cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/nats-server/${{ steps.release.outputs.nats_server_version }}
+          key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ steps.release.outputs.nats_server_version }}
+
+      - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
+        if: steps.nats_cache.outputs.cache-hit != 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.go_info.outputs.go_version }}
+          cache-dependency-path: ${{ runner.temp }}/nats-server-src/go.mod
+
+      - name: "🔨 Build NATS Server [${{ steps.release.outputs.nats_server_version }}]"
+        if: steps.nats_cache.outputs.cache-hit != 'true'
+        shell: sh
+        run: |
+          set -eu
+          mkdir -p "${HOME}/.cache/nats-server/${{ steps.release.outputs.nats_server_version }}"
+          cd "${RUNNER_TEMP}/nats-server-src"
+          go build -o "${HOME}/.cache/nats-server/${{ steps.release.outputs.nats_server_version }}/nats-server" ./main.go
+
+      - name: "📍 Expose NATS Server"
+        shell: sh
+        run: |
+          set -eu
+          chmod +x "${HOME}/.cache/nats-server/${{ steps.release.outputs.nats_server_version }}/nats-server"
+          printf '%s\n' "${HOME}/.cache/nats-server/${{ steps.release.outputs.nats_server_version }}" >> "${GITHUB_PATH}"
+          "${HOME}/.cache/nats-server/${{ steps.release.outputs.nats_server_version }}/nats-server" -v
+
+      - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: ${{ steps.java_info.outputs.java_version }}
           cache: maven
           server-id: central
           server-username: OSSRH_USERNAME
           server-password: OSSRH_PASSWORD
           gpg-private-key: ${{ secrets.SIGNING_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
 
-      - name: Install nats-server
-        uses: ./.github/actions/install-nats-server
-        with:
-          version: ${{ env.NATS_SERVER_VERSION }}
+      - name: "🏷️ Set Release Version [${{ steps.release.outputs.version }}]"
+        run: ./mvnw -B versions:set -DnewVersion=${{ steps.release.outputs.version }} -DgenerateBackupPoms=false
 
-      - name: Set release version
-        run: ./mvnw --no-transfer-progress versions:set -DnewVersion=${{ steps.release.outputs.version }} -DgenerateBackupPoms=false
+      - name: "🧪 Verify Release Build"
+        run: ./mvnw -B verify
 
-      - name: Verify release build
-        run: ./mvnw --no-transfer-progress verify
-
-      - name: Publish release
-        run: ./mvnw --no-transfer-progress -Ppublish -DskipTests deploy
+      - name: "🚀 Publish Release"
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+        run: ./mvnw -B -Ppublish -DskipTests deploy
