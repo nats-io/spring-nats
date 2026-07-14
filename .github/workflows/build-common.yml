@@ -89,16 +89,19 @@ jobs:
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@main
+        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b
 
       - name: "🧮 Resolve Version [${{ inputs.release_strategy }}]"
         id: resolve_version
+        env:
+          PROJECT_VERSION: ${{ steps.java_info.outputs.project_version }}
+          RELEASE_STRATEGY: ${{ inputs.release_strategy }}
         shell: sh
         run: |
           set -eu
 
-          release_strategy='${{ inputs.release_strategy }}'
-          project_version='${{ steps.java_info.outputs.project_version }}'
+          release_strategy=${RELEASE_STRATEGY}
+          project_version=${PROJECT_VERSION}
           project_version_without_snapshot=${project_version%-SNAPSHOT}
           current_release_version=${project_version_without_snapshot%%[+-]*}
           current_snapshot_version=${current_release_version}-SNAPSHOT
@@ -127,7 +130,23 @@ jobs:
               should_create_release=false
               ;;
             rc)
-              resolved_version=${current_release_version}-rc.1
+              latest_rc_number=$(
+                {
+                  git tag --list "${current_release_version}-rc.*" \
+                    | sed -n "s/^${current_release_version}-rc\\.//p" \
+                    | grep -E '^[0-9]+$' \
+                    | sort -n
+                } | tail -n 1
+              )
+              case "${latest_rc_number}" in
+                '')
+                  next_rc_number=1
+                  ;;
+                *)
+                  next_rc_number=$((latest_rc_number + 1))
+                  ;;
+              esac
+              resolved_version=${current_release_version}-rc.${next_rc_number}
               release_kind=prerelease
               should_publish=true
               should_tag=true
@@ -178,13 +197,28 @@ jobs:
           cache: maven
 
       - name: "🏷️ Set Project Version [${{ steps.resolve_version.outputs.resolved_version }}]"
-        run: ./mvnw -B versions:set -DnewVersion=${{ steps.resolve_version.outputs.resolved_version }} -DgenerateBackupPoms=false
+        env:
+          RELEASE_VERSION: ${{ steps.resolve_version.outputs.resolved_version }}
+        run: ./mvnw -B versions:set -DnewVersion="${RELEASE_VERSION}" -DgenerateBackupPoms=false
 
-      - name: "📦 Clone NATS Server [${{ inputs.nats_server_version }}]"
+      - name: "✅ Validate NATS Server Version [${{ inputs.nats_server_version }}]"
+        env:
+          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
         shell: sh
         run: |
           set -eu
-          git clone --depth 1 --branch "${{ inputs.nats_server_version }}" \
+          if ! printf '%s\n' "${NATS_SERVER_VERSION}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$'; then
+            echo "Unsupported NATS server version: ${NATS_SERVER_VERSION}" >&2
+            exit 1
+          fi
+
+      - name: "📦 Clone NATS Server [${{ inputs.nats_server_version }}]"
+        env:
+          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
+        shell: sh
+        run: |
+          set -eu
+          git clone --depth 1 --branch "${NATS_SERVER_VERSION}" \
             https://github.com/nats-io/nats-server.git "${RUNNER_TEMP}/nats-server-src"
 
       - name: "🔍 Read Go Info"
@@ -212,10 +246,12 @@ jobs:
           cache: false
 
       - name: "📁 Prepare NATS Server Cache Directory"
+        env:
+          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
         shell: sh
         run: |
           set -eu
-          mkdir -p "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}"
+          mkdir -p "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}"
 
       - name: "♻️ Cache NATS Server [${{ inputs.nats_server_version }}]"
         id: nats_cache
@@ -226,28 +262,34 @@ jobs:
 
       - name: "🔨 Build NATS Server [${{ inputs.nats_server_version }}]"
         if: steps.nats_cache.outputs.cache-hit != 'true'
+        env:
+          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
         shell: sh
         run: |
           set -eu
           cd "${RUNNER_TEMP}/nats-server-src"
-          go build -o "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}/nats-server" ./main.go
+          go build -o "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}/nats-server" ./main.go
 
       - name: "📍 Expose NATS Server"
+        env:
+          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
         shell: sh
         run: |
           set -eu
-          chmod +x "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}/nats-server"
-          printf '%s\n' "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}" >> "${GITHUB_PATH}"
-          "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}/nats-server" -v
+          chmod +x "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}/nats-server"
+          printf '%s\n' "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}" >> "${GITHUB_PATH}"
+          "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}/nats-server" -v
 
       - name: "🧪 Build and Verify"
+        env:
+          SHOULD_PUBLISH: ${{ steps.resolve_version.outputs.should_publish }}
         shell: sh
         run: |
           set -eu
-          if [ "${{ steps.resolve_version.outputs.should_publish }}" = "true" ]; then
-            ${{ steps.java_info.outputs.cmd_test_build }} -Dmaven.javadoc.skip=false
+          if [ "${SHOULD_PUBLISH}" = "true" ]; then
+            ./mvnw -B verify -Dmaven.javadoc.skip=false
           else
-            ${{ steps.java_info.outputs.cmd_test_build }}
+            ./mvnw -B verify
           fi
 
       - name: "🗜️ Archive Rewritten Workspace"

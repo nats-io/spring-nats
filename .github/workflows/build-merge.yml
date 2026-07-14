@@ -7,11 +7,6 @@ on:
       - master
   workflow_dispatch:
     inputs:
-      ref:
-        description: Git ref to build
-        required: false
-        default: ''
-        type: string
       nats_server_version:
         description: NATS server version to build for tests
         required: false
@@ -25,12 +20,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-dispatch-ref:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: "🛡️ Validate Dispatch Branch [${{ github.ref_name }}]"
+        shell: sh
+        run: |
+          set -eu
+          case "${GITHUB_REF_NAME}" in
+            main|master)
+              ;;
+            *)
+              echo "Build Merge workflow_dispatch must run from main or master, got: ${GITHUB_REF_NAME}" >&2
+              exit 1
+              ;;
+          esac
+
   build:
+    needs:
+      - validate-dispatch-ref
+    if: ${{ always() && (needs.validate-dispatch-ref.result == 'success' || needs.validate-dispatch-ref.result == 'skipped') }}
     permissions:
       contents: read
     uses: ./.github/workflows/build-common.yml
     with:
-      ref: ${{ inputs.ref || github.sha }}
+      ref: ${{ github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
       release_strategy: snapshot
     secrets: inherit

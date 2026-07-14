@@ -64,7 +64,7 @@ jobs:
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@main
+        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
         uses: actions/setup-java@v5
@@ -80,4 +80,5 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./mvnw -B -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} deploy
+          GITHUB_PACKAGES_REPOSITORY: ${{ github.repository }}
+        run: ./mvnw -B -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository=github::https://maven.pkg.github.com/${GITHUB_PACKAGES_REPOSITORY} deploy

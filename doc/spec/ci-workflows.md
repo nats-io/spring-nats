@@ -27,6 +27,18 @@ flowchart TD
 
 ## What each workflow does
 
+## Workflow capabilities
+
+- automatic version resolution per workflow run
+- automatic snapshot publishing on merges to `main` or `master`
+- manual release publishing for `rc`, `patch`, `minor`, and `major`
+- git tag creation for release workflows
+- GitHub release creation for manual releases
+- publish to GitHub Packages
+- publish to Maven Central
+- GitHub environments for publish and release stages
+- GitHub deployments for visible release activity
+
 ### `build-pr.yml`
 
 - Trigger: `pull_request` on `main` or `master`
@@ -102,7 +114,9 @@ This makes release activity visible in GitHub Deployments instead of only in wor
 
 ## Version strategy notes
 
-`build-common.yml` normalizes versions to plain semver for workflow builds and publishing.
+`build-common.yml` resolves the workflow version from the checked-in project version and the selected `release_strategy`, then rewrites the Maven version with `versions:set` for that run.
+
+The checked-in project version is the baseline input, not the final published truth for a workflow run.
 
 The repository still contains historical Spring-line markers such as `+3.5`, but the workflow intentionally strips those and treats this as the Spring Boot 3 line from a release-version perspective.
 
@@ -110,7 +124,7 @@ Examples:
 
 - `none` -> keep the current semver shape
 - `snapshot` -> ensure `-SNAPSHOT`
-- `rc` -> append `-rc.1`
+- `rc` -> append or increment `-rc.N` from existing matching tags
 - `patch|minor|major` -> bump the numeric core
 
 Example normalization:

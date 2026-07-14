@@ -13,11 +13,6 @@ on:
           - patch
           - minor
           - major
-      ref:
-        description: Git ref to publish from
-        required: false
-        default: ''
-        type: string
       nats_server_version:
         description: NATS server version to build for tests
         required: false
@@ -31,12 +26,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-dispatch-ref:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: "🛡️ Validate Release Branch [${{ github.ref_name }}]"
+        shell: sh
+        run: |
+          set -eu
+          case "${GITHUB_REF_NAME}" in
+            main|master)
+              ;;
+            *)
+              echo "Release workflow_dispatch must run from main or master, got: ${GITHUB_REF_NAME}" >&2
+              exit 1
+              ;;
+          esac
+
   build:
+    needs:
+      - validate-dispatch-ref
+    if: ${{ needs.validate-dispatch-ref.result == 'success' }}
     permissions:
       contents: read
     uses: ./.github/workflows/build-common.yml
     with:
-      ref: ${{ inputs.ref || github.sha }}
+      ref: ${{ github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
       release_strategy: ${{ inputs.release_strategy }}
     secrets: inherit
