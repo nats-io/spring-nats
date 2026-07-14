@@ -14,6 +14,25 @@ on:
         required: false
         default: none
         type: string
+    outputs:
+      resolved_version:
+        description: Resolved project version for this run
+        value: ${{ jobs.build.outputs.resolved_version }}
+      release_kind:
+        description: Release kind [none, snapshot, prerelease, release]
+        value: ${{ jobs.build.outputs.release_kind }}
+      should_publish:
+        description: Whether publish jobs should run
+        value: ${{ jobs.build.outputs.should_publish }}
+      should_tag:
+        description: Whether a git tag should be created
+        value: ${{ jobs.build.outputs.should_tag }}
+      should_create_release:
+        description: Whether a GitHub release should be created
+        value: ${{ jobs.build.outputs.should_create_release }}
+      commit_sha:
+        description: Resolved commit SHA for this build
+        value: ${{ jobs.build.outputs.commit_sha }}
   workflow_dispatch:
     inputs:
       ref:
@@ -38,25 +57,6 @@ on:
           - patch
           - minor
           - major
-    outputs:
-      resolved_version:
-        description: Resolved project version for this run
-        value: ${{ jobs.build.outputs.resolved_version }}
-      release_kind:
-        description: Release kind [none, snapshot, prerelease, release]
-        value: ${{ jobs.build.outputs.release_kind }}
-      should_publish:
-        description: Whether publish jobs should run
-        value: ${{ jobs.build.outputs.should_publish }}
-      should_tag:
-        description: Whether a git tag should be created
-        value: ${{ jobs.build.outputs.should_tag }}
-      should_create_release:
-        description: Whether a GitHub release should be created
-        value: ${{ jobs.build.outputs.should_create_release }}
-      commit_sha:
-        description: Resolved commit SHA for this build
-        value: ${{ jobs.build.outputs.commit_sha }}
 
 permissions: {}
 
