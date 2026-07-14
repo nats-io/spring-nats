@@ -2,11 +2,34 @@ name: Publish GitHub Packages
 
 on:
   workflow_call:
+    inputs:
+      run_id:
+        required: false
+        default: ''
+        type: string
+      environment_name:
+        required: false
+        default: github-packages
+        type: string
+      environment_url:
+        required: false
+        default: ''
+        type: string
   workflow_dispatch:
     inputs:
       run_id:
         description: Workflow run ID containing the build-workspace artifact
         required: true
+        type: string
+      environment_name:
+        description: Deployment environment name
+        required: false
+        default: github-packages
+        type: string
+      environment_url:
+        description: Deployment environment URL
+        required: false
+        default: ''
         type: string
 
 permissions: {}
@@ -18,7 +41,11 @@ jobs:
     permissions:
       actions: read
       contents: read
+      deployments: write
       packages: write
+    environment:
+      name: ${{ inputs.environment_name }}
+      url: ${{ inputs.environment_url || format('https://github.com/{0}/packages', github.repository) }}
     steps:
       - name: "📥 Download Build Artifact"
         uses: actions/download-artifact@v4

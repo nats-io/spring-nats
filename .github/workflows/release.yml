@@ -48,6 +48,9 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/publish-central.yml
+    with:
+      environment_name: maven-central-release
+      environment_url: https://central.sonatype.com
     secrets: inherit
 
   publish-github-packages:
@@ -58,6 +61,9 @@ jobs:
       contents: read
       packages: write
     uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      environment_name: github-packages-release
+      environment_url: https://github.com/${{ github.repository }}/packages
     secrets: inherit
 
   create-release:
@@ -69,6 +75,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      deployments: write
+    environment:
+      name: github-release
+      url: ${{ steps.release_info.outputs.release_url || format('https://github.com/{0}/releases', github.repository) }}
     steps:
       - name: "🧑‍💻 Checkout [${{ needs.build.outputs.commit_sha }}]"
         uses: actions/checkout@v7
@@ -100,3 +110,14 @@ jobs:
               --target "${TARGET_SHA}" \
               --generate-notes
           fi
+
+      - name: "🔗 Read GitHub Release URL"
+        id: release_info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ needs.build.outputs.resolved_version }}
+        shell: sh
+        run: |
+          set -eu
+          release_url=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_VERSION}" --jq '.html_url')
+          printf 'release_url=%s\n' "${release_url}" >> "${GITHUB_OUTPUT}"

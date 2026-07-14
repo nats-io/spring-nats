@@ -1,10 +1,6 @@
 name: Build Pull Request
 
 on:
-  push:
-    branches-ignore:
-      - main
-      - master
   pull_request:
     branches:
       - main
@@ -13,7 +9,6 @@ on:
       - opened
       - synchronize
       - reopened
-      - ready_for_review
   workflow_dispatch:
     inputs:
       ref:
@@ -30,7 +25,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: build-pr-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  group: build-pr-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:

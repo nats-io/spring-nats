@@ -2,11 +2,34 @@ name: Publish Central
 
 on:
   workflow_call:
+    inputs:
+      run_id:
+        required: false
+        default: ''
+        type: string
+      environment_name:
+        required: false
+        default: maven-central
+        type: string
+      environment_url:
+        required: false
+        default: https://central.sonatype.com
+        type: string
   workflow_dispatch:
     inputs:
       run_id:
         description: Workflow run ID containing the build-workspace artifact
         required: true
+        type: string
+      environment_name:
+        description: Deployment environment name
+        required: false
+        default: maven-central
+        type: string
+      environment_url:
+        description: Deployment environment URL
+        required: false
+        default: https://central.sonatype.com
         type: string
 
 permissions: {}
@@ -18,6 +41,10 @@ jobs:
     permissions:
       actions: read
       contents: read
+      deployments: write
+    environment:
+      name: ${{ inputs.environment_name }}
+      url: ${{ inputs.environment_url }}
     steps:
       - name: "🔐 Check Publish Secrets"
         shell: sh

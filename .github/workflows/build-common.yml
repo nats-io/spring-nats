@@ -98,29 +98,29 @@ jobs:
           set -eu
 
           release_strategy='${{ inputs.release_strategy }}'
-          current_version='${{ steps.java_info.outputs.project_version }}'
-          current_release_version=${current_version%-SNAPSHOT}
-
-          version_core=${current_release_version%%[-+]*}
-          version_suffix=
-          if [ "${version_core}" != "${current_release_version}" ]; then
-            version_suffix=${current_release_version#"$version_core"}
-          fi
+          project_version='${{ steps.java_info.outputs.project_version }}'
+          project_version_without_snapshot=${project_version%-SNAPSHOT}
+          current_release_version=${project_version_without_snapshot%%[+-]*}
+          current_snapshot_version=${current_release_version}-SNAPSHOT
 
           IFS=. read -r major minor patch <<EOF_VERSION
-          ${version_core}
+          ${current_release_version}
           EOF_VERSION
 
           case "${release_strategy}" in
             none)
-              resolved_version=${current_version}
+              if [ "${project_version}" != "${project_version_without_snapshot}" ]; then
+                resolved_version=${current_snapshot_version}
+              else
+                resolved_version=${current_release_version}
+              fi
               release_kind=none
               should_publish=false
               should_tag=false
               should_create_release=false
               ;;
             snapshot)
-              resolved_version=${current_release_version}-SNAPSHOT
+              resolved_version=${current_snapshot_version}
               release_kind=snapshot
               should_publish=true
               should_tag=false
@@ -134,10 +134,10 @@ jobs:
               should_create_release=true
               ;;
             patch)
-              if [ "${current_version}" != "${current_release_version}" ]; then
+              if [ "${project_version}" != "${current_release_version}" ]; then
                 resolved_version=${current_release_version}
               else
-                resolved_version=${major}.${minor}.$((patch + 1))${version_suffix}
+                resolved_version=${major}.${minor}.$((patch + 1))
               fi
               release_kind=release
               should_publish=true
@@ -145,14 +145,14 @@ jobs:
               should_create_release=true
               ;;
             minor)
-              resolved_version=${major}.$((minor + 1)).0${version_suffix}
+              resolved_version=${major}.$((minor + 1)).0
               release_kind=release
               should_publish=true
               should_tag=true
               should_create_release=true
               ;;
             major)
-              resolved_version=$((major + 1)).0.0${version_suffix}
+              resolved_version=$((major + 1)).0.0
               release_kind=release
               should_publish=true
               should_tag=true
