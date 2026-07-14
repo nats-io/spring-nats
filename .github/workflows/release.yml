@@ -52,7 +52,7 @@ jobs:
   build:
     needs:
       - validate-dispatch-ref
-    if: ${{ needs.validate-dispatch-ref.result == 'success' }}
+    if: ${{ always() && (needs.validate-dispatch-ref.result == 'success' || needs.validate-dispatch-ref.result == 'skipped') }}
     permissions:
       contents: read
     uses: ./.github/workflows/build-common.yml
