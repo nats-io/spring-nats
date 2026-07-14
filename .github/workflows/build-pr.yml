@@ -1,9 +1,14 @@
 name: Build Pull Request
 
 on:
+  push:
+    branches-ignore:
+      - main
+      - master
   pull_request:
     branches:
       - main
+      - master
     types:
       - opened
       - synchronize
@@ -25,7 +30,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: build-pr-${{ github.event.pull_request.number || github.run_id }}
+  group: build-pr-${{ github.event.pull_request.number || github.ref || github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -36,5 +41,5 @@ jobs:
     with:
       ref: ${{ inputs.ref || github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
-      upload_artifact: false
+      release_strategy: none
     secrets: inherit

@@ -2,13 +2,11 @@ name: Publish GitHub Packages
 
 on:
   workflow_call:
+  workflow_dispatch:
     inputs:
-      ref:
+      run_id:
+        description: Workflow run ID containing the build-workspace artifact
         required: true
-        type: string
-      release_version:
-        required: false
-        default: ''
         type: string
 
 permissions: {}
@@ -18,25 +16,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: read
       contents: read
       packages: write
     steps:
       - name: "📥 Download Build Artifact"
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts
-          path: ${{ runner.temp }}/build-artifacts
+          name: build-workspace
+          path: ${{ runner.temp }}/build-artifact
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.run_id || github.run_id }}
 
-      - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-
-      - name: "📦 Restore Build Targets"
+      - name: "📦 Restore Build Workspace"
         shell: sh
         run: |
           set -eu
-          tar -xzf "${RUNNER_TEMP}/build-artifacts/build-artifacts.tgz" -C "${GITHUB_WORKSPACE}"
+          tar -xzf "${RUNNER_TEMP}/build-artifact/build-workspace.tgz" -C "${GITHUB_WORKSPACE}"
 
       - name: "🔍 Read Java Info"
         id: java_info
@@ -52,33 +49,8 @@ jobs:
           server-username: GITHUB_ACTOR
           server-password: GITHUB_TOKEN
 
-      - name: "🔖 Normalize Release Version"
-        if: inputs.release_version != ''
-        id: semver_info
-        uses: YunaBraska/semver-info-action@main
-        with:
-          semver-a: ${{ inputs.release_version }}
-
-      - name: "🚫 Reject Invalid Release Version"
-        if: inputs.release_version != ''
-        shell: sh
-        run: |
-          set -eu
-          if [ "${{ steps.semver_info.outputs.is_valid_semver_a }}" != "true" ]; then
-            echo "Invalid release version: ${{ inputs.release_version }}" >&2
-            exit 1
-          fi
-          if [ "${{ steps.semver_info.outputs.is_stable_a }}" != "true" ]; then
-            echo "Release version must be stable: ${{ inputs.release_version }}" >&2
-            exit 1
-          fi
-
-      - name: "🏷️ Set Release Version [${{ steps.semver_info.outputs.clean_semver_a }}]"
-        if: inputs.release_version != ''
-        run: ./mvnw -B versions:set -DnewVersion=${{ steps.semver_info.outputs.clean_semver_a }} -DgenerateBackupPoms=false
-
       - name: "🚀 Publish to GitHub Packages"
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./mvnw -B -DskipTests -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} deploy
+        run: ./mvnw -B -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} deploy

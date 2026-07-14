@@ -4,19 +4,59 @@ on:
   workflow_call:
     inputs:
       ref:
-        required: true
+        required: false
+        default: ''
         type: string
       nats_server_version:
         required: true
         type: string
-      release_version:
+      release_strategy:
+        required: false
+        default: none
+        type: string
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build
         required: false
         default: ''
         type: string
-      upload_artifact:
+      nats_server_version:
+        description: NATS server version to build for tests
         required: false
-        default: false
-        type: boolean
+        default: v2.14.3
+        type: string
+      release_strategy:
+        description: Release strategy to apply
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - snapshot
+          - rc
+          - patch
+          - minor
+          - major
+    outputs:
+      resolved_version:
+        description: Resolved project version for this run
+        value: ${{ jobs.build.outputs.resolved_version }}
+      release_kind:
+        description: Release kind [none, snapshot, prerelease, release]
+        value: ${{ jobs.build.outputs.release_kind }}
+      should_publish:
+        description: Whether publish jobs should run
+        value: ${{ jobs.build.outputs.should_publish }}
+      should_tag:
+        description: Whether a git tag should be created
+        value: ${{ jobs.build.outputs.should_tag }}
+      should_create_release:
+        description: Whether a GitHub release should be created
+        value: ${{ jobs.build.outputs.should_create_release }}
+      commit_sha:
+        description: Resolved commit SHA for this build
+        value: ${{ jobs.build.outputs.commit_sha }}
 
 permissions: {}
 
@@ -26,15 +66,109 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+    outputs:
+      resolved_version: ${{ steps.resolve_version.outputs.resolved_version }}
+      release_kind: ${{ steps.resolve_version.outputs.release_kind }}
+      should_publish: ${{ steps.resolve_version.outputs.should_publish }}
+      should_tag: ${{ steps.resolve_version.outputs.should_tag }}
+      should_create_release: ${{ steps.resolve_version.outputs.should_create_release }}
+      commit_sha: ${{ steps.commit_info.outputs.commit_sha }}
     steps:
       - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: "🧾 Read Commit Info"
+        id: commit_info
+        shell: sh
+        run: |
+          set -eu
+          printf 'commit_sha=%s\n' "$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
 
       - name: "🔍 Read Java Info"
         id: java_info
         uses: YunaBraska/java-info-action@main
+
+      - name: "🧮 Resolve Version [${{ inputs.release_strategy }}]"
+        id: resolve_version
+        shell: sh
+        run: |
+          set -eu
+
+          release_strategy='${{ inputs.release_strategy }}'
+          current_version='${{ steps.java_info.outputs.project_version }}'
+          current_release_version=${current_version%-SNAPSHOT}
+
+          version_core=${current_release_version%%[-+]*}
+          version_suffix=
+          if [ "${version_core}" != "${current_release_version}" ]; then
+            version_suffix=${current_release_version#"$version_core"}
+          fi
+
+          IFS=. read -r major minor patch <<EOF_VERSION
+          ${version_core}
+          EOF_VERSION
+
+          case "${release_strategy}" in
+            none)
+              resolved_version=${current_version}
+              release_kind=none
+              should_publish=false
+              should_tag=false
+              should_create_release=false
+              ;;
+            snapshot)
+              resolved_version=${current_release_version}-SNAPSHOT
+              release_kind=snapshot
+              should_publish=true
+              should_tag=false
+              should_create_release=false
+              ;;
+            rc)
+              resolved_version=${current_release_version}-rc.1
+              release_kind=prerelease
+              should_publish=true
+              should_tag=true
+              should_create_release=true
+              ;;
+            patch)
+              if [ "${current_version}" != "${current_release_version}" ]; then
+                resolved_version=${current_release_version}
+              else
+                resolved_version=${major}.${minor}.$((patch + 1))${version_suffix}
+              fi
+              release_kind=release
+              should_publish=true
+              should_tag=true
+              should_create_release=true
+              ;;
+            minor)
+              resolved_version=${major}.$((minor + 1)).0${version_suffix}
+              release_kind=release
+              should_publish=true
+              should_tag=true
+              should_create_release=true
+              ;;
+            major)
+              resolved_version=$((major + 1)).0.0${version_suffix}
+              release_kind=release
+              should_publish=true
+              should_tag=true
+              should_create_release=true
+              ;;
+            *)
+              echo "Unsupported release_strategy: ${release_strategy}" >&2
+              exit 1
+              ;;
+          esac
+
+          printf 'resolved_version=%s\n' "${resolved_version}" >> "${GITHUB_OUTPUT}"
+          printf 'release_kind=%s\n' "${release_kind}" >> "${GITHUB_OUTPUT}"
+          printf 'should_publish=%s\n' "${should_publish}" >> "${GITHUB_OUTPUT}"
+          printf 'should_tag=%s\n' "${should_tag}" >> "${GITHUB_OUTPUT}"
+          printf 'should_create_release=%s\n' "${should_create_release}" >> "${GITHUB_OUTPUT}"
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
         uses: actions/setup-java@v5
@@ -42,6 +176,9 @@ jobs:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
           cache: maven
+
+      - name: "🏷️ Set Project Version [${{ steps.resolve_version.outputs.resolved_version }}]"
+        run: ./mvnw -B versions:set -DnewVersion=${{ steps.resolve_version.outputs.resolved_version }} -DgenerateBackupPoms=false
 
       - name: "📦 Clone NATS Server [${{ inputs.nats_server_version }}]"
         shell: sh
@@ -80,9 +217,9 @@ jobs:
           set -eu
           mkdir -p "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}"
 
-      - name: "♻️ Restore NATS Server Cache [${{ inputs.nats_server_version }}]"
+      - name: "♻️ Cache NATS Server [${{ inputs.nats_server_version }}]"
         id: nats_cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/.cache/nats-server/${{ inputs.nats_server_version }}
           key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
@@ -103,58 +240,42 @@ jobs:
           printf '%s\n' "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}" >> "${GITHUB_PATH}"
           "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}/nats-server" -v
 
-      - name: "💾 Save NATS Server Cache [${{ inputs.nats_server_version }}]"
-        if: steps.nats_cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v6
-        with:
-          path: ${{ github.workspace }}/.cache/nats-server/${{ inputs.nats_server_version }}
-          key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
-
-      - name: "🔖 Normalize Release Version"
-        if: inputs.release_version != ''
-        id: semver_info
-        uses: YunaBraska/semver-info-action@main
-        with:
-          semver-a: ${{ inputs.release_version }}
-
-      - name: "🚫 Reject Invalid Release Version"
-        if: inputs.release_version != ''
+      - name: "🧪 Build and Verify"
         shell: sh
         run: |
           set -eu
-          if [ "${{ steps.semver_info.outputs.is_valid_semver_a }}" != "true" ]; then
-            echo "Invalid release version: ${{ inputs.release_version }}" >&2
-            exit 1
-          fi
-          if [ "${{ steps.semver_info.outputs.is_stable_a }}" != "true" ]; then
-            echo "Release version must be stable: ${{ inputs.release_version }}" >&2
-            exit 1
+          if [ "${{ steps.resolve_version.outputs.should_publish }}" = "true" ]; then
+            ${{ steps.java_info.outputs.cmd_test_build }} -Dmaven.javadoc.skip=false
+          else
+            ${{ steps.java_info.outputs.cmd_test_build }}
           fi
 
-      - name: "🏷️ Set Release Version [${{ steps.semver_info.outputs.clean_semver_a }}]"
-        if: inputs.release_version != ''
-        run: ./mvnw -B versions:set -DnewVersion=${{ steps.semver_info.outputs.clean_semver_a }} -DgenerateBackupPoms=false
-
-      - name: "🧪 Verify"
-        if: ${{ !(inputs.upload_artifact || inputs.release_version != '') }}
-        run: ${{ steps.java_info.outputs.cmd }} -B verify
-
-      - name: "📦 Build Package"
-        if: inputs.upload_artifact || inputs.release_version != ''
-        run: ${{ steps.java_info.outputs.cmd }} -B package
-
-      - name: "🗜️ Bundle Build Targets"
-        if: inputs.upload_artifact || inputs.release_version != ''
+      - name: "🗜️ Archive Rewritten Workspace"
+        if: steps.resolve_version.outputs.should_publish == 'true'
         shell: sh
         run: |
           set -eu
-          find . -type d -name target -prune | sort > "${RUNNER_TEMP}/build-targets.txt"
-          tar -czf "${RUNNER_TEMP}/build-artifacts.tgz" -T "${RUNNER_TEMP}/build-targets.txt"
+          : > "${RUNNER_TEMP}/workspace-paths.txt"
+          for path in .mvn mvnw mvnw.cmd pom.xml nats-spring nats-spring-boot-starter nats-spring-cloud-stream-binder nats-spring-samples; do
+            if [ -e "${path}" ]; then
+              printf '%s\n' "${path}" >> "${RUNNER_TEMP}/workspace-paths.txt"
+            fi
+          done
+          tar -czf "${RUNNER_TEMP}/build-workspace.tgz" \
+            --exclude='*/target/site/jacoco' \
+            --exclude='*/target/site' \
+            --exclude='*/target/apidocs' \
+            --exclude='*/target/javadoc-bundle-options' \
+            --exclude='*/target/maven-javadoc-plugin-stale-data.txt' \
+            --exclude='*/target/jacoco.exec' \
+            --exclude='*/target/surefire-reports' \
+            --exclude='*/target/failsafe-reports' \
+            -T "${RUNNER_TEMP}/workspace-paths.txt"
 
       - name: "📦 Upload Build Artifact"
-        if: inputs.upload_artifact || inputs.release_version != ''
+        if: steps.resolve_version.outputs.should_publish == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: build-workspace
           if-no-files-found: error
-          path: ${{ runner.temp }}/build-artifacts.tgz
+          path: ${{ runner.temp }}/build-workspace.tgz

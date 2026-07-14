@@ -4,23 +4,19 @@ on:
   push:
     branches:
       - main
+      - master
   workflow_dispatch:
     inputs:
       ref:
         description: Git ref to build
         required: false
-        default: main
+        default: ''
         type: string
       nats_server_version:
         description: NATS server version to build for tests
         required: false
         default: v2.14.3
         type: string
-      publish_snapshot:
-        description: Publish snapshot after verify
-        required: false
-        default: true
-        type: boolean
 
 permissions: {}
 
@@ -36,28 +32,24 @@ jobs:
     with:
       ref: ${{ inputs.ref || github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
-      upload_artifact: true
+      release_strategy: snapshot
     secrets: inherit
 
   publish-central:
-    if: github.event_name == 'push' || inputs.publish_snapshot
     needs:
       - build
+    if: needs.build.outputs.should_publish == 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/publish-central.yml
-    with:
-      ref: ${{ inputs.ref || github.sha }}
     secrets: inherit
 
   publish-github-packages:
-    if: github.event_name == 'push' || inputs.publish_snapshot
     needs:
       - build
+    if: needs.build.outputs.should_publish == 'true'
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/publish-github-packages.yml
-    with:
-      ref: ${{ inputs.ref || github.sha }}
     secrets: inherit

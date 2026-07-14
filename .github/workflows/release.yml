@@ -3,28 +3,31 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      release_version:
-        description: Release version to publish
+      release_strategy:
+        description: Release strategy to publish
         required: true
-        type: string
+        default: patch
+        type: choice
+        options:
+          - rc
+          - patch
+          - minor
+          - major
       ref:
         description: Git ref to publish from
         required: false
-        default: main
+        default: ''
         type: string
       nats_server_version:
         description: NATS server version to build for tests
         required: false
         default: v2.14.3
         type: string
-  release:
-    types:
-      - published
 
 permissions: {}
 
 concurrency:
-  group: release-${{ github.event.release.tag_name || inputs.release_version || github.run_id }}
+  group: release-${{ inputs.release_strategy }}-${{ inputs.ref || github.sha || github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -33,30 +36,67 @@ jobs:
       contents: read
     uses: ./.github/workflows/build-common.yml
     with:
-      ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
+      ref: ${{ inputs.ref || github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
-      release_version: ${{ github.event.release.tag_name || inputs.release_version }}
+      release_strategy: ${{ inputs.release_strategy }}
     secrets: inherit
 
-  publish-release:
+  publish-central:
     needs:
       - build
+    if: needs.build.outputs.should_publish == 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/publish-central.yml
-    with:
-      ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
-      release_version: ${{ github.event.release.tag_name || inputs.release_version }}
     secrets: inherit
 
   publish-github-packages:
     needs:
       - build
+    if: needs.build.outputs.should_publish == 'true'
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/publish-github-packages.yml
-    with:
-      ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
-      release_version: ${{ github.event.release.tag_name || inputs.release_version }}
     secrets: inherit
+
+  create-release:
+    needs:
+      - build
+      - publish-central
+      - publish-github-packages
+    if: needs.build.outputs.should_create_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: "🧑‍💻 Checkout [${{ needs.build.outputs.commit_sha }}]"
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.build.outputs.commit_sha }}
+
+      - name: "🏷️ Create GitHub Release [${{ needs.build.outputs.resolved_version }}]"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_KIND: ${{ needs.build.outputs.release_kind }}
+          RELEASE_VERSION: ${{ needs.build.outputs.resolved_version }}
+          TARGET_SHA: ${{ needs.build.outputs.commit_sha }}
+        shell: sh
+        run: |
+          set -eu
+          if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "GitHub release already exists for ${RELEASE_VERSION}"
+            exit 0
+          fi
+
+          if [ "${RELEASE_KIND}" = "prerelease" ]; then
+            gh release create "${RELEASE_VERSION}" \
+              --target "${TARGET_SHA}" \
+              --generate-notes \
+              --prerelease
+          else
+            gh release create "${RELEASE_VERSION}" \
+              --target "${TARGET_SHA}" \
+              --generate-notes
+          fi
