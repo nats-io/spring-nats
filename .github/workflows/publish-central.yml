@@ -71,7 +71,7 @@ jobs:
           : "${SIGNING_PASSWORD:?Missing required secret: SIGNING_PASSWORD}"
 
       - name: "📥 Download Build Artifact"
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: build-workspace
           path: ${{ runner.temp }}/build-artifact
@@ -90,7 +90,7 @@ jobs:
         uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.5.0
         with:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}

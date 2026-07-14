@@ -75,7 +75,7 @@ jobs:
       commit_sha: ${{ steps.commit_info.outputs.commit_sha }}
     steps:
       - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref || github.sha }}
@@ -190,7 +190,7 @@ jobs:
           printf 'should_create_release=%s\n' "${should_create_release}" >> "${GITHUB_OUTPUT}"
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.5.0
         with:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
@@ -240,7 +240,7 @@ jobs:
           printf 'go_version=%s\n' "${go_version}" >> "${GITHUB_OUTPUT}"
 
       - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v6.5.0
         with:
           go-version: ${{ steps.go_info.outputs.go_version }}
           cache: false
@@ -255,7 +255,7 @@ jobs:
 
       - name: "♻️ Cache NATS Server [${{ inputs.nats_server_version }}]"
         id: nats_cache
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: ${{ github.workspace }}/.cache/nats-server/${{ inputs.nats_server_version }}
           key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
@@ -316,7 +316,7 @@ jobs:
 
       - name: "📦 Upload Build Artifact"
         if: steps.resolve_version.outputs.should_publish == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: build-workspace
           if-no-files-found: error

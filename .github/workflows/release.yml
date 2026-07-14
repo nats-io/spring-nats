@@ -32,6 +32,7 @@ concurrency:
 
 jobs:
   validate-dispatch-ref:
+    if: inputs.dry_run != true
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -107,7 +108,7 @@ jobs:
       url: ${{ steps.release_info.outputs.release_url || format('https://github.com/{0}/releases', github.repository) }}
     steps:
       - name: "🧑‍💻 Checkout [${{ needs.build.outputs.commit_sha }}]"
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ needs.build.outputs.commit_sha }}

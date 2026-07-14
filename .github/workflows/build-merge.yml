@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   validate-dispatch-ref:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && inputs.dry_run != true
     runs-on: ubuntu-latest
     permissions: {}
     steps:
