@@ -59,7 +59,7 @@ jobs:
   publish-central:
     needs:
       - build
-    if: needs.build.outputs.should_publish == 'true'
+    if: needs.build.result == 'success'
     permissions:
       actions: read
       contents: read
@@ -74,7 +74,7 @@ jobs:
   publish-github-packages:
     needs:
       - build
-    if: needs.build.outputs.should_publish == 'true'
+    if: needs.build.result == 'success'
     permissions:
       actions: read
       contents: read
