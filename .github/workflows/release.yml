@@ -105,7 +105,7 @@ jobs:
       deployments: write
     environment:
       name: github-release
-      url: ${{ steps.release_info.outputs.release_url || format('https://github.com/{0}/releases', github.repository) }}
+      url: ${{ format('https://github.com/{0}/releases', github.repository) }}
     steps:
       - name: "🧑‍💻 Checkout [${{ needs.build.outputs.commit_sha }}]"
         uses: actions/checkout@v7
@@ -137,14 +137,3 @@ jobs:
               --target "${TARGET_SHA}" \
               --generate-notes
           fi
-
-      - name: "🔗 Read GitHub Release URL"
-        id: release_info
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_VERSION: ${{ needs.build.outputs.resolved_version }}
-        shell: sh
-        run: |
-          set -eu
-          release_url=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_VERSION}" --jq '.html_url')
-          printf 'release_url=%s\n' "${release_url}" >> "${GITHUB_OUTPUT}"

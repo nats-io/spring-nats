@@ -131,24 +131,26 @@ This makes release activity visible in GitHub Deployments instead of only in wor
 
 ## Version strategy notes
 
-`build-common.yml` resolves the workflow version from the checked-in project version and the selected `release_strategy`, then rewrites the Maven version with `versions:set` for that run.
+`build-common.yml` resolves the workflow version from the latest reachable git tag and the selected `release_strategy`, then rewrites the Maven version with `versions:set` for that run.
 
-The checked-in project version is the baseline input, not the final published truth for a workflow run.
+The checked-in Maven version is not used as release truth for workflow versioning.
 
-The repository still contains historical Spring-line markers such as `+3.5`, but the workflow intentionally strips those and treats this as the Spring Boot 3 line from a release-version perspective.
+The repository still contains historical Spring-line markers such as `+3.5`, but the workflow intentionally ignores those for version resolution and treats the latest git tag as the source of truth.
 
 Examples:
 
-- `none` -> keep the current semver shape
-- `snapshot` -> ensure `-SNAPSHOT`
-- `rc` -> append or increment `-rc.N` from existing matching tags
-- `patch|minor|major` -> bump the numeric core
+- `none` -> use the next snapshot line from the latest tag
+- `snapshot` -> use the next snapshot line from the latest tag
+- `rc` -> append or increment `-rc.N` from the latest tag line
+- `patch|minor|major` -> bump the numeric core from the latest tag
 
 Example normalization:
 
-- project version `0.6.3+3.5-SNAPSHOT`
-- workflow snapshot version `0.6.3-SNAPSHOT`
-- workflow release version `0.6.3`
+- latest tag `0.6.1+3.1`
+- workflow snapshot version `0.6.2-SNAPSHOT`
+- workflow patch release version `0.6.2`
+
+This means the workflow requires at least one existing tag in the repository before it can resolve versions.
 
 ## Dry run behavior
 
