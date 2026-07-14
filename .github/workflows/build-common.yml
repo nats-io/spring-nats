@@ -82,7 +82,7 @@ jobs:
 
       - name: "♻️ Restore NATS Server Cache [${{ inputs.nats_server_version }}]"
         id: nats_cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ${{ github.workspace }}/.cache/nats-server/${{ inputs.nats_server_version }}
           key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
@@ -102,6 +102,13 @@ jobs:
           chmod +x "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}/nats-server"
           printf '%s\n' "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}" >> "${GITHUB_PATH}"
           "${GITHUB_WORKSPACE}/.cache/nats-server/${{ inputs.nats_server_version }}/nats-server" -v
+
+      - name: "💾 Save NATS Server Cache [${{ inputs.nats_server_version }}]"
+        if: steps.nats_cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ github.workspace }}/.cache/nats-server/${{ inputs.nats_server_version }}
+          key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
 
       - name: "🔖 Normalize Release Version"
         if: inputs.release_version != ''
