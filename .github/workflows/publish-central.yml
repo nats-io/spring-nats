@@ -50,13 +50,13 @@ jobs:
         shell: sh
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           set -eu
           : "${OSSRH_USERNAME:?Missing required secret: OSSRH_USERNAME}"
-          : "${OSSRH_PASSWORD:?Missing required secret: OSSRH_PASSWORD}"
+          : "${OSSRH_TOKEN:?Missing required secret: OSSRH_TOKEN}"
           : "${SIGNING_KEY:?Missing required secret: SIGNING_KEY}"
           : "${SIGNING_PASSWORD:?Missing required secret: SIGNING_PASSWORD}"
 
@@ -87,17 +87,17 @@ jobs:
           cache: maven
           server-id: central
           server-username: OSSRH_USERNAME
-          server-password: OSSRH_PASSWORD
+          server-password: OSSRH_TOKEN
           gpg-private-key: ${{ secrets.SIGNING_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
 
       - name: "🚀 Publish to Maven Central"
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
         run: ./mvnw -B -Ppublish -DskipTests deploy
