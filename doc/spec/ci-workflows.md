@@ -15,6 +15,10 @@ flowchart TD
     BC_SNAP --> ART["build-workspace.tgz\nartifact upload"]
     ART --> PC_SNAP["publish-central.yml\nenvironment: maven-central-snapshot"]
     ART --> PGP_SNAP["publish-github-packages.yml\nenvironment: github-packages-snapshot"]
+    BMDRY["manual build-merge dry run"] --> BC_SNAP_DRY["build-common.yml\nrelease_strategy=snapshot"]
+    BC_SNAP_DRY --> ART_SNAP_DRY["build-workspace.tgz\nartifact upload"]
+    ART_SNAP_DRY --> PC_SNAP_DRY["publish-central.yml\ndry_run=true\nno upload"]
+    ART_SNAP_DRY --> PGP_SNAP_DRY["publish-github-packages.yml\ndry_run=true\nlocal file repo"]
 
     REL["manual release workflow_dispatch"] --> RW["release.yml"]
     RW --> BC_REL["build-common.yml\nrelease_strategy=rc|patch|minor|major"]
@@ -23,6 +27,10 @@ flowchart TD
     ART_REL --> PGP_REL["publish-github-packages.yml\nenvironment: github-packages-release"]
     PC_REL --> GR["GitHub release job\nenvironment: github-release"]
     PGP_REL --> GR
+    RELDRY["manual release dry run"] --> BC_REL_DRY["build-common.yml\nrelease_strategy=rc|patch|minor|major"]
+    BC_REL_DRY --> ART_REL_DRY["build-workspace.tgz\nartifact upload"]
+    ART_REL_DRY --> PC_REL_DRY["publish-central.yml\ndry_run=true\nno upload"]
+    ART_REL_DRY --> PGP_REL_DRY["publish-github-packages.yml\ndry_run=true\nlocal file repo"]
 ```
 
 ## What each workflow does
@@ -32,6 +40,7 @@ flowchart TD
 - automatic version resolution per workflow run
 - automatic snapshot publishing on merges to `main` or `master`
 - manual release publishing for `rc`, `patch`, `minor`, and `major`
+- manual dry-run rehearsal for snapshot and release publishing
 - git tag creation for release workflows
 - GitHub release creation for manual releases
 - publish to GitHub Packages
@@ -52,11 +61,13 @@ flowchart TD
 
 - Trigger: push to `main` or `master`
 - Also supports manual `workflow_dispatch`
+- Manual dispatch supports `dry_run=true`
 - Calls `build-common.yml` with `release_strategy=snapshot`
 - Produces the publishable workspace artifact
 - Publishes snapshot outputs to:
   - Maven Central snapshot environment
   - GitHub Packages snapshot environment
+- With `dry_run=true`, rehearses Central packaging and deploys to a local file repository instead of publishing externally
 
 ### `release.yml`
 
@@ -66,12 +77,14 @@ flowchart TD
   - `patch`
   - `minor`
   - `major`
+- Supports `dry_run=true`
 - Calls `build-common.yml` with the selected strategy
 - Produces the publishable workspace artifact
 - Publishes release outputs to:
   - Maven Central release environment
   - GitHub Packages release environment
 - Creates a GitHub release after both publish jobs succeed
+- Skips GitHub release creation when `dry_run=true`
 
 ### `build-common.yml`
 
@@ -109,6 +122,10 @@ Current environment mapping:
 - Release publish to Central: `maven-central-release`
 - Release publish to GitHub Packages: `github-packages-release`
 - GitHub release creation: `github-release`
+- Snapshot dry run to Central: `maven-central-snapshot-dry-run`
+- Snapshot dry run to GitHub Packages: `github-packages-snapshot-dry-run`
+- Release dry run to Central: `maven-central-release-dry-run`
+- Release dry run to GitHub Packages: `github-packages-release-dry-run`
 
 This makes release activity visible in GitHub Deployments instead of only in workflow logs.
 
@@ -132,3 +149,18 @@ Example normalization:
 - project version `0.6.3+3.5-SNAPSHOT`
 - workflow snapshot version `0.6.3-SNAPSHOT`
 - workflow release version `0.6.3`
+
+## Dry run behavior
+
+Dry runs use the same rewritten workspace artifact as live publish jobs, but stop before any external publication:
+
+- `publish-central.yml` runs `./mvnw -B -Ppublish -DskipTests -Dgpg.skip=true -DskipPublishing=true package`
+- `publish-github-packages.yml` deploys to a local file repository under `${RUNNER_TEMP}`
+- `release.yml` skips GitHub release and tag creation when `dry_run=true`
+
+This covers the important bits without leaving a trail of junk in public registries:
+
+- snapshot version reuse and overwrite behavior
+- RC, patch, minor, and major version resolution
+- publish-from-artifact mechanics
+- publish profile and javadoc wiring

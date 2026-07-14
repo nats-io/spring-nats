@@ -7,6 +7,10 @@ on:
         required: false
         default: ''
         type: string
+      dry_run:
+        required: false
+        default: false
+        type: boolean
       environment_name:
         required: false
         default: maven-central
@@ -21,6 +25,11 @@ on:
         description: Workflow run ID containing the build-workspace artifact
         required: true
         type: string
+      dry_run:
+        description: Run packaging-only Central publish validation without uploading
+        required: false
+        default: false
+        type: boolean
       environment_name:
         description: Deployment environment name
         required: false
@@ -47,6 +56,7 @@ jobs:
       url: ${{ inputs.environment_url }}
     steps:
       - name: "🔐 Check Publish Secrets"
+        if: inputs.dry_run != true
         shell: sh
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
@@ -96,8 +106,16 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
 
       - name: "🚀 Publish to Maven Central"
+        shell: sh
         env:
+          DRY_RUN: ${{ inputs.dry_run }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
-        run: ./mvnw -B -Ppublish -DskipTests deploy
+        run: |
+          set -eu
+          if [ "${DRY_RUN}" = "true" ]; then
+            ./mvnw -B -Ppublish -DskipTests -Dgpg.skip=true -DskipPublishing=true package
+          else
+            ./mvnw -B -Ppublish -DskipTests deploy
+          fi

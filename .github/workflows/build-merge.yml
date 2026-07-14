@@ -12,6 +12,11 @@ on:
         required: false
         default: v2.14.3
         type: string
+      dry_run:
+        description: Rehearse snapshot publishing without uploading externally
+        required: false
+        default: false
+        type: boolean
 
 permissions: {}
 
@@ -56,10 +61,13 @@ jobs:
       - build
     if: needs.build.outputs.should_publish == 'true'
     permissions:
+      actions: read
       contents: read
+      deployments: write
     uses: ./.github/workflows/publish-central.yml
     with:
-      environment_name: maven-central-snapshot
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+      environment_name: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'maven-central-snapshot-dry-run' || 'maven-central-snapshot' }}
       environment_url: https://central.sonatype.com/repository/maven-snapshots
     secrets: inherit
 
@@ -68,10 +76,13 @@ jobs:
       - build
     if: needs.build.outputs.should_publish == 'true'
     permissions:
+      actions: read
       contents: read
+      deployments: write
       packages: write
     uses: ./.github/workflows/publish-github-packages.yml
     with:
-      environment_name: github-packages-snapshot
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+      environment_name: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'github-packages-snapshot-dry-run' || 'github-packages-snapshot' }}
       environment_url: https://github.com/${{ github.repository }}/packages
     secrets: inherit

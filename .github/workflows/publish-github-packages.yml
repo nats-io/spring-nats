@@ -7,6 +7,10 @@ on:
         required: false
         default: ''
         type: string
+      dry_run:
+        required: false
+        default: false
+        type: boolean
       environment_name:
         required: false
         default: github-packages
@@ -21,6 +25,11 @@ on:
         description: Workflow run ID containing the build-workspace artifact
         required: true
         type: string
+      dry_run:
+        description: Deploy to a local file repository instead of GitHub Packages
+        required: false
+        default: false
+        type: boolean
       environment_name:
         description: Deployment environment name
         required: false
@@ -77,8 +86,17 @@ jobs:
           server-password: GITHUB_TOKEN
 
       - name: "🚀 Publish to GitHub Packages"
+        shell: sh
         env:
+          DRY_RUN: ${{ inputs.dry_run }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PACKAGES_REPOSITORY: ${{ github.repository }}
-        run: ./mvnw -B -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository=github::https://maven.pkg.github.com/${GITHUB_PACKAGES_REPOSITORY} deploy
+        run: |
+          set -eu
+          if [ "${DRY_RUN}" = "true" ]; then
+            repository="dry-run::file://${RUNNER_TEMP}/github-packages-dry-run"
+          else
+            repository="github::https://maven.pkg.github.com/${GITHUB_PACKAGES_REPOSITORY}"
+          fi
+          ./mvnw -B -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository="${repository}" deploy
