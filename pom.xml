@@ -114,18 +114,6 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <configuration>
-                        <source>${java.version}</source>
-                        <doclint>none</doclint>
-                        <failOnError>false</failOnError>
-                        <failOnWarnings>false</failOnWarnings>
-                        <quiet>true</quiet>
-                        <skip>${maven.javadoc.skip}</skip>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
@@ -163,8 +151,6 @@
                             <source>${java.version}</source>
                             <doclint>none</doclint>
                             <failOnError>false</failOnError>
-                            <failOnWarnings>false</failOnWarnings>
-                            <quiet>true</quiet>
                             <skip>${maven.javadoc.skip}</skip>
                         </configuration>
                     </execution>
@@ -174,8 +160,6 @@
                             <source>${java.version}</source>
                             <doclint>none</doclint>
                             <failOnError>false</failOnError>
-                            <failOnWarnings>false</failOnWarnings>
-                            <quiet>true</quiet>
                             <skip>${maven.javadoc.skip}</skip>
                         </configuration>
                     </execution>
@@ -184,8 +168,6 @@
                     <source>${java.version}</source>
                     <doclint>none</doclint>
                     <failOnError>false</failOnError>
-                    <failOnWarnings>false</failOnWarnings>
-                    <quiet>true</quiet>
                     <skip>${maven.javadoc.skip}</skip>
                 </configuration>
             </plugin>

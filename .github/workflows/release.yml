@@ -28,14 +28,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish-release:
+  build:
     permissions:
       contents: read
     uses: ./.github/workflows/build-common.yml
     with:
       ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
-      run_publish: true
       release_version: ${{ github.event.release.tag_name || inputs.release_version }}
       upload_artifact: true
+      artifact_name: release-build
+    secrets: inherit
+
+  publish-release:
+    needs:
+      - build
+    permissions:
+      contents: read
+    uses: ./.github/workflows/publish-central.yml
+    with:
+      ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
+      nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
+      artifact_name: release-build
+      release_version: ${{ github.event.release.tag_name || inputs.release_version }}
     secrets: inherit

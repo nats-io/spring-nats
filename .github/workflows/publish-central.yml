@@ -1,4 +1,4 @@
-name: Build Common
+name: Publish Central
 
 on:
   workflow_call:
@@ -9,28 +9,46 @@ on:
       nats_server_version:
         required: true
         type: string
+      artifact_name:
+        required: true
+        type: string
       release_version:
         required: false
         default: ''
-        type: string
-      upload_artifact:
-        required: false
-        default: false
-        type: boolean
-      artifact_name:
-        required: false
-        default: build-artifacts
         type: string
 
 permissions: {}
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
     steps:
+      - name: "🔐 Check Publish Secrets"
+        shell: sh
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -eu
+          for name in OSSRH_USERNAME OSSRH_PASSWORD SIGNING_KEY SIGNING_PASSWORD; do
+            eval "value=\${$name}"
+            if [ -z "${value}" ]; then
+              echo "Missing required secret: ${name}" >&2
+              exit 1
+            fi
+          done
+
+      - name: "📥 Download Build Artifact [${{ inputs.artifact_name }}]"
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: ${{ runner.temp }}/build-artifacts
+
       - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
         uses: actions/checkout@v7
         with:
@@ -46,6 +64,15 @@ jobs:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
           cache: maven
+          server-id: central
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_PASSWORD
+          gpg-private-key: ${{ secrets.SIGNING_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
 
       - name: "📦 Clone NATS Server [${{ inputs.nats_server_version }}]"
         shell: sh
@@ -122,21 +149,9 @@ jobs:
         if: inputs.release_version != ''
         run: ./mvnw -B versions:set -DnewVersion=${{ steps.semver_info.outputs.clean_semver_a }} -DgenerateBackupPoms=false
 
-      - name: "🧪 Verify"
-        if: ${{ !(inputs.upload_artifact || inputs.release_version != '') }}
-        run: ${{ steps.java_info.outputs.cmd }} -B verify
-
-      - name: "📦 Build Package"
-        if: inputs.upload_artifact || inputs.release_version != ''
-        run: ${{ steps.java_info.outputs.cmd }} -B package
-
-      - name: "📦 Upload Build Artifact"
-        if: inputs.upload_artifact || inputs.release_version != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact_name }}
-          if-no-files-found: ignore
-          path: |
-            **/target/*.jar
-            **/target/site/jacoco/**
-            **/target/surefire-reports/**
+      - name: "🚀 Publish to Maven Central"
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+        run: ./mvnw -B -Ppublish -DskipTests deploy
