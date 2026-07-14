@@ -74,6 +74,12 @@ jobs:
           go-version: ${{ steps.go_info.outputs.go_version }}
           cache-dependency-path: ${{ runner.temp }}/nats-server-src/go.mod
 
+      - name: "📁 Prepare NATS Server Cache Directory"
+        shell: sh
+        run: |
+          set -eu
+          mkdir -p "${HOME}/.cache/nats-server/${{ inputs.nats_server_version }}"
+
       - name: "♻️ Restore NATS Server Cache [${{ inputs.nats_server_version }}]"
         id: nats_cache
         uses: actions/cache@v6
