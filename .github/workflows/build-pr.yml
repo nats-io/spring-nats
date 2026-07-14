@@ -30,96 +30,12 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
     permissions:
       contents: read
-    steps:
-      - name: "📄 Create context"
-        id: context
-        shell: sh
-        run: |
-          set -eu
-          checkout_ref='${{ github.sha }}'
-          nats_server_version='v2.14.3'
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if [ -n "${{ inputs.ref }}" ]; then
-              checkout_ref='${{ inputs.ref }}'
-            fi
-            nats_server_version='${{ inputs.nats_server_version }}'
-          fi
-          printf 'checkout_ref=%s\n' "${checkout_ref}" >> "${GITHUB_OUTPUT}"
-          printf 'nats_server_version=%s\n' "${nats_server_version}" >> "${GITHUB_OUTPUT}"
-
-      - name: "🧑‍💻 Checkout [${{ steps.context.outputs.checkout_ref }}]"
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ steps.context.outputs.checkout_ref }}
-
-      - name: "🔍 Read Java Info"
-        id: java_info
-        uses: YunaBraska/java-info-action@main
-        with:
-          jv-fallback: '17'
-
-      - name: "📦 Clone NATS Server [${{ steps.context.outputs.nats_server_version }}]"
-        shell: sh
-        run: |
-          set -eu
-          git clone --depth 1 --branch "${{ steps.context.outputs.nats_server_version }}" \
-            https://github.com/nats-io/nats-server.git "${RUNNER_TEMP}/nats-server-src"
-
-      - name: "🔍 Read Go Info"
-        id: go_info
-        shell: sh
-        run: |
-          set -eu
-          go_version=$(awk '/^toolchain / { sub(/^toolchain go/, "", $2); print $2; exit } /^go / && found != 1 { found = 1; print $2 }' \
-            "${RUNNER_TEMP}/nats-server-src/go.mod")
-          if [ -z "${go_version}" ]; then
-            echo "Unable to determine Go version from NATS go.mod" >&2
-            exit 1
-          fi
-          printf 'go_version=%s\n' "${go_version}" >> "${GITHUB_OUTPUT}"
-
-      - name: "♻️ Restore NATS Server Cache [${{ steps.context.outputs.nats_server_version }}]"
-        id: nats_cache
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}
-          key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ steps.context.outputs.nats_server_version }}
-
-      - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
-        if: steps.nats_cache.outputs.cache-hit != 'true'
-        uses: actions/setup-go@v6
-        with:
-          go-version: ${{ steps.go_info.outputs.go_version }}
-          cache-dependency-path: ${{ runner.temp }}/nats-server-src/go.mod
-
-      - name: "🔨 Build NATS Server [${{ steps.context.outputs.nats_server_version }}]"
-        if: steps.nats_cache.outputs.cache-hit != 'true'
-        shell: sh
-        run: |
-          set -eu
-          mkdir -p "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}"
-          cd "${RUNNER_TEMP}/nats-server-src"
-          go build -o "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}/nats-server" ./main.go
-
-      - name: "📍 Expose NATS Server"
-        shell: sh
-        run: |
-          set -eu
-          chmod +x "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}/nats-server"
-          printf '%s\n' "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}" >> "${GITHUB_PATH}"
-          "${HOME}/.cache/nats-server/${{ steps.context.outputs.nats_server_version }}/nats-server" -v
-
-      - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: ${{ steps.java_info.outputs.java_version }}
-          cache: maven
-
-      - name: "🧪 Verify"
-        run: ./mvnw -B verify
-
+    uses: ./.github/workflows/build-common.yml
+    with:
+      ref: ${{ inputs.ref || github.sha }}
+      nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
+      run_publish: false
+      upload_artifact: false
+    secrets: inherit
