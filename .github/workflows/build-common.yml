@@ -26,8 +26,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-    env:
-      NATS_SERVER_CACHE_DIR: ${{ runner.temp }}/nats-server-cache/${{ inputs.nats_server_version }}
     steps:
       - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
         uses: actions/checkout@v7
@@ -80,13 +78,13 @@ jobs:
         shell: sh
         run: |
           set -eu
-          mkdir -p "${NATS_SERVER_CACHE_DIR}"
+          mkdir -p "${RUNNER_TEMP}/nats-server-cache/${{ inputs.nats_server_version }}"
 
       - name: "♻️ Restore NATS Server Cache [${{ inputs.nats_server_version }}]"
         id: nats_cache
         uses: actions/cache@v6
         with:
-          path: ${{ env.NATS_SERVER_CACHE_DIR }}
+          path: ${{ runner.temp }}/nats-server-cache/${{ inputs.nats_server_version }}
           key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
 
       - name: "🔨 Build NATS Server [${{ inputs.nats_server_version }}]"
@@ -95,15 +93,15 @@ jobs:
         run: |
           set -eu
           cd "${RUNNER_TEMP}/nats-server-src"
-          go build -o "${NATS_SERVER_CACHE_DIR}/nats-server" ./main.go
+          go build -o "${RUNNER_TEMP}/nats-server-cache/${{ inputs.nats_server_version }}/nats-server" ./main.go
 
       - name: "📍 Expose NATS Server"
         shell: sh
         run: |
           set -eu
-          chmod +x "${NATS_SERVER_CACHE_DIR}/nats-server"
-          printf '%s\n' "${NATS_SERVER_CACHE_DIR}" >> "${GITHUB_PATH}"
-          "${NATS_SERVER_CACHE_DIR}/nats-server" -v
+          chmod +x "${RUNNER_TEMP}/nats-server-cache/${{ inputs.nats_server_version }}/nats-server"
+          printf '%s\n' "${RUNNER_TEMP}/nats-server-cache/${{ inputs.nats_server_version }}" >> "${GITHUB_PATH}"
+          "${RUNNER_TEMP}/nats-server-cache/${{ inputs.nats_server_version }}/nats-server" -v
 
       - name: "🔖 Normalize Release Version"
         if: inputs.release_version != ''
