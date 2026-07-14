@@ -55,8 +55,13 @@ jobs:
         shell: sh
         run: |
           set -eu
-          go_version=$(awk '/^toolchain / { sub(/^toolchain go/, "", $2); print $2; exit } /^go / && found != 1 { found = 1; print $2 }' \
+          go_version=$(awk '/^toolchain / { print $2; exit } /^go / { print $2; exit }' \
             "${RUNNER_TEMP}/nats-server-src/go.mod")
+          case "${go_version}" in
+            go*)
+              go_version=${go_version#go}
+              ;;
+          esac
           if [ -z "${go_version}" ]; then
             echo "Unable to determine Go version from NATS go.mod" >&2
             exit 1
