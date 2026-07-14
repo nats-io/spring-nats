@@ -72,7 +72,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: ${{ steps.go_info.outputs.go_version }}
-          cache-dependency-path: ${{ runner.temp }}/nats-server-src/go.mod
+          cache: false
 
       - name: "📁 Prepare NATS Server Cache Directory"
         shell: sh
