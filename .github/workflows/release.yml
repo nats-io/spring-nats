@@ -65,6 +65,7 @@ jobs:
   publish-central:
     needs:
       - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
     permissions:
       actions: read
       contents: read
@@ -79,6 +80,7 @@ jobs:
   publish-github-packages:
     needs:
       - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
     permissions:
       actions: read
       contents: read
@@ -96,7 +98,7 @@ jobs:
       - build
       - publish-central
       - publish-github-packages
-    if: inputs.dry_run != true
+    if: ${{ always() && !cancelled() && inputs.dry_run != true && needs.build.result == 'success' && needs.publish-central.result == 'success' && needs.publish-github-packages.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

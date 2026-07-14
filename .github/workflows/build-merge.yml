@@ -59,6 +59,7 @@ jobs:
   publish-central:
     needs:
       - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
     permissions:
       actions: read
       contents: read
@@ -73,6 +74,7 @@ jobs:
   publish-github-packages:
     needs:
       - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
     permissions:
       actions: read
       contents: read
