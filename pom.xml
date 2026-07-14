@@ -159,21 +159,9 @@
                 <executions>
                     <execution>
                         <id>aggregate</id>
-                        <configuration combine.self="override">
-                            <source>${java.version}</source>
-                            <doclint>none</doclint>
-                            <failOnError>false</failOnError>
-                            <skip>${maven.javadoc.skip}</skip>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>javadoc</id>
-                        <configuration combine.self="override">
-                            <source>${java.version}</source>
-                            <doclint>none</doclint>
-                            <failOnError>false</failOnError>
-                            <skip>${maven.javadoc.skip}</skip>
-                        </configuration>
                     </execution>
                 </executions>
                 <configuration combine.self="override">

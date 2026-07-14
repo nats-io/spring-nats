@@ -22,7 +22,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: release-${{ inputs.release_strategy }}-${{ inputs.ref || github.sha || github.run_id }}
+  group: release-${{ inputs.release_strategy }}-${{ github.sha || github.run_id }}
   cancel-in-progress: false
 
 jobs:

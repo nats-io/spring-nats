@@ -55,13 +55,10 @@ jobs:
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           set -eu
-          for name in OSSRH_USERNAME OSSRH_PASSWORD SIGNING_KEY SIGNING_PASSWORD; do
-            eval "value=\${$name}"
-            if [ -z "${value}" ]; then
-              echo "Missing required secret: ${name}" >&2
-              exit 1
-            fi
-          done
+          : "${OSSRH_USERNAME:?Missing required secret: OSSRH_USERNAME}"
+          : "${OSSRH_PASSWORD:?Missing required secret: OSSRH_PASSWORD}"
+          : "${SIGNING_KEY:?Missing required secret: SIGNING_KEY}"
+          : "${SIGNING_PASSWORD:?Missing required secret: SIGNING_PASSWORD}"
 
       - name: "📥 Download Build Artifact"
         uses: actions/download-artifact@v4
