@@ -1,4 +1,4 @@
-name: Publish Central
+name: Publish GitHub Packages
 
 on:
   workflow_call:
@@ -19,24 +19,8 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      packages: write
     steps:
-      - name: "🔐 Check Publish Secrets"
-        shell: sh
-        env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-        run: |
-          set -eu
-          for name in OSSRH_USERNAME OSSRH_PASSWORD SIGNING_KEY SIGNING_PASSWORD; do
-            eval "value=\${$name}"
-            if [ -z "${value}" ]; then
-              echo "Missing required secret: ${name}" >&2
-              exit 1
-            fi
-          done
-
       - name: "📥 Download Build Artifact"
         uses: actions/download-artifact@v4
         with:
@@ -64,15 +48,9 @@ jobs:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
           cache: maven
-          server-id: central
-          server-username: OSSRH_USERNAME
-          server-password: OSSRH_PASSWORD
-          gpg-private-key: ${{ secrets.SIGNING_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
-        env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
 
       - name: "🔖 Normalize Release Version"
         if: inputs.release_version != ''
@@ -99,9 +77,8 @@ jobs:
         if: inputs.release_version != ''
         run: ./mvnw -B versions:set -DnewVersion=${{ steps.semver_info.outputs.clean_semver_a }} -DgenerateBackupPoms=false
 
-      - name: "🚀 Publish to Maven Central"
+      - name: "🚀 Publish to GitHub Packages"
         env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
-        run: ./mvnw -B -Ppublish -DskipTests deploy
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./mvnw -B -DskipTests -DaltDeploymentRepository=github::https://maven.pkg.github.com/${{ github.repository }} deploy

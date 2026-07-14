@@ -17,10 +17,6 @@ on:
         required: false
         default: false
         type: boolean
-      artifact_name:
-        required: false
-        default: build-artifacts
-        type: string
 
 permissions: {}
 
@@ -130,13 +126,18 @@ jobs:
         if: inputs.upload_artifact || inputs.release_version != ''
         run: ${{ steps.java_info.outputs.cmd }} -B package
 
+      - name: "🗜️ Bundle Build Targets"
+        if: inputs.upload_artifact || inputs.release_version != ''
+        shell: sh
+        run: |
+          set -eu
+          find . -type d -name target -prune | sort > "${RUNNER_TEMP}/build-targets.txt"
+          tar -czf "${RUNNER_TEMP}/build-artifacts.tgz" -T "${RUNNER_TEMP}/build-targets.txt"
+
       - name: "📦 Upload Build Artifact"
         if: inputs.upload_artifact || inputs.release_version != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.artifact_name }}
-          if-no-files-found: ignore
-          path: |
-            **/target/*.jar
-            **/target/site/jacoco/**
-            **/target/surefire-reports/**
+          name: build-artifacts
+          if-no-files-found: error
+          path: ${{ runner.temp }}/build-artifacts.tgz

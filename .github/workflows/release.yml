@@ -36,8 +36,6 @@ jobs:
       ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
       release_version: ${{ github.event.release.tag_name || inputs.release_version }}
-      upload_artifact: true
-      artifact_name: release-build
     secrets: inherit
 
   publish-release:
@@ -48,7 +46,17 @@ jobs:
     uses: ./.github/workflows/publish-central.yml
     with:
       ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
-      nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
-      artifact_name: release-build
+      release_version: ${{ github.event.release.tag_name || inputs.release_version }}
+    secrets: inherit
+
+  publish-github-packages:
+    needs:
+      - build
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      ref: ${{ inputs.ref || github.event.release.tag_name || 'main' }}
       release_version: ${{ github.event.release.tag_name || inputs.release_version }}
     secrets: inherit

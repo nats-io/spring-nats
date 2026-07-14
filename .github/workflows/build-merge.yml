@@ -37,7 +37,6 @@ jobs:
       ref: ${{ inputs.ref || github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
       upload_artifact: true
-      artifact_name: snapshot-build
     secrets: inherit
 
   publish-central:
@@ -49,6 +48,16 @@ jobs:
     uses: ./.github/workflows/publish-central.yml
     with:
       ref: ${{ inputs.ref || github.sha }}
-      nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
-      artifact_name: snapshot-build
+    secrets: inherit
+
+  publish-github-packages:
+    if: github.event_name == 'push' || inputs.publish_snapshot
+    needs:
+      - build
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      ref: ${{ inputs.ref || github.sha }}
     secrets: inherit
