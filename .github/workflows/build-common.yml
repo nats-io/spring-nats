@@ -91,87 +91,79 @@ jobs:
         id: java_info
         uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b
 
+      - name: "🏷️ Read Latest Tag"
+        id: latest_tag
+        shell: sh
+        run: |
+          set -eu
+          latest_tag=$(git tag --sort=-version:refname | sed -n '1p')
+          if [ -z "${latest_tag}" ]; then
+            echo "Unable to resolve release version: repository has no tags" >&2
+            exit 1
+          fi
+          printf 'latest_tag=%s\n' "${latest_tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: "🔢 Read Semver Info [${{ steps.latest_tag.outputs.latest_tag }}]"
+        id: semver_info
+        uses: YunaBraska/semver-info-action@3
+        with:
+          semver-a: ${{ steps.latest_tag.outputs.latest_tag }}
+
       - name: "🧮 Resolve Version [${{ inputs.release_strategy }}]"
         id: resolve_version
         env:
-          PROJECT_VERSION: ${{ steps.java_info.outputs.project_version }}
+          LATEST_TAG: ${{ steps.latest_tag.outputs.latest_tag }}
+          NEXT_MAJOR: ${{ steps.semver_info.outputs.next_major }}
+          NEXT_MINOR: ${{ steps.semver_info.outputs.next_minor }}
+          NEXT_PATCH: ${{ steps.semver_info.outputs.next_patch }}
+          NEXT_RC: ${{ steps.semver_info.outputs.next_rc }}
+          NEXT_SNAPSHOT: ${{ steps.semver_info.outputs.next_snapshot }}
           RELEASE_STRATEGY: ${{ inputs.release_strategy }}
         shell: sh
         run: |
           set -eu
 
           release_strategy=${RELEASE_STRATEGY}
-          project_version=${PROJECT_VERSION}
-          project_version_without_snapshot=${project_version%-SNAPSHOT}
-          current_release_version=${project_version_without_snapshot%%[+-]*}
-          current_snapshot_version=${current_release_version}-SNAPSHOT
-
-          IFS=. read -r major minor patch <<EOF_VERSION
-          ${current_release_version}
-          EOF_VERSION
+          latest_tag=${LATEST_TAG}
 
           case "${release_strategy}" in
             none)
-              if [ "${project_version}" != "${project_version_without_snapshot}" ]; then
-                resolved_version=${current_snapshot_version}
-              else
-                resolved_version=${current_release_version}
-              fi
+              resolved_version=${NEXT_SNAPSHOT}
               release_kind=none
               should_publish=false
               should_tag=false
               should_create_release=false
               ;;
             snapshot)
-              resolved_version=${current_snapshot_version}
+              resolved_version=${NEXT_SNAPSHOT}
               release_kind=snapshot
               should_publish=true
               should_tag=false
               should_create_release=false
               ;;
             rc)
-              latest_rc_number=$(
-                {
-                  git tag --list "${current_release_version}-rc.*" \
-                    | sed -n "s/^${current_release_version}-rc\\.//p" \
-                    | grep -E '^[0-9]+$' \
-                    | sort -n
-                } | tail -n 1
-              )
-              case "${latest_rc_number}" in
-                '')
-                  next_rc_number=1
-                  ;;
-                *)
-                  next_rc_number=$((latest_rc_number + 1))
-                  ;;
-              esac
-              resolved_version=${current_release_version}-rc.${next_rc_number}
+              resolved_version=${NEXT_RC}
               release_kind=prerelease
               should_publish=true
               should_tag=true
               should_create_release=true
               ;;
             patch)
-              if [ "${project_version}" != "${current_release_version}" ]; then
-                resolved_version=${current_release_version}
-              else
-                resolved_version=${major}.${minor}.$((patch + 1))
-              fi
+              resolved_version=${NEXT_PATCH}
               release_kind=release
               should_publish=true
               should_tag=true
               should_create_release=true
               ;;
             minor)
-              resolved_version=${major}.$((minor + 1)).0
+              resolved_version=${NEXT_MINOR}
               release_kind=release
               should_publish=true
               should_tag=true
               should_create_release=true
               ;;
             major)
-              resolved_version=$((major + 1)).0.0
+              resolved_version=${NEXT_MAJOR}
               release_kind=release
               should_publish=true
               should_tag=true
@@ -182,6 +174,11 @@ jobs:
               exit 1
               ;;
           esac
+
+          if [ -z "${resolved_version}" ]; then
+            echo "Unable to resolve version from latest tag ${latest_tag} with strategy ${release_strategy}" >&2
+            exit 1
+          fi
 
           printf 'resolved_version=%s\n' "${resolved_version}" >> "${GITHUB_OUTPUT}"
           printf 'release_kind=%s\n' "${release_kind}" >> "${GITHUB_OUTPUT}"
