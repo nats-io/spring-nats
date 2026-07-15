@@ -97,44 +97,44 @@ jobs:
         run: |
           set -eu
           latest_tag=$(
-            python3 - <<'PY'
-            import re
-            import subprocess
+python3 - <<'PY'
+import re
+import subprocess
 
-            semver_pattern = re.compile(
-                r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$"
-            )
+semver_pattern = re.compile(
+    r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$"
+)
 
-            def parse_identifier(identifier: str):
-                return (0, int(identifier)) if identifier.isdigit() else (1, identifier)
+def parse_identifier(identifier):
+    return (0, int(identifier)) if identifier.isdigit() else (1, identifier)
 
-            def parse_prerelease(prerelease: str | None):
-                if prerelease is None:
-                    return (1, ())
-                return (0, tuple(parse_identifier(part) for part in prerelease.split(".")))
+def parse_prerelease(prerelease):
+    if prerelease is None:
+        return (1, ())
+    return (0, tuple(parse_identifier(part) for part in prerelease.split(".")))
 
-            best_tag = None
-            best_key = None
-            tags = subprocess.check_output(["git", "tag", "--merged", "HEAD"], text=True).splitlines()
+best_tag = None
+best_key = None
+tags = subprocess.check_output(["git", "tag", "--merged", "HEAD"], text=True).splitlines()
 
-            for tag in tags:
-                match = semver_pattern.fullmatch(tag.strip())
-                if match is None:
-                    continue
-                major, minor, patch, prerelease, _build = match.groups()
-                key = (
-                    int(major),
-                    int(minor),
-                    int(patch),
-                    parse_prerelease(prerelease),
-                    tag,
-                )
-                if best_key is None or key > best_key:
-                    best_key = key
-                    best_tag = tag
+for tag in tags:
+    match = semver_pattern.fullmatch(tag.strip())
+    if match is None:
+        continue
+    major, minor, patch, prerelease, _build = match.groups()
+    key = (
+        int(major),
+        int(minor),
+        int(patch),
+        parse_prerelease(prerelease),
+        tag,
+    )
+    if best_key is None or key > best_key:
+        best_key = key
+        best_tag = tag
 
-            print(best_tag or "")
-            PY
+print(best_tag or "")
+PY
           )
           if [ -z "${latest_tag}" ]; then
             printf 'latest_tag=%s\n' '0.0.0' >> "${GITHUB_OUTPUT}"
