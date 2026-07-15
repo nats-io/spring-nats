@@ -57,7 +57,7 @@ jobs:
       url: ${{ inputs.environment_url || format('https://github.com/{0}/packages', github.repository) }}
     steps:
       - name: "📥 Download Build Artifact"
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v7
         with:
           name: build-workspace
           path: ${{ runner.temp }}/build-artifact
@@ -73,7 +73,7 @@ jobs:
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b
+        uses: YunaBraska/java-info-action@3
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
         uses: actions/setup-java@v5
