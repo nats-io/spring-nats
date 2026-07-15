@@ -135,7 +135,7 @@ This makes release activity visible in GitHub Deployments instead of only in wor
 
 The checked-in Maven version is not used as release truth for workflow versioning.
 
-The repository still contains historical Spring-line markers such as `+3.5`, but the workflow intentionally ignores those for version resolution and treats the latest git tag as the source of truth.
+The repository still contains historical Spring-line markers such as `+3.5`, but the workflow intentionally ignores build metadata for precedence and treats the latest semver tag as the source of truth.
 
 Examples:
 
@@ -150,7 +150,13 @@ Example normalization:
 - workflow snapshot version `0.6.2-SNAPSHOT`
 - workflow patch release version `0.6.2`
 
-This means the workflow requires at least one existing tag in the repository before it can resolve versions.
+If the repository has no reachable tags, the workflow falls back to a bootstrap base version of `0.0.0`.
+
+Bootstrap examples:
+
+- no tags + `none` -> `0.0.1-SNAPSHOT`
+- no tags + `snapshot` -> `0.0.1-SNAPSHOT`
+- no tags + `patch` -> `0.0.1`
 
 ## Dry run behavior
 

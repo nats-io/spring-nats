@@ -91,28 +91,69 @@ jobs:
         id: java_info
         uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b
 
-      - name: "🏷️ Read Latest Tag"
-        id: latest_tag
+      - name: "🏷️ Read Version Source"
+        id: version_source
         shell: sh
         run: |
           set -eu
-          latest_tag=$(git tag --sort=-version:refname | sed -n '1p')
+          latest_tag=$(
+            python3 - <<'PY'
+            import re
+            import subprocess
+
+            semver_pattern = re.compile(
+                r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$"
+            )
+
+            def parse_identifier(identifier: str):
+                return (0, int(identifier)) if identifier.isdigit() else (1, identifier)
+
+            def parse_prerelease(prerelease: str | None):
+                if prerelease is None:
+                    return (1, ())
+                return (0, tuple(parse_identifier(part) for part in prerelease.split(".")))
+
+            best_tag = None
+            best_key = None
+            tags = subprocess.check_output(["git", "tag", "--merged", "HEAD"], text=True).splitlines()
+
+            for tag in tags:
+                match = semver_pattern.fullmatch(tag.strip())
+                if match is None:
+                    continue
+                major, minor, patch, prerelease, _build = match.groups()
+                key = (
+                    int(major),
+                    int(minor),
+                    int(patch),
+                    parse_prerelease(prerelease),
+                    tag,
+                )
+                if best_key is None or key > best_key:
+                    best_key = key
+                    best_tag = tag
+
+            print(best_tag or "")
+            PY
+          )
           if [ -z "${latest_tag}" ]; then
-            echo "Unable to resolve release version: repository has no tags" >&2
-            exit 1
+            printf 'latest_tag=%s\n' '0.0.0' >> "${GITHUB_OUTPUT}"
+            printf 'display_tag=%s\n' '0.0.0 (bootstrap)' >> "${GITHUB_OUTPUT}"
+            exit 0
           fi
           printf 'latest_tag=%s\n' "${latest_tag}" >> "${GITHUB_OUTPUT}"
+          printf 'display_tag=%s\n' "${latest_tag}" >> "${GITHUB_OUTPUT}"
 
-      - name: "🔢 Read Semver Info [${{ steps.latest_tag.outputs.latest_tag }}]"
+      - name: "🔢 Read Semver Info [${{ steps.version_source.outputs.display_tag }}]"
         id: semver_info
         uses: YunaBraska/semver-info-action@3
         with:
-          semver-a: ${{ steps.latest_tag.outputs.latest_tag }}
+          semver-a: ${{ steps.version_source.outputs.latest_tag }}
 
       - name: "🧮 Resolve Version [${{ inputs.release_strategy }}]"
         id: resolve_version
         env:
-          LATEST_TAG: ${{ steps.latest_tag.outputs.latest_tag }}
+          LATEST_TAG: ${{ steps.version_source.outputs.latest_tag }}
           NEXT_MAJOR: ${{ steps.semver_info.outputs.next_major }}
           NEXT_MINOR: ${{ steps.semver_info.outputs.next_minor }}
           NEXT_PATCH: ${{ steps.semver_info.outputs.next_patch }}
@@ -313,7 +354,7 @@ jobs:
 
       - name: "📦 Upload Build Artifact"
         if: steps.resolve_version.outputs.should_publish == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v8
         with:
           name: build-workspace
           if-no-files-found: error
