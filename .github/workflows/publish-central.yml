@@ -1,0 +1,118 @@
+name: Publish Central
+
+on:
+  workflow_call:
+    inputs:
+      run_id:
+        required: false
+        default: ''
+        type: string
+      dry_run:
+        required: false
+        default: false
+        type: boolean
+      build_output_timestamp:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Workflow run ID containing the build-workspace artifact
+        required: true
+        type: string
+      dry_run:
+        description: Run packaging-only Central publish validation without uploading
+        required: false
+        default: false
+        type: boolean
+      build_output_timestamp:
+        description: Reproducible build output timestamp
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+    environment:
+      name: maven-central
+      url: https://central.sonatype.com
+    steps:
+      - name: "🔐 Check Publish Secrets"
+        if: inputs.dry_run != true
+        shell: sh
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -eu
+          : "${OSSRH_USERNAME:?Missing required secret: OSSRH_USERNAME}"
+          : "${OSSRH_TOKEN:?Missing required secret: OSSRH_TOKEN}"
+          : "${SIGNING_KEY:?Missing required secret: SIGNING_KEY}"
+          : "${SIGNING_PASSWORD:?Missing required secret: SIGNING_PASSWORD}"
+
+      - name: "📥 Download Build Artifact"
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: build-workspace
+          path: ${{ github.workspace }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.run_id || github.run_id }}
+
+      - name: "🔧 Restore Maven Wrapper"
+        shell: sh
+        run: |
+          set -eu
+          chmod +x "${GITHUB_WORKSPACE}/mvnw"
+
+      - name: "🔍 Read Java Info"
+        id: java_info
+        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b # 3
+
+      - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
+        if: inputs.dry_run == true
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java_info.outputs.java_version }}
+          cache: maven
+
+      - name: "☕ Setup Publish Java [${{ steps.java_info.outputs.java_version }}]"
+        if: inputs.dry_run != true
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java_info.outputs.java_version }}
+          cache: maven
+          server-id: central
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_TOKEN
+          gpg-private-key: ${{ secrets.SIGNING_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+
+      - name: "🚀 Publish to Maven Central"
+        shell: sh
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          BUILD_OUTPUT_TIMESTAMP: ${{ inputs.build_output_timestamp }}
+          PUBLISH_MODULES: nats-spring,nats-spring-boot-starter,nats-spring-cloud-stream-binder
+        run: |
+          set -eu
+          if [ "${DRY_RUN}" = "true" ]; then
+            ${{ steps.java_info.outputs.cmd }} -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests -Dgpg.skip=true -DskipPublishing=true package
+          else
+            ${{ steps.java_info.outputs.cmd }} -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests deploy
+          fi

@@ -5,7 +5,7 @@
 
     <artifactId>nats-spring-parent</artifactId>
     <groupId>io.nats</groupId>
-        <version>0.6.3+3.5-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <parent>
@@ -16,16 +16,23 @@
     </parent>
 
     <properties>
-        <spring-boot.version>3.5.14</spring-boot.version>
-        <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
+        <!-- BUILD -->
+        <revision>1.0.0-SNAPSHOT</revision>
         <java.version>17</java.version>
-        <jacoco.version>0.8.13</jacoco.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
         <git-commit-id-maven-plugin.version>9.2.0</git-commit-id-maven-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+        <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
         <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
-        <!-- Unique entry point for version number management -->
-        <revision>0.6.0</revision>
+
+        <!-- TEST -->
+        <jacoco.version>0.8.13</jacoco.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+
+        <!-- PROD -->
+        <spring-boot.version>3.5.14</spring-boot.version>
+        <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
     </properties>
 
     <modules>
@@ -106,16 +113,6 @@
     <build>
         <pluginManagement>
             <plugins>
-<!--                <plugin>-->
-<!--                    <groupId>org.apache.maven.plugins</groupId>-->
-<!--                    <artifactId>maven-gpg-plugin</artifactId>-->
-<!--                    <version>3.2.7</version>-->
-<!--                </plugin>-->
-<!--                <plugin>-->
-<!--                    <groupId>org.simplify4u.plugins</groupId>-->
-<!--                    <artifactId>sign-maven-plugin</artifactId>-->
-<!--                    <version>1.1.0</version>-->
-<!--                </plugin>-->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
@@ -152,6 +149,7 @@
                     <failOnError>false</failOnError>
                     <failOnWarnings>false</failOnWarnings>
                     <quiet>true</quiet>
+                    <skip>${maven.javadoc.skip}</skip>
                     <source>${java.version}</source>
                 </configuration>
                 <executions combine.self="override">
@@ -189,6 +187,8 @@
                     <runOnlyOnce>true</runOnlyOnce>
                     <injectAllReactorProjects>true</injectAllReactorProjects>
                     <generateGitPropertiesFile>false</generateGitPropertiesFile>
+                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
+                    <failOnUnableToExtractRepoInfo>false</failOnUnableToExtractRepoInfo>
                     <dateFormat>yyyy-MM-dd'T'HH:mm:ss'Z'</dateFormat>
                     <dateFormatTimeZone>UTC</dateFormatTimeZone>
                     <includeOnlyProperties>
@@ -226,49 +226,47 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.2.7</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                        <configuration>
-                            <signer>bc</signer>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.simplify4u.plugins</groupId>-->
-<!--                <artifactId>sign-maven-plugin</artifactId>-->
-<!--                <version>1.1.0</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <goals>-->
-<!--                            <goal>sign</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.7.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <publishingServerId>central</publishingServerId>
-                    <autoPublish>true</autoPublish>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
+        <profile>
+            <id>publish</id>
+            <properties>
+                <maven.javadoc.skip>false</maven.javadoc.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <signer>bc</signer>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>spring</id>
             <repositories>

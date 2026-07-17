@@ -1,52 +1,86 @@
-name: Build Main
+name: Build Merge
 
 on:
   push:
     branches:
       - main
+      - master
   workflow_dispatch:
+    inputs:
+      nats_server_version:
+        description: NATS server version to build for tests
+        required: false
+        default: v2.14.3
+        type: string
+      dry_run:
+        description: Rehearse snapshot publishing while skipping publish side effects
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: build-merge-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
-  build:
+  validate-dispatch-ref:
+    if: github.event_name == 'workflow_dispatch' && inputs.dry_run != true
     runs-on: ubuntu-latest
-    env:
-      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-      OSSRH_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-      MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
-      MAVEN_GPG_KEY: ${{ secrets.SIGNING_KEY }}
-      GODEBUG: x509sha1=1
+    permissions: {}
     steps:
-      - name: Setup GO
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.21.4'
-      - name: Install Nats Server
+      - name: "🛡️ Validate Dispatch Branch [${{ github.ref_name }}]"
+        shell: sh
         run: |
-          cd $GITHUB_WORKSPACE
-          git clone https://github.com/nats-io/nats-server.git
-          cd nats-server
-          go get
-          go build main.go
-          mkdir -p ~/.local/bin
-          cp main ~/.local/bin/nats-server
-          cd ..
-          rm -rf nats-server
-          nats-server -v
-      - name: Check out code
-        uses: actions/checkout@v4
-      - name: Setup Maven Action
-        uses: s4u/setup-maven-action@v1.18.0
-        with:
-          java-version: 17
-      - name: Build and Install Parent Pom
-        run: mvn --no-transfer-progress --settings ./settings.xml -N clean install
-      - name: Build and Install Samples
-        run: |
-          cd nats-spring-samples
-          mvn --no-transfer-progress --settings ../settings.xml -N clean install
-          cd ..
-      - name: Publish
-        run: mvn --no-transfer-progress --settings ./settings.xml clean verify install deploy
+          set -eu
+          case "${GITHUB_REF_NAME}" in
+            main|master)
+              ;;
+            *)
+              echo "Build Merge workflow_dispatch must run from main or master, got: ${GITHUB_REF_NAME}" >&2
+              exit 1
+              ;;
+          esac
 
+  build:
+    needs:
+      - validate-dispatch-ref
+    if: ${{ always() && (needs.validate-dispatch-ref.result == 'success' || needs.validate-dispatch-ref.result == 'skipped') }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-common.yml
+    with:
+      ref: ${{ github.sha }}
+      nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
+      release_strategy: snapshot
+    secrets: inherit
 
+  publish-central:
+    needs:
+      - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+    uses: ./.github/workflows/publish-central.yml
+    with:
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
+    secrets: inherit
 
+  publish-github-packages:
+    needs:
+      - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' && (github.event_name != 'workflow_dispatch' || inputs.dry_run != true) }}
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+      packages: write
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
+    secrets: inherit
