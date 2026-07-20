@@ -11,7 +11,7 @@ i.e. `<version>1.2.3+3.1</version>`
 
 There are 2 GitHub actions:
 
-1\. [Build Pull Request](.github/workflows/build-pr.yml) 
+1\. [🧪 CI · Pull Request](.github/workflows/build-pr.yml) 
 
 When a PR is submitted, this runs to compile and test the project. 
 
