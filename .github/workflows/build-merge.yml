@@ -1,4 +1,4 @@
-name: Build Merge
+name: 🔄 CD · Release Snapshot
 
 on:
   push:

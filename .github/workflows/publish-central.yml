@@ -1,4 +1,4 @@
-name: Publish Central
+name: 📦 CD · Publish Central
 
 on:
   workflow_call:

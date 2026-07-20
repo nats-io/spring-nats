@@ -1,4 +1,4 @@
-name: Publish GitHub Packages
+name: 📦 CD · Publish GitHub Packages
 
 on:
   workflow_call:

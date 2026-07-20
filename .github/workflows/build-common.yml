@@ -1,4 +1,4 @@
-name: Build Common
+name: 🧩 CI · Common Build
 
 on:
   workflow_call:
