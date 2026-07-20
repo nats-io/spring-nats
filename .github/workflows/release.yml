@@ -1,4 +1,4 @@
-name: 🚀 CD · Release
+name: 🏷️ Manual · Release
 
 on:
   workflow_dispatch:
