@@ -1,4 +1,4 @@
-name: Claude Code
+name: 🤖 Bot · Claude Code
 
 permissions:
   contents: read
@@ -14,7 +14,14 @@ on:
 
 jobs:
   claude:
-    uses: synadia-io/ai-workflows/.github/workflows/claude.yml@v2
+    if: |
+      github.event_name == 'pull_request_target' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' &&
+       contains(github.event.comment.body, '@claude'))
+    uses: synadia-io/ai-workflows/.github/workflows/claude.yml@5b7104f96a7a643def9aea2a1be126ea598fb06c # v2
     with:
       gh_app_id: ${{ vars.CLAUDE_GH_APP_ID }}
       checkout_mode: base

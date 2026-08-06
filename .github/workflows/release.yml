@@ -1,0 +1,165 @@
+name: 🏷️ Manual · Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_strategy:
+        description: Release strategy to publish
+        required: true
+        default: patch
+        type: choice
+        options:
+          - rc
+          - patch
+          - minor
+          - major
+      nats_server_version:
+        description: NATS server version to build for tests
+        required: false
+        default: v2.14.3
+        type: string
+      dry_run:
+        description: Rehearse release publishing while skipping Maven Central upload
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  validate-dispatch-ref:
+    if: inputs.dry_run != true
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: "🛡️ Validate Release Branch [${{ github.ref_name }}]"
+        shell: sh
+        run: |
+          set -eu
+          case "${GITHUB_REF_NAME}" in
+            main|master)
+              ;;
+            *)
+              echo "Release workflow_dispatch must run from main or master, got: ${GITHUB_REF_NAME}" >&2
+              exit 1
+              ;;
+          esac
+
+  build:
+    needs:
+      - validate-dispatch-ref
+    if: ${{ always() && (needs.validate-dispatch-ref.result == 'success' || needs.validate-dispatch-ref.result == 'skipped') }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-common.yml
+    with:
+      ref: ${{ github.sha }}
+      nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
+      release_strategy: ${{ inputs.release_strategy }}
+
+  publish-central:
+    needs:
+      - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+    uses: ./.github/workflows/publish-central.yml
+    with:
+      dry_run: ${{ inputs.dry_run }}
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
+    secrets:
+      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+
+  publish-github-packages:
+    needs:
+      - build
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+      packages: write
+    uses: ./.github/workflows/publish-github-packages.yml
+    with:
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
+
+  create-release:
+    needs:
+      - build
+      - publish-central
+      - publish-github-packages
+    if: ${{ always() && !cancelled() && needs.build.outputs.should_create_release == 'true' && needs.build.result == 'success' && needs.publish-central.result == 'success' && needs.publish-github-packages.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: "🧑‍💻 Checkout [${{ needs.build.outputs.commit_sha }}]"
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.build.outputs.commit_sha }}
+
+      - name: "📥 Download Build Artifact"
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: build-workspace
+          path: ${{ github.workspace }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+
+      - name: "📦 Prepare Release Assets"
+        env:
+          RELEASE_VERSION: ${{ needs.build.outputs.resolved_version }}
+        shell: sh
+        run: |
+          set -eu
+          assets_dir="${RUNNER_TEMP}/release-assets"
+          rm -rf "${assets_dir}"
+          mkdir -p "${assets_dir}"
+
+          cp pom.xml "${assets_dir}/nats-spring-parent-${RELEASE_VERSION}.pom"
+          cp nats-spring-boot-starter/pom.xml "${assets_dir}/nats-spring-boot-starter-${RELEASE_VERSION}.pom"
+
+          cp nats-spring/target/nats-spring-${RELEASE_VERSION}.jar "${assets_dir}/"
+          cp nats-spring/target/nats-spring-${RELEASE_VERSION}-sources.jar "${assets_dir}/"
+          cp nats-spring/target/nats-spring-${RELEASE_VERSION}-javadoc.jar "${assets_dir}/"
+          cp nats-spring-cloud-stream-binder/target/nats-spring-cloud-stream-binder-${RELEASE_VERSION}.jar "${assets_dir}/"
+          cp nats-spring-cloud-stream-binder/target/nats-spring-cloud-stream-binder-${RELEASE_VERSION}-sources.jar "${assets_dir}/"
+          cp nats-spring-cloud-stream-binder/target/nats-spring-cloud-stream-binder-${RELEASE_VERSION}-javadoc.jar "${assets_dir}/"
+
+      - name: "🏷️ Create GitHub Release [${{ needs.build.outputs.resolved_version }}]"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_KIND: ${{ needs.build.outputs.release_kind }}
+          RELEASE_VERSION: ${{ needs.build.outputs.resolved_version }}
+          TARGET_SHA: ${{ needs.build.outputs.commit_sha }}
+        shell: sh
+        run: |
+          set -eu
+          if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "GitHub release already exists for ${RELEASE_VERSION}"
+          else
+            if [ "${RELEASE_KIND}" = "prerelease" ]; then
+              gh release create "${RELEASE_VERSION}" \
+                --target "${TARGET_SHA}" \
+                --generate-notes \
+                --prerelease
+            else
+              gh release create "${RELEASE_VERSION}" \
+                --target "${TARGET_SHA}" \
+                --generate-notes
+            fi
+          fi
+
+          gh release upload "${RELEASE_VERSION}" "${RUNNER_TEMP}/release-assets"/* --clobber
