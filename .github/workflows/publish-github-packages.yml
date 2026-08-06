@@ -3,30 +3,7 @@ name: 📦 CD · Publish GitHub Packages
 on:
   workflow_call:
     inputs:
-      run_id:
-        required: false
-        default: ''
-        type: string
-      dry_run:
-        required: false
-        default: false
-        type: boolean
       build_output_timestamp:
-        required: true
-        type: string
-  workflow_dispatch:
-    inputs:
-      run_id:
-        description: Workflow run ID containing the build-workspace artifact
-        required: true
-        type: string
-      dry_run:
-        description: Reserved for release-flow rehearsal toggles
-        required: false
-        default: false
-        type: boolean
-      build_output_timestamp:
-        description: Reproducible build output timestamp
         required: true
         type: string
 
@@ -52,7 +29,7 @@ jobs:
           path: ${{ github.workspace }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.run_id || github.run_id }}
+          run-id: ${{ github.run_id }}
 
       - name: "🔧 Restore Maven Wrapper"
         shell: sh

@@ -73,7 +73,11 @@ jobs:
     with:
       dry_run: ${{ inputs.dry_run }}
       build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
-    secrets: inherit
+    secrets:
+      OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+      OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+      SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
 
   publish-github-packages:
     needs:
@@ -86,9 +90,7 @@ jobs:
       packages: write
     uses: ./.github/workflows/publish-github-packages.yml
     with:
-      dry_run: ${{ inputs.dry_run }}
       build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
-    secrets: inherit
 
   create-release:
     needs:

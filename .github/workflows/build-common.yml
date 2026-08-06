@@ -21,9 +21,6 @@ on:
       release_kind:
         description: Release kind [none, snapshot, prerelease, release]
         value: ${{ jobs.build.outputs.release_kind }}
-      should_publish:
-        description: Whether publish jobs should run
-        value: ${{ jobs.build.outputs.should_publish }}
       should_create_release:
         description: Whether a GitHub release should be created
         value: ${{ jobs.build.outputs.should_create_release }}
@@ -33,31 +30,6 @@ on:
       build_output_timestamp:
         description: Reproducible build output timestamp
         value: ${{ jobs.build.outputs.build_output_timestamp }}
-  workflow_dispatch:
-    inputs:
-      ref:
-        description: Git ref to build
-        required: false
-        default: ''
-        type: string
-      nats_server_version:
-        description: NATS server version to build for tests
-        required: false
-        default: v2.14.3
-        type: string
-      release_strategy:
-        description: Release strategy to apply
-        required: true
-        default: none
-        type: choice
-        options:
-          - none
-          - snapshot
-          - rc
-          - patch
-          - minor
-          - major
-
 permissions: {}
 
 jobs:
@@ -69,7 +41,6 @@ jobs:
     outputs:
       resolved_version: ${{ steps.resolve_version.outputs.resolved_version }}
       release_kind: ${{ steps.resolve_version.outputs.release_kind }}
-      should_publish: ${{ steps.resolve_version.outputs.should_publish }}
       should_create_release: ${{ steps.resolve_version.outputs.should_create_release }}
       commit_sha: ${{ steps.commit_info.outputs.commit_sha }}
       build_output_timestamp: ${{ steps.commit_info.outputs.build_output_timestamp }}
@@ -85,8 +56,10 @@ jobs:
         shell: sh
         run: |
           set -eu
-          printf 'commit_sha=%s\n' "$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
-          printf 'build_output_timestamp=%s\n' "$(git log -1 --format=%cI HEAD)" >> "${GITHUB_OUTPUT}"
+          {
+            printf 'commit_sha=%s\n' "$(git rev-parse HEAD)"
+            printf 'build_output_timestamp=%s\n' "$(git log -1 --format=%cI HEAD)"
+          } | tee -a "${GITHUB_OUTPUT}"
 
       - name: "🔍 Read Java Info"
         id: java_info
@@ -136,12 +109,16 @@ jobs:
           print(best_tag or "")
           ')
           if [ -z "${latest_tag}" ]; then
-            printf 'latest_tag=%s\n' '0.0.0' >> "${GITHUB_OUTPUT}"
-            printf 'display_tag=%s\n' '0.0.0 (bootstrap)' >> "${GITHUB_OUTPUT}"
+            {
+              printf 'latest_tag=%s\n' '0.0.0'
+              printf 'display_tag=%s\n' '0.0.0 (bootstrap)'
+            } | tee -a "${GITHUB_OUTPUT}"
             exit 0
           fi
-          printf 'latest_tag=%s\n' "${latest_tag}" >> "${GITHUB_OUTPUT}"
-          printf 'display_tag=%s\n' "${latest_tag}" >> "${GITHUB_OUTPUT}"
+          {
+            printf 'latest_tag=%s\n' "${latest_tag}"
+            printf 'display_tag=%s\n' "${latest_tag}"
+          } | tee -a "${GITHUB_OUTPUT}"
 
       - name: "🔢 Read Semver Info [${{ steps.version_source.outputs.display_tag }}]"
         id: semver_info
@@ -214,10 +191,12 @@ jobs:
             exit 1
           fi
 
-          printf 'resolved_version=%s\n' "${resolved_version}" >> "${GITHUB_OUTPUT}"
-          printf 'release_kind=%s\n' "${release_kind}" >> "${GITHUB_OUTPUT}"
-          printf 'should_publish=%s\n' "${should_publish}" >> "${GITHUB_OUTPUT}"
-          printf 'should_create_release=%s\n' "${should_create_release}" >> "${GITHUB_OUTPUT}"
+          {
+            printf 'resolved_version=%s\n' "${resolved_version}"
+            printf 'release_kind=%s\n' "${release_kind}"
+            printf 'should_publish=%s\n' "${should_publish}"
+            printf 'should_create_release=%s\n' "${should_create_release}"
+          } | tee -a "${GITHUB_OUTPUT}"
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
@@ -258,7 +237,7 @@ jobs:
             echo "Unable to determine Go version from NATS go.mod" >&2
             exit 1
           fi
-          printf 'go_version=%s\n' "${go_version}" >> "${GITHUB_OUTPUT}"
+          printf 'go_version=%s\n' "${go_version}" | tee -a "${GITHUB_OUTPUT}"
 
       - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6

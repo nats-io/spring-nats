@@ -17,6 +17,8 @@ Status: Accepted
 11. Manual releases share one concurrency slot.
 12. External actions are pinned to immutable commit SHAs.
 13. After a partial release failure, rerun failed jobs in the same workflow run. Do not dispatch a new release.
+14. Shared build and publish workflows are callable only.
+15. Central receives only its four named secrets; GitHub Packages uses the automatic repository token.
 
 ## Release Assets
 

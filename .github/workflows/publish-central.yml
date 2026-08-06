@@ -3,10 +3,6 @@ name: 📦 CD · Publish Central
 on:
   workflow_call:
     inputs:
-      run_id:
-        required: false
-        default: ''
-        type: string
       dry_run:
         required: false
         default: false
@@ -14,21 +10,15 @@ on:
       build_output_timestamp:
         required: true
         type: string
-  workflow_dispatch:
-    inputs:
-      run_id:
-        description: Workflow run ID containing the build-workspace artifact
+    secrets:
+      OSSRH_USERNAME:
         required: true
-        type: string
-      dry_run:
-        description: Run packaging-only Central publish validation without uploading
-        required: false
-        default: false
-        type: boolean
-      build_output_timestamp:
-        description: Reproducible build output timestamp
+      OSSRH_TOKEN:
         required: true
-        type: string
+      SIGNING_KEY:
+        required: true
+      SIGNING_PASSWORD:
+        required: true
 
 permissions: {}
 
@@ -65,7 +55,7 @@ jobs:
           path: ${{ github.workspace }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          run-id: ${{ inputs.run_id || github.run_id }}
+          run-id: ${{ github.run_id }}
 
       - name: "🔧 Restore Maven Wrapper"
         shell: sh

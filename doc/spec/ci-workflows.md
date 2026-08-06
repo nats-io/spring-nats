@@ -55,12 +55,20 @@ flowchart TD
 
 ### `build-common.yml`
 
+- is callable only; public runs start through the pull-request, snapshot, or release workflows
 - reads Java with `java-info-action`
 - resolves versions from the latest reachable git tag with `semver-info-action`
 - derives Go from the selected NATS Server `go.mod`
 - builds NATS Server and runs Maven verification
 - uploads the rewritten workspace for publish strategies
 - retains the artifact for one day
+
+### Publish workflows
+
+- are callable only and consume the artifact from their caller's workflow run
+- receive only the credentials required for their destination
+- use the automatic `GITHUB_TOKEN` for GitHub Packages
+- receive the four Maven Central and signing secrets explicitly for Central publishing
 
 ## How is the version selected?
 
