@@ -11,13 +11,8 @@ on:
         required: false
         default: false
         type: boolean
-      environment_name:
-        required: false
-        default: maven-central
-        type: string
-      environment_url:
-        required: false
-        default: https://central.sonatype.com
+      build_output_timestamp:
+        required: true
         type: string
   workflow_dispatch:
     inputs:
@@ -30,15 +25,9 @@ on:
         required: false
         default: false
         type: boolean
-      environment_name:
-        description: Deployment environment name
-        required: false
-        default: maven-central
-        type: string
-      environment_url:
-        description: Deployment environment URL
-        required: false
-        default: https://central.sonatype.com
+      build_output_timestamp:
+        description: Reproducible build output timestamp
+        required: true
         type: string
 
 permissions: {}
@@ -52,11 +41,10 @@ jobs:
       contents: read
       deployments: write
     environment:
-      name: ${{ inputs.environment_name }}
-      url: ${{ inputs.environment_url }}
+      name: maven-central
+      url: https://central.sonatype.com
     steps:
       - name: "🔐 Check Publish Secrets"
-        if: inputs.dry_run != true
         shell: sh
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
@@ -71,26 +59,26 @@ jobs:
           : "${SIGNING_PASSWORD:?Missing required secret: SIGNING_PASSWORD}"
 
       - name: "📥 Download Build Artifact"
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: build-workspace
-          path: ${{ runner.temp }}/build-artifact
+          path: ${{ github.workspace }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.run_id || github.run_id }}
 
-      - name: "📦 Restore Build Workspace"
+      - name: "🔧 Restore Maven Wrapper"
         shell: sh
         run: |
           set -eu
-          tar -xzf "${RUNNER_TEMP}/build-artifact/build-workspace.tgz" -C "${GITHUB_WORKSPACE}"
+          chmod +x "${GITHUB_WORKSPACE}/mvnw"
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@3
+        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b # 3
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
@@ -109,13 +97,16 @@ jobs:
         shell: sh
         env:
           DRY_RUN: ${{ inputs.dry_run }}
+          BUILD_OUTPUT_TIMESTAMP: ${{ inputs.build_output_timestamp }}
+          MAVEN_CMD: ${{ steps.java_info.outputs.cmd }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+          PUBLISH_MODULES: nats-spring,nats-spring-boot-starter,nats-spring-cloud-stream-binder
         run: |
           set -eu
           if [ "${DRY_RUN}" = "true" ]; then
-            ./mvnw -B -Ppublish -DskipTests -Dgpg.skip=true -DskipPublishing=true package
+            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests -Dgpg.skip=true -DskipPublishing=true package
           else
-            ./mvnw -B -Ppublish -DskipTests deploy
+            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests deploy
           fi

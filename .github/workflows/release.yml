@@ -19,7 +19,7 @@ on:
         default: v2.14.3
         type: string
       dry_run:
-        description: Rehearse release publishing without uploading or creating a GitHub release
+        description: Rehearse release publishing while skipping Maven Central upload
         required: false
         default: false
         type: boolean
@@ -27,7 +27,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: release-${{ inputs.release_strategy }}-${{ github.sha || github.run_id }}
+  group: release
   cancel-in-progress: false
 
 jobs:
@@ -60,7 +60,6 @@ jobs:
       ref: ${{ github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
       release_strategy: ${{ inputs.release_strategy }}
-    secrets: inherit
 
   publish-central:
     needs:
@@ -73,8 +72,7 @@ jobs:
     uses: ./.github/workflows/publish-central.yml
     with:
       dry_run: ${{ inputs.dry_run }}
-      environment_name: ${{ inputs.dry_run && 'maven-central-release-dry-run' || 'maven-central-release' }}
-      environment_url: https://central.sonatype.com
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
     secrets: inherit
 
   publish-github-packages:
@@ -89,8 +87,7 @@ jobs:
     uses: ./.github/workflows/publish-github-packages.yml
     with:
       dry_run: ${{ inputs.dry_run }}
-      environment_name: ${{ inputs.dry_run && 'github-packages-release-dry-run' || 'github-packages-release' }}
-      environment_url: https://github.com/${{ github.repository }}/packages
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
     secrets: inherit
 
   create-release:
@@ -98,20 +95,46 @@ jobs:
       - build
       - publish-central
       - publish-github-packages
-    if: ${{ always() && !cancelled() && inputs.dry_run != true && needs.build.result == 'success' && needs.publish-central.result == 'success' && needs.publish-github-packages.result == 'success' }}
+    if: ${{ always() && !cancelled() && needs.build.outputs.should_create_release == 'true' && needs.build.result == 'success' && needs.publish-central.result == 'success' && needs.publish-github-packages.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: write
-      deployments: write
-    environment:
-      name: github-release
-      url: ${{ format('https://github.com/{0}/releases', github.repository) }}
     steps:
       - name: "🧑‍💻 Checkout [${{ needs.build.outputs.commit_sha }}]"
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0
           ref: ${{ needs.build.outputs.commit_sha }}
+
+      - name: "📥 Download Build Artifact"
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: build-workspace
+          path: ${{ github.workspace }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+
+      - name: "📦 Prepare Release Assets"
+        env:
+          RELEASE_VERSION: ${{ needs.build.outputs.resolved_version }}
+        shell: sh
+        run: |
+          set -eu
+          assets_dir="${RUNNER_TEMP}/release-assets"
+          rm -rf "${assets_dir}"
+          mkdir -p "${assets_dir}"
+
+          cp pom.xml "${assets_dir}/nats-spring-parent-${RELEASE_VERSION}.pom"
+          cp nats-spring-boot-starter/pom.xml "${assets_dir}/nats-spring-boot-starter-${RELEASE_VERSION}.pom"
+
+          cp nats-spring/target/nats-spring-${RELEASE_VERSION}.jar "${assets_dir}/"
+          cp nats-spring/target/nats-spring-${RELEASE_VERSION}-sources.jar "${assets_dir}/"
+          cp nats-spring/target/nats-spring-${RELEASE_VERSION}-javadoc.jar "${assets_dir}/"
+          cp nats-spring-cloud-stream-binder/target/nats-spring-cloud-stream-binder-${RELEASE_VERSION}.jar "${assets_dir}/"
+          cp nats-spring-cloud-stream-binder/target/nats-spring-cloud-stream-binder-${RELEASE_VERSION}-sources.jar "${assets_dir}/"
+          cp nats-spring-cloud-stream-binder/target/nats-spring-cloud-stream-binder-${RELEASE_VERSION}-javadoc.jar "${assets_dir}/"
 
       - name: "🏷️ Create GitHub Release [${{ needs.build.outputs.resolved_version }}]"
         env:
@@ -124,16 +147,17 @@ jobs:
           set -eu
           if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
             echo "GitHub release already exists for ${RELEASE_VERSION}"
-            exit 0
+          else
+            if [ "${RELEASE_KIND}" = "prerelease" ]; then
+              gh release create "${RELEASE_VERSION}" \
+                --target "${TARGET_SHA}" \
+                --generate-notes \
+                --prerelease
+            else
+              gh release create "${RELEASE_VERSION}" \
+                --target "${TARGET_SHA}" \
+                --generate-notes
+            fi
           fi
 
-          if [ "${RELEASE_KIND}" = "prerelease" ]; then
-            gh release create "${RELEASE_VERSION}" \
-              --target "${TARGET_SHA}" \
-              --generate-notes \
-              --prerelease
-          else
-            gh release create "${RELEASE_VERSION}" \
-              --target "${TARGET_SHA}" \
-              --generate-notes
-          fi
+          gh release upload "${RELEASE_VERSION}" "${RUNNER_TEMP}/release-assets"/* --clobber

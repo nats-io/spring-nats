@@ -25,7 +25,7 @@
         <spring-boot.version>3.5.14</spring-boot.version>
         <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
         <nats-spring.version>${revision}</nats-spring.version>
-        <revision>0.6.3+3.5-SNAPSHOT</revision>
+        <revision>1.0.0-SNAPSHOT</revision>
     </properties>
 
     <dependencyManagement>

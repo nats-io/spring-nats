@@ -13,7 +13,7 @@ on:
         default: v2.14.3
         type: string
       dry_run:
-        description: Rehearse snapshot publishing without uploading externally
+        description: Rehearse snapshot publishing while skipping Maven Central upload
         required: false
         default: false
         type: boolean
@@ -21,7 +21,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: build-merge-${{ github.ref || github.run_id }}
+  group: build-main-${{ github.ref || github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -38,7 +38,7 @@ jobs:
             main|master)
               ;;
             *)
-              echo "Build Merge workflow_dispatch must run from main or master, got: ${GITHUB_REF_NAME}" >&2
+              echo "Release Snapshot workflow_dispatch must run from main or master, got: ${GITHUB_REF_NAME}" >&2
               exit 1
               ;;
           esac
@@ -54,7 +54,6 @@ jobs:
       ref: ${{ github.sha }}
       nats_server_version: ${{ inputs.nats_server_version || 'v2.14.3' }}
       release_strategy: snapshot
-    secrets: inherit
 
   publish-central:
     needs:
@@ -67,8 +66,7 @@ jobs:
     uses: ./.github/workflows/publish-central.yml
     with:
       dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
-      environment_name: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'maven-central-snapshot-dry-run' || 'maven-central-snapshot' }}
-      environment_url: https://central.sonatype.com/repository/maven-snapshots
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
     secrets: inherit
 
   publish-github-packages:
@@ -83,6 +81,5 @@ jobs:
     uses: ./.github/workflows/publish-github-packages.yml
     with:
       dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
-      environment_name: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'github-packages-snapshot-dry-run' || 'github-packages-snapshot' }}
-      environment_url: https://github.com/${{ github.repository }}/packages
+      build_output_timestamp: ${{ needs.build.outputs.build_output_timestamp }}
     secrets: inherit

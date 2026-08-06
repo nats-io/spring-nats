@@ -11,13 +11,8 @@ on:
         required: false
         default: false
         type: boolean
-      environment_name:
-        required: false
-        default: github-packages
-        type: string
-      environment_url:
-        required: false
-        default: ''
+      build_output_timestamp:
+        required: true
         type: string
   workflow_dispatch:
     inputs:
@@ -26,19 +21,13 @@ on:
         required: true
         type: string
       dry_run:
-        description: Deploy to a local file repository instead of GitHub Packages
+        description: Reserved for release-flow rehearsal toggles
         required: false
         default: false
         type: boolean
-      environment_name:
-        description: Deployment environment name
-        required: false
-        default: github-packages
-        type: string
-      environment_url:
-        description: Deployment environment URL
-        required: false
-        default: ''
+      build_output_timestamp:
+        description: Reproducible build output timestamp
+        required: true
         type: string
 
 permissions: {}
@@ -53,30 +42,30 @@ jobs:
       deployments: write
       packages: write
     environment:
-      name: ${{ inputs.environment_name }}
-      url: ${{ inputs.environment_url || format('https://github.com/{0}/packages', github.repository) }}
+      name: github-packages
+      url: ${{ format('https://github.com/{0}/packages', github.repository) }}
     steps:
       - name: "📥 Download Build Artifact"
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: build-workspace
-          path: ${{ runner.temp }}/build-artifact
+          path: ${{ github.workspace }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           run-id: ${{ inputs.run_id || github.run_id }}
 
-      - name: "📦 Restore Build Workspace"
+      - name: "🔧 Restore Maven Wrapper"
         shell: sh
         run: |
           set -eu
-          tar -xzf "${RUNNER_TEMP}/build-artifact/build-workspace.tgz" -C "${GITHUB_WORKSPACE}"
+          chmod +x "${GITHUB_WORKSPACE}/mvnw"
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@3
+        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b # 3
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
@@ -88,15 +77,13 @@ jobs:
       - name: "🚀 Publish to GitHub Packages"
         shell: sh
         env:
-          DRY_RUN: ${{ inputs.dry_run }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_PACKAGES_REPOSITORY: ${{ github.repository }}
+          BUILD_OUTPUT_TIMESTAMP: ${{ inputs.build_output_timestamp }}
+          MAVEN_CMD: ${{ steps.java_info.outputs.cmd }}
+          PUBLISH_MODULES: nats-spring,nats-spring-boot-starter,nats-spring-cloud-stream-binder
         run: |
           set -eu
-          if [ "${DRY_RUN}" = "true" ]; then
-            repository="dry-run::file://${RUNNER_TEMP}/github-packages-dry-run"
-          else
-            repository="github::https://maven.pkg.github.com/${GITHUB_PACKAGES_REPOSITORY}"
-          fi
-          ./mvnw -B -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository="${repository}" deploy
+          repository="github::https://maven.pkg.github.com/${GITHUB_PACKAGES_REPOSITORY}"
+          "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -pl "${PUBLISH_MODULES}" -am -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository="${repository}" deploy

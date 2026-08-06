@@ -1,174 +1,104 @@
 # How do the GitHub Actions workflows work?
 
-This document explains the current CI/CD workflow layout in `spring-nats`.
-
 ## Flow
 
 ```mermaid
 flowchart TD
-    PR["pull_request\nopened | synchronize | reopened"] --> BPR["build-pr.yml"]
-    BPR --> BC_PR["build-common.yml\nrelease_strategy=none"]
-    BC_PR --> VERIFY["verify only\nversion resolved\nNATS server prepared\ntests + build"]
+    PR["Pull request"] --> BPR["build-pr.yml"]
+    BPR --> VERIFY["build-common.yml\nverify only"]
 
-    MAIN["push to main/master"] --> BM["build-merge.yml"]
-    BM --> BC_SNAP["build-common.yml\nrelease_strategy=snapshot"]
-    BC_SNAP --> ART["build-workspace.tgz\nartifact upload"]
-    ART --> PC_SNAP["publish-central.yml\nenvironment: maven-central-snapshot"]
-    ART --> PGP_SNAP["publish-github-packages.yml\nenvironment: github-packages-snapshot"]
-    BMDRY["manual build-merge dry run"] --> BC_SNAP_DRY["build-common.yml\nrelease_strategy=snapshot"]
-    BC_SNAP_DRY --> ART_SNAP_DRY["build-workspace.tgz\nartifact upload"]
-    ART_SNAP_DRY --> PC_SNAP_DRY["publish-central.yml\ndry_run=true\nno upload"]
-    ART_SNAP_DRY --> PGP_SNAP_DRY["publish-github-packages.yml\ndry_run=true\nlocal file repo"]
+    MAIN["Push to main or master"] --> SNAP["build-merge.yml\nsnapshot strategy"]
+    SNAP --> BUILD["build-common.yml\nbuild and artifact"]
+    BUILD --> CENTRAL["publish-central.yml\nmaven-central"]
+    BUILD --> PACKAGES["publish-github-packages.yml\ngithub-packages"]
 
-    REL["manual release workflow_dispatch"] --> RW["release.yml"]
-    RW --> BC_REL["build-common.yml\nrelease_strategy=rc|patch|minor|major"]
-    BC_REL --> ART_REL["build-workspace.tgz\nartifact upload"]
-    ART_REL --> PC_REL["publish-central.yml\nenvironment: maven-central-release"]
-    ART_REL --> PGP_REL["publish-github-packages.yml\nenvironment: github-packages-release"]
-    PC_REL --> GR["GitHub release job\nenvironment: github-release"]
-    PGP_REL --> GR
-    RELDRY["manual release dry run"] --> BC_REL_DRY["build-common.yml\nrelease_strategy=rc|patch|minor|major"]
-    BC_REL_DRY --> ART_REL_DRY["build-workspace.tgz\nartifact upload"]
-    ART_REL_DRY --> PC_REL_DRY["publish-central.yml\ndry_run=true\nno upload"]
-    ART_REL_DRY --> PGP_REL_DRY["publish-github-packages.yml\ndry_run=true\nlocal file repo"]
+    MANUAL["Manual release\nrc, patch, minor, or major"] --> RELEASE["release.yml"]
+    RELEASE --> RELEASE_BUILD["build-common.yml\nbuild and artifact"]
+    RELEASE_BUILD --> CENTRAL
+    RELEASE_BUILD --> PACKAGES
+    CENTRAL --> GH_RELEASE["Git tag and GitHub release\nwith Maven assets"]
+    PACKAGES --> GH_RELEASE
+
+    DRY_SNAPSHOT["Snapshot dry run"] --> DRY_SNAPSHOT_BUILD["build and artifact"]
+    DRY_SNAPSHOT_BUILD --> CENTRAL_CHECK["Central packaging validation\nno upload"]
+    DRY_SNAPSHOT_BUILD --> PACKAGES
+
+    DRY_RELEASE["Release dry run"] --> DRY_RELEASE_BUILD["build and artifact"]
+    DRY_RELEASE_BUILD --> CENTRAL_CHECK
+    DRY_RELEASE_BUILD --> PACKAGES
+    DRY_RELEASE_BUILD --> GH_RELEASE
 ```
 
-## What each workflow does
-
-## Workflow capabilities
-
-- automatic version resolution per workflow run
-- automatic snapshot publishing on merges to `main` or `master`
-- manual release publishing for `rc`, `patch`, `minor`, and `major`
-- manual dry-run rehearsal for snapshot and release publishing
-- git tag creation for release workflows
-- GitHub release creation for manual releases
-- publish to GitHub Packages
-- publish to Maven Central
-- GitHub environments for publish and release stages
-- GitHub deployments for visible release activity
+## What does each workflow do?
 
 ### `build-pr.yml`
 
-- Trigger: `pull_request` on `main` or `master`
-- Types: `opened`, `synchronize`, `reopened`
-- Calls `build-common.yml` with `release_strategy=none`
-- Runs normal CI only
-- Does not publish
-- Does not upload the rewritten workspace artifact
+- runs for opened, synchronized, and reopened pull requests
+- resolves the next snapshot version from git tags
+- builds NATS Server and runs `verify`
+- never publishes
 
 ### `build-merge.yml`
 
-- Trigger: push to `main` or `master`
-- Also supports manual `workflow_dispatch`
-- Manual dispatch supports `dry_run=true`
-- Calls `build-common.yml` with `release_strategy=snapshot`
-- Produces the publishable workspace artifact
-- Publishes snapshot outputs to:
-  - Maven Central snapshot environment
-  - GitHub Packages snapshot environment
-- With `dry_run=true`, rehearses Central packaging and deploys to a local file repository instead of publishing externally
+- runs after a push to `main` or `master`
+- publishes the next snapshot to Maven Central and GitHub Packages
+- supports a manual dry run that skips Maven Central upload and exercises GitHub Packages and deployments
 
 ### `release.yml`
 
-- Trigger: manual `workflow_dispatch`
-- Release strategies:
-  - `rc`
-  - `patch`
-  - `minor`
-  - `major`
-- Supports `dry_run=true`
-- Calls `build-common.yml` with the selected strategy
-- Produces the publishable workspace artifact
-- Publishes release outputs to:
-  - Maven Central release environment
-  - GitHub Packages release environment
-- Creates a GitHub release after both publish jobs succeed
-- Skips GitHub release creation when `dry_run=true`
+- runs manually with `rc`, `patch`, `minor`, or `major`
+- serializes all releases through one concurrency slot
+- publishes to Maven Central and GitHub Packages
+- creates the git tag and GitHub release after both publishes succeed
+- attaches the parent and starter POMs plus core and binder artifacts
+- supports a manual dry run that skips Maven Central upload and creates the GitHub package, deployment, tag, release, and assets
 
 ### `build-common.yml`
 
-This is the shared build pipeline.
+- reads Java with `java-info-action`
+- resolves versions from the latest reachable git tag with `semver-info-action`
+- derives Go from the selected NATS Server `go.mod`
+- builds NATS Server and runs Maven verification
+- uploads the rewritten workspace for publish strategies
+- retains the artifact for one day
 
-It does the following:
+## How is the version selected?
 
-1. Checks out the requested ref
-2. Reads Java project metadata with `java-info-action`
-3. Resolves the target project version from `release_strategy`
-4. Rewrites the Maven version with `versions:set`
-5. Clones and builds `nats-server`
-6. Runs build and tests
-7. For publish strategies only:
-   - packages the workspace into `build-workspace.tgz`
-   - uploads it as the `build-workspace` artifact
+The checked-in Maven version is not release truth. The workflow uses the latest reachable semver tag:
 
-## Why there is a tarball inside the artifact
+- `none` and `snapshot`: next patch snapshot
+- `rc`: next release candidate
+- `patch`, `minor`, `major`: corresponding stable version bump
+- no tag: bootstrap from `0.0.0`
 
-GitHub artifact upload already compresses files for storage and transfer, but it does not reliably preserve executable permissions. We tar the workspace before upload so restored files such as `mvnw` keep the expected file mode.
+With the current `0.6.1+3.1` tag:
 
-That tarball is the handoff between:
+- snapshot: `0.6.2-SNAPSHOT`
+- patch: `0.6.2`
+- major: `1.0.0`
 
-- the build job that determines version and produces artifacts
-- the publish jobs that deploy exactly what was built
+## What gets published?
 
-## Environments and deployments
+Only these Maven coordinates are published:
 
-The publish and release jobs use GitHub environments so they create deployment records in GitHub.
+- `io.nats:nats-spring-parent`
+- `io.nats:nats-spring`
+- `io.nats:nats-spring-boot-starter`
+- `io.nats:nats-spring-cloud-stream-binder`
 
-Current environment mapping:
+Samples are built and tested but never published.
 
-- Snapshot publish to Central: `maven-central-snapshot`
-- Snapshot publish to GitHub Packages: `github-packages-snapshot`
-- Release publish to Central: `maven-central-release`
-- Release publish to GitHub Packages: `github-packages-release`
-- GitHub release creation: `github-release`
-- Snapshot dry run to Central: `maven-central-snapshot-dry-run`
-- Snapshot dry run to GitHub Packages: `github-packages-snapshot-dry-run`
-- Release dry run to Central: `maven-central-release-dry-run`
-- Release dry run to GitHub Packages: `github-packages-release-dry-run`
+## How are builds reproducible?
 
-This makes release activity visible in GitHub Deployments instead of only in workflow logs.
+`project.build.outputTimestamp` comes from the checked-out commit timestamp. The same timestamp is passed to build and publish jobs with the verified workspace artifact.
 
-## Version strategy notes
+## Which environments exist?
 
-`build-common.yml` resolves the workflow version from the latest reachable git tag and the selected `release_strategy`, then rewrites the Maven version with `versions:set` for that run.
+- `maven-central`
+- `github-packages`
 
-The checked-in Maven version is not used as release truth for workflow versioning.
+Dry runs enter both environments and create deployment records. The Central job validates release packaging without uploading; GitHub Packages and GitHub releases behave as live rehearsal targets.
 
-The repository still contains historical Spring-line markers such as `+3.5`, but the workflow intentionally ignores build metadata for precedence and treats the latest semver tag as the source of truth.
+## How is a partial release retried?
 
-Examples:
-
-- `none` -> use the next snapshot line from the latest tag
-- `snapshot` -> use the next snapshot line from the latest tag
-- `rc` -> append or increment `-rc.N` from the latest tag line
-- `patch|minor|major` -> bump the numeric core from the latest tag
-
-Example normalization:
-
-- latest tag `0.6.1+3.1`
-- workflow snapshot version `0.6.2-SNAPSHOT`
-- workflow patch release version `0.6.2`
-
-If the repository has no reachable tags, the workflow falls back to a bootstrap base version of `0.0.0`.
-
-Bootstrap examples:
-
-- no tags + `none` -> `0.0.1-SNAPSHOT`
-- no tags + `snapshot` -> `0.0.1-SNAPSHOT`
-- no tags + `patch` -> `0.0.1`
-
-## Dry run behavior
-
-Dry runs use the same rewritten workspace artifact as live publish jobs, but stop before any external publication:
-
-- `publish-central.yml` runs `./mvnw -B -Ppublish -DskipTests -Dgpg.skip=true -DskipPublishing=true package`
-- `publish-github-packages.yml` deploys to a local file repository under `${RUNNER_TEMP}`
-- `release.yml` skips GitHub release and tag creation when `dry_run=true`
-
-This covers the important bits without leaving a trail of junk in public registries:
-
-- snapshot version reuse and overwrite behavior
-- RC, patch, minor, and major version resolution
-- publish-from-artifact mechanics
-- publish profile and javadoc wiring
+Use **Re-run failed jobs** on the original workflow run. Do not dispatch a new release: the original run preserves the resolved version and verified artifact.

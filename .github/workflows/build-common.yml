@@ -24,15 +24,15 @@ on:
       should_publish:
         description: Whether publish jobs should run
         value: ${{ jobs.build.outputs.should_publish }}
-      should_tag:
-        description: Whether a git tag should be created
-        value: ${{ jobs.build.outputs.should_tag }}
       should_create_release:
         description: Whether a GitHub release should be created
         value: ${{ jobs.build.outputs.should_create_release }}
       commit_sha:
         description: Resolved commit SHA for this build
         value: ${{ jobs.build.outputs.commit_sha }}
+      build_output_timestamp:
+        description: Reproducible build output timestamp
+        value: ${{ jobs.build.outputs.build_output_timestamp }}
   workflow_dispatch:
     inputs:
       ref:
@@ -70,12 +70,12 @@ jobs:
       resolved_version: ${{ steps.resolve_version.outputs.resolved_version }}
       release_kind: ${{ steps.resolve_version.outputs.release_kind }}
       should_publish: ${{ steps.resolve_version.outputs.should_publish }}
-      should_tag: ${{ steps.resolve_version.outputs.should_tag }}
       should_create_release: ${{ steps.resolve_version.outputs.should_create_release }}
       commit_sha: ${{ steps.commit_info.outputs.commit_sha }}
+      build_output_timestamp: ${{ steps.commit_info.outputs.build_output_timestamp }}
     steps:
       - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref || github.sha }}
@@ -86,10 +86,11 @@ jobs:
         run: |
           set -eu
           printf 'commit_sha=%s\n' "$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          printf 'build_output_timestamp=%s\n' "$(git log -1 --format=%cI HEAD)" >> "${GITHUB_OUTPUT}"
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@3
+        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b # 3
 
       - name: "🏷️ Read Version Source"
         id: version_source
@@ -144,7 +145,7 @@ jobs:
 
       - name: "🔢 Read Semver Info [${{ steps.version_source.outputs.display_tag }}]"
         id: semver_info
-        uses: YunaBraska/semver-info-action@3
+        uses: YunaBraska/semver-info-action@180ebf79b3c81785c50cf1f198ee236fc5591504 # 3
         with:
           semver-a: ${{ steps.version_source.outputs.latest_tag }}
 
@@ -170,42 +171,36 @@ jobs:
               resolved_version=${NEXT_SNAPSHOT}
               release_kind=none
               should_publish=false
-              should_tag=false
               should_create_release=false
               ;;
             snapshot)
               resolved_version=${NEXT_SNAPSHOT}
               release_kind=snapshot
               should_publish=true
-              should_tag=false
               should_create_release=false
               ;;
             rc)
               resolved_version=${NEXT_RC}
               release_kind=prerelease
               should_publish=true
-              should_tag=true
               should_create_release=true
               ;;
             patch)
               resolved_version=${NEXT_PATCH}
               release_kind=release
               should_publish=true
-              should_tag=true
               should_create_release=true
               ;;
             minor)
               resolved_version=${NEXT_MINOR}
               release_kind=release
               should_publish=true
-              should_tag=true
               should_create_release=true
               ;;
             major)
               resolved_version=${NEXT_MAJOR}
               release_kind=release
               should_publish=true
-              should_tag=true
               should_create_release=true
               ;;
             *)
@@ -222,11 +217,10 @@ jobs:
           printf 'resolved_version=%s\n' "${resolved_version}" >> "${GITHUB_OUTPUT}"
           printf 'release_kind=%s\n' "${release_kind}" >> "${GITHUB_OUTPUT}"
           printf 'should_publish=%s\n' "${should_publish}" >> "${GITHUB_OUTPUT}"
-          printf 'should_tag=%s\n' "${should_tag}" >> "${GITHUB_OUTPUT}"
           printf 'should_create_release=%s\n' "${should_create_release}" >> "${GITHUB_OUTPUT}"
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
@@ -234,19 +228,10 @@ jobs:
 
       - name: "🏷️ Set Project Version [${{ steps.resolve_version.outputs.resolved_version }}]"
         env:
+          MAVEN_CMD: ${{ steps.java_info.outputs.cmd }}
           RELEASE_VERSION: ${{ steps.resolve_version.outputs.resolved_version }}
-        run: ./mvnw -B versions:set -DnewVersion="${RELEASE_VERSION}" -DgenerateBackupPoms=false
-
-      - name: "✅ Validate NATS Server Version [${{ inputs.nats_server_version }}]"
-        env:
-          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
-        shell: sh
-        run: |
-          set -eu
-          if ! printf '%s\n' "${NATS_SERVER_VERSION}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$'; then
-            echo "Unsupported NATS server version: ${NATS_SERVER_VERSION}" >&2
-            exit 1
-          fi
+          BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
+        run: '"${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" versions:set -DnewVersion="${RELEASE_VERSION}" -DgenerateBackupPoms=false'
 
       - name: "📦 Clone NATS Server [${{ inputs.nats_server_version }}]"
         env:
@@ -276,7 +261,7 @@ jobs:
           printf 'go_version=%s\n' "${go_version}" >> "${GITHUB_OUTPUT}"
 
       - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: ${{ steps.go_info.outputs.go_version }}
           cache: false
@@ -291,7 +276,7 @@ jobs:
 
       - name: "♻️ Cache NATS Server [${{ inputs.nats_server_version }}]"
         id: nats_cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ${{ github.workspace }}/.cache/nats-server/${{ inputs.nats_server_version }}
           key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
@@ -318,42 +303,44 @@ jobs:
 
       - name: "🧪 Build and Verify"
         env:
+          MAVEN_CMD: ${{ steps.java_info.outputs.cmd }}
           SHOULD_PUBLISH: ${{ steps.resolve_version.outputs.should_publish }}
+          BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
         shell: sh
         run: |
           set -eu
           if [ "${SHOULD_PUBLISH}" = "true" ]; then
-            ./mvnw -B verify -Dmaven.javadoc.skip=false
+            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify -Dmaven.javadoc.skip=false
           else
-            ./mvnw -B verify
+            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify
           fi
-
-      - name: "🗜️ Archive Rewritten Workspace"
-        if: steps.resolve_version.outputs.should_publish == 'true'
-        shell: sh
-        run: |
-          set -eu
-          : > "${RUNNER_TEMP}/workspace-paths.txt"
-          for path in .mvn mvnw mvnw.cmd pom.xml nats-spring nats-spring-boot-starter nats-spring-cloud-stream-binder nats-spring-samples; do
-            if [ -e "${path}" ]; then
-              printf '%s\n' "${path}" >> "${RUNNER_TEMP}/workspace-paths.txt"
-            fi
-          done
-          tar -czf "${RUNNER_TEMP}/build-workspace.tgz" \
-            --exclude='*/target/site/jacoco' \
-            --exclude='*/target/site' \
-            --exclude='*/target/apidocs' \
-            --exclude='*/target/javadoc-bundle-options' \
-            --exclude='*/target/maven-javadoc-plugin-stale-data.txt' \
-            --exclude='*/target/jacoco.exec' \
-            --exclude='*/target/surefire-reports' \
-            --exclude='*/target/failsafe-reports' \
-            -T "${RUNNER_TEMP}/workspace-paths.txt"
 
       - name: "📦 Upload Build Artifact"
         if: steps.resolve_version.outputs.should_publish == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-workspace
           if-no-files-found: error
-          path: ${{ runner.temp }}/build-workspace.tgz
+          include-hidden-files: true
+          retention-days: 1
+          path: |
+            .mvn
+            mvnw
+            mvnw.cmd
+            pom.xml
+            nats-spring
+            nats-spring-boot-starter
+            nats-spring-cloud-stream-binder
+            nats-spring-samples
+            !**/target/site
+            !**/target/site/**
+            !**/target/apidocs
+            !**/target/apidocs/**
+            !**/target/javadoc-bundle-options
+            !**/target/javadoc-bundle-options/**
+            !**/target/maven-javadoc-plugin-stale-data.txt
+            !**/target/jacoco.exec
+            !**/target/surefire-reports
+            !**/target/surefire-reports/**
+            !**/target/failsafe-reports
+            !**/target/failsafe-reports/**
