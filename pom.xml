@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <spring-boot.version>3.5.14</spring-boot.version>
+        <spring-boot.version>3.5.15</spring-boot.version>
         <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
         <java.version>17</java.version>
         <jacoco.version>0.8.13</jacoco.version>
