@@ -39,11 +39,13 @@ import org.springframework.cloud.stream.binder.HeaderMode;
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A NATS channel binder provides a NATS connection to the code attached to it.
@@ -53,8 +55,11 @@ public class NatsChannelBinder extends
         implements ExtendedPropertiesBinder<MessageChannel, NatsConsumerProperties, NatsProducerProperties> {
     private static final Log logger = LogFactory.getLog(NatsChannelBinder.class);
     private final NatsExtendedBindingProperties bindingProperties;
+    @Nullable
     private NatsBinderConfigurationProperties properties;
+    @Nullable
     private NatsProperties natsProperties;
+    @Nullable
     private Connection connection;
 
     /**
@@ -63,21 +68,23 @@ public class NatsChannelBinder extends
      * The NatsProperties are considered global and a backup. If a connection or error listener is provided it is used, otherwise a default logging listener is assigned to avoid
      * silent errors.
      *
-     * @param bindingProperties    extended properties for future use
-     * @param properties           primary properties
-     * @param natsProperties       backup global properties
-     * @param provisioningProvider provisioner for destination names
-     * @param connectionListener   custom connection listener
-     * @param errorListener        custom error listener
+     * @param bindingProperties    extended binding properties; must not be {@code null}
+     * @param properties           primary binder properties, or {@code null} when only global properties are available
+     * @param natsProperties       backup global properties, or {@code null} when only binder properties are available
+     * @param provisioningProvider provisioner for destination names; must not be {@code null}
+     * @param connectionListener   optional custom connection listener
+     * @param errorListener        optional custom error listener
+     * @throws NullPointerException if {@code bindingProperties} or {@code provisioningProvider} is {@code null}
      */
     public NatsChannelBinder(NatsExtendedBindingProperties bindingProperties,
-                             NatsBinderConfigurationProperties properties,
-                             NatsProperties natsProperties,
+                             @Nullable NatsBinderConfigurationProperties properties,
+                             @Nullable NatsProperties natsProperties,
                              NatsChannelProvisioner provisioningProvider,
-                             ConnectionListener connectionListener,
-                             ErrorListener errorListener) {
-        super(headersToEmbed(properties), provisioningProvider);
-        this.bindingProperties = bindingProperties;
+                             @Nullable ConnectionListener connectionListener,
+                             @Nullable ErrorListener errorListener) {
+        super(headersToEmbed(properties), Objects.requireNonNull(provisioningProvider,
+                "provisioningProvider must not be null"));
+        this.bindingProperties = Objects.requireNonNull(bindingProperties, "bindingProperties must not be null");
         this.properties = properties;
         this.natsProperties = natsProperties;
 
@@ -103,7 +110,7 @@ public class NatsChannelBinder extends
                 builder = builder.connectionListener(connectionListener);
             } else {
                 builder = builder.connectionListener(new ConnectionListener() {
-                    public void connectionEvent(Connection conn, Events type) {
+                    public void connectionEvent(@Nullable Connection conn, Events type) {
                         logger.info("NATS connection status changed " + type);
                     }
                 });
@@ -114,17 +121,17 @@ public class NatsChannelBinder extends
             } else {
                 builder = builder.errorListener(new ErrorListener() {
                     @Override
-                    public void slowConsumerDetected(Connection conn, Consumer consumer) {
+                    public void slowConsumerDetected(@Nullable Connection conn, @Nullable Consumer consumer) {
                         logger.info("NATS connection slow consumer detected");
                     }
 
                     @Override
-                    public void exceptionOccurred(Connection conn, Exception exp) {
+                    public void exceptionOccurred(@Nullable Connection conn, Exception exp) {
                         logger.info("NATS connection exception occurred", exp);
                     }
 
                     @Override
-                    public void errorOccurred(Connection conn, String error) {
+                    public void errorOccurred(@Nullable Connection conn, String error) {
                         logger.info("NATS connection error occurred " + error);
                     }
                 });
@@ -142,8 +149,9 @@ public class NatsChannelBinder extends
     }
 
     /**
-     * @return NATS connection
+     * @return NATS connection, or {@code null} when no server was configured or connection setup failed
      */
+    @Nullable
     public Connection getConnection() {
         return this.connection;
     }

@@ -16,9 +16,13 @@
 
 package io.nats.cloud.stream.binder.properties;
 
+import org.springframework.lang.Nullable;
+
 public class NatsConsumerProperties {
     private boolean jetStream;
+    @Nullable
     private String streamName;
+    @Nullable
     private String consumerName;
 
     /**
@@ -36,30 +40,32 @@ public class NatsConsumerProperties {
     }
 
     /**
-     * @return optional JetStream stream name used for subscriptions
+     * @return JetStream stream name used for subscriptions, or {@code null} when no stream name was configured
      */
+    @Nullable
     public String getStreamName() {
         return this.streamName;
     }
 
     /**
-     * @param streamName optional JetStream stream name used for subscriptions
+     * @param streamName JetStream stream name used for subscriptions, or {@code null} to leave it unset
      */
-    public void setStreamName(String streamName) {
+    public void setStreamName(@Nullable String streamName) {
         this.streamName = streamName;
     }
 
     /**
-     * @return optional JetStream consumer name used for subscriptions
+     * @return JetStream consumer name used for subscriptions, or {@code null} when no consumer name was configured
      */
+    @Nullable
     public String getConsumerName() {
         return this.consumerName;
     }
 
     /**
-     * @param consumerName optional JetStream consumer name used for subscriptions
+     * @param consumerName JetStream consumer name used for subscriptions, or {@code null} to leave it unset
      */
-    public void setConsumerName(String consumerName) {
+    public void setConsumerName(@Nullable String consumerName) {
         this.consumerName = consumerName;
     }
 

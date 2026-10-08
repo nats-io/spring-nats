@@ -25,11 +25,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -44,36 +46,42 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
     public static final String SUBJECT = "subject";
 
     private NatsConsumerDestination destination;
+    @Nullable
     private Connection connection;
+    @Nullable
     private MessageChannel output;
     private AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
     private AtomicReference<io.nats.client.MessageConsumer> jetStreamConsumer = new AtomicReference<>();
     private boolean includeNativeHeaders;
     private boolean markNativeHeadersPresent;
     private boolean jetStream;
+    @Nullable
     private String streamName;
+    @Nullable
     private String consumerName;
 
     /**
      * Create a message producer. Once started the producer will use a dispatcher, and the associated thread, to
      * listen for and handle incoming messages.
      *
-     * @param destination where to subscribe
-     * @param nc          NATS connection
+     * @param destination destination to subscribe to; must not be {@code null}
+     * @param nc          NATS connection, or {@code null} when connection setup failed
+     * @throws NullPointerException if {@code destination} is {@code null}
      */
-    public NatsMessageProducer(NatsConsumerDestination destination, Connection nc) {
+    public NatsMessageProducer(NatsConsumerDestination destination, @Nullable Connection nc) {
         this(destination, nc, true, true);
     }
 
     /**
      * Create a message producer with explicit native header behavior.
      *
-     * @param destination              where to subscribe
-     * @param nc                       NATS connection
+     * @param destination              destination to subscribe to; must not be {@code null}
+     * @param nc                       NATS connection, or {@code null} when connection setup failed
      * @param includeNativeHeaders     whether native NATS headers should be copied to Spring headers
      * @param markNativeHeadersPresent whether Spring Cloud Stream should be told native headers were present
+     * @throws NullPointerException if {@code destination} is {@code null}
      */
-    public NatsMessageProducer(NatsConsumerDestination destination, Connection nc,
+    public NatsMessageProducer(NatsConsumerDestination destination, @Nullable Connection nc,
                                boolean includeNativeHeaders, boolean markNativeHeadersPresent) {
         this(destination, nc, includeNativeHeaders, markNativeHeadersPresent, false, null, null);
     }
@@ -81,18 +89,19 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
     /**
      * Create a message producer with explicit native header and JetStream behavior.
      *
-     * @param destination              where to subscribe
-     * @param nc                       NATS connection
+     * @param destination              destination to subscribe to; must not be {@code null}
+     * @param nc                       NATS connection, or {@code null} when connection setup failed
      * @param includeNativeHeaders     whether native NATS headers should be copied to Spring headers
      * @param markNativeHeadersPresent whether Spring Cloud Stream should be told native headers were present
      * @param jetStream                whether messages should be consumed through JetStream
-     * @param streamName               optional JetStream stream name
-     * @param consumerName             optional JetStream consumer name
+     * @param streamName               optional JetStream stream name; required before start when JetStream mode is enabled
+     * @param consumerName             optional JetStream consumer name; required before start when JetStream mode is enabled and no consumer group exists
+     * @throws NullPointerException if {@code destination} is {@code null}
      */
-    public NatsMessageProducer(NatsConsumerDestination destination, Connection nc,
+    public NatsMessageProducer(NatsConsumerDestination destination, @Nullable Connection nc,
                                boolean includeNativeHeaders, boolean markNativeHeadersPresent,
-                               boolean jetStream, String streamName, String consumerName) {
-        this.destination = destination;
+                               boolean jetStream, @Nullable String streamName, @Nullable String consumerName) {
+        this.destination = Objects.requireNonNull(destination, "destination must not be null");
         this.connection = nc;
         this.includeNativeHeaders = includeNativeHeaders;
         this.markNativeHeadersPresent = markNativeHeadersPresent;
@@ -101,7 +110,11 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
         this.consumerName = NatsJetStreamSupport.normalize(consumerName);
     }
 
+    /**
+     * @return output channel receiving Spring messages, or {@code null} when none has been configured
+     */
     @Override
+    @Nullable
     public MessageChannel getOutputChannel() {
         return this.output;
     }
@@ -122,12 +135,19 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
             return;
         }
 
-        if (this.jetStream) {
-            startJetStream();
+        Connection nc = this.connection;
+        if (nc == null) {
+            logger.warn("cannot start NATS message producer, no connection available for "
+                    + this.destination.getName());
             return;
         }
 
-        Dispatcher dispatcher = this.connection.createDispatcher(this::handleIncomingMessage);
+        if (this.jetStream) {
+            startJetStream(nc);
+            return;
+        }
+
+        Dispatcher dispatcher = nc.createDispatcher(this::handleIncomingMessage);
         this.dispatcher.set(dispatcher);
 
         String sub = this.destination.getSubject();
@@ -140,7 +160,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
         }
     }
 
-    private void startJetStream() {
+    private void startJetStream(Connection nc) {
         String sub = this.destination.getSubject();
         String queue = this.destination.getQueueGroup();
         String consumer = NatsJetStreamSupport.hasText(this.consumerName)
@@ -154,15 +174,15 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
             throw new IllegalStateException("NATS JetStream consumers require consumer-name or a consumer group");
         }
 
-        Dispatcher dispatcher = this.connection.createDispatcher();
+        Dispatcher dispatcher = nc.createDispatcher();
         this.dispatcher.set(dispatcher);
 
         try {
-            ConsumerContext consumerContext = this.connection.jetStream()
+            ConsumerContext consumerContext = nc.jetStream()
                     .getConsumerContext(this.streamName, consumer);
             this.jetStreamConsumer.set(consumerContext.consume(dispatcher, this::handleIncomingMessage));
         } catch (IOException | JetStreamApiException | IllegalArgumentException exp) {
-            this.connection.closeDispatcher(dispatcher);
+            nc.closeDispatcher(dispatcher);
             this.dispatcher.compareAndSet(dispatcher, null);
             throw new IllegalStateException("Failed to subscribe to NATS JetStream subject " + sub, exp);
         }
@@ -209,6 +229,9 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
         if (consumer != null) {
             consumer.stop();
         }
-        this.connection.closeDispatcher(dispatcher);
+        Connection nc = this.connection;
+        if (nc != null) {
+            nc.closeDispatcher(dispatcher);
+        }
     }
 }

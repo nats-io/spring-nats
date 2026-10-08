@@ -23,6 +23,7 @@ import io.nats.client.api.StorageType;
 import io.nats.client.api.StreamConfiguration;
 import io.nats.client.api.StreamInfo;
 import io.nats.cloud.stream.binder.properties.NatsProducerProperties;
+import org.springframework.lang.Nullable;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -37,7 +38,8 @@ class NatsJetStreamSupport {
     private NatsJetStreamSupport() {
     }
 
-    static String normalize(String value) {
+    @Nullable
+    static String normalize(@Nullable String value) {
         if (!hasText(value)) {
             return null;
         }
@@ -45,11 +47,11 @@ class NatsJetStreamSupport {
         return value.trim();
     }
 
-    static boolean hasText(String value) {
+    static boolean hasText(@Nullable String value) {
         return value != null && value.trim().length() > 0;
     }
 
-    static void provisionStream(Connection connection, String subject, NatsProducerProperties properties) {
+    static void provisionStream(@Nullable Connection connection, String subject, @Nullable NatsProducerProperties properties) {
         if (properties == null || !properties.isJetStream() || !properties.isProvisionStream()) {
             return;
         }
@@ -63,9 +65,9 @@ class NatsJetStreamSupport {
 
     private static void provisionStream(Connection connection,
                                         String subject,
-                                        String streamName,
-                                        StorageType storageType,
-                                        Integer streamReplicas) {
+                                        @Nullable String streamName,
+                                        @Nullable StorageType storageType,
+                                        @Nullable Integer streamReplicas) {
         String stream = normalize(streamName);
         String streamSubject = normalize(subject);
         if (!hasText(stream)) {
@@ -95,8 +97,8 @@ class NatsJetStreamSupport {
     private static void addStream(JetStreamManagement management,
                                   String stream,
                                   String subject,
-                                  StorageType storageType,
-                                  Integer streamReplicas)
+                                  @Nullable StorageType storageType,
+                                  @Nullable Integer streamReplicas)
             throws IOException, JetStreamApiException {
         try {
             management.addStream(newStreamConfiguration(stream, subject, storageType, streamReplicas));
@@ -125,6 +127,7 @@ class NatsJetStreamSupport {
         return builder.build();
     }
 
+    @Nullable
     private static StreamInfo streamInfoOrNull(JetStreamManagement management, String stream)
             throws IOException, JetStreamApiException {
         try {

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 public class DestinationNameTests {
@@ -35,6 +36,14 @@ public class DestinationNameTests {
 
         assertEquals(subject, dest.getName());
         assertEquals(subject + "-1", dest.getNameForPartition(1));
+    }
+
+    @Test
+    public void producerDestinationRejectsNullName() {
+        NullPointerException exception = assertThrows(NullPointerException.class,
+                () -> new NatsProducerDestination(null));
+
+        assertEquals("name must not be null", exception.getMessage());
     }
 
     @Test
@@ -56,6 +65,14 @@ public class DestinationNameTests {
 
         assertEquals(subject, dest.getSubject());
         assertEquals("", dest.getQueueGroup());
+    }
+
+    @Test
+    public void consumerDestinationRejectsNullName() {
+        NullPointerException exception = assertThrows(NullPointerException.class,
+                () -> new NatsConsumerDestination(null));
+
+        assertEquals("name must not be null", exception.getMessage());
     }
 
     @Test

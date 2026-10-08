@@ -138,7 +138,7 @@ class BinderTests {
     }
 
     @Test
-    void createBinderWithoutServerProperties() throws IOException, InterruptedException {
+    void createBinderWithoutServerPropertiesFailsExplicitly() {
         NatsChannelBinderConfiguration config = new NatsChannelBinderConfiguration(
                 null,
                 null,
@@ -147,7 +147,9 @@ class BinderTests {
                 new NatsExtendedBindingProperties());
         NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
 
-        assertThat(config.natsBinder(provisioner)).isNull();
+        assertThatThrownBy(() -> config.natsBinder(provisioner))
+                .isInstanceOf(IOException.class)
+                .hasMessage("NATS binder could not establish a connection");
     }
 
     @Test
@@ -161,6 +163,29 @@ class BinderTests {
                 null);
 
         assertThat(binder.getConnection()).isNull();
+    }
+
+    @Test
+    void createBinderRejectsMissingRequiredCollaborators() {
+        assertThatThrownBy(() -> new NatsChannelBinder(
+                null,
+                null,
+                null,
+                new NatsChannelProvisioner(),
+                null,
+                null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("bindingProperties must not be null");
+
+        assertThatThrownBy(() -> new NatsChannelBinder(
+                new NatsExtendedBindingProperties(),
+                null,
+                null,
+                null,
+                null,
+                null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("provisioningProvider must not be null");
     }
 
     @Test
@@ -201,6 +226,36 @@ class BinderTests {
         assertThat(config.getNatsProperties()).isSameAs(natsProperties);
         assertThat(config.natsChannelProvisioner()).isNotNull();
         assertThat(mappings).containsEntry(streamPrefix, streamPrefix);
+    }
+
+    @Test
+    void binderConfigurationRejectsMissingRequiredPropertyObjects() {
+        assertThatThrownBy(() -> new NatsChannelBinderConfiguration(
+                null,
+                null,
+                null,
+                new NatsBinderConfigurationProperties(),
+                new NatsExtendedBindingProperties()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("natsProperties must not be null");
+
+        assertThatThrownBy(() -> new NatsChannelBinderConfiguration(
+                null,
+                null,
+                new NatsProperties(),
+                null,
+                new NatsExtendedBindingProperties()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("natsBinderConfigurationProperties must not be null");
+
+        assertThatThrownBy(() -> new NatsChannelBinderConfiguration(
+                null,
+                null,
+                new NatsProperties(),
+                new NatsBinderConfigurationProperties(),
+                null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("natsExtendedBindingProperties must not be null");
     }
 
     @Test
@@ -270,7 +325,7 @@ class BinderTests {
     }
 
     @Test
-    void createBinderReturnsNullWhenAuthenticationFails() throws IOException, InterruptedException {
+    void createBinderFailsExplicitlyWhenAuthenticationFails() throws IOException, InterruptedException {
         try (NatsBinderTestServer ts = new NatsBinderTestServer(new String[]{"--auth", "secret"}, false)) {
             NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
             binderProps.setServer(ts.getURI());
@@ -283,12 +338,14 @@ class BinderTests {
                     new NatsExtendedBindingProperties());
             NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
 
-            assertThat(config.natsBinder(provisioner)).isNull();
+            assertThatThrownBy(() -> config.natsBinder(provisioner))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("NATS binder could not establish a connection");
         }
     }
 
     @Test
-    void createBinderReturnsNullWhenServerIsUnreachable() throws IOException, InterruptedException {
+    void createBinderFailsExplicitlyWhenServerIsUnreachable() {
         int unusedPort = NatsBinderTestServer.nextPort();
         NatsBinderConfigurationProperties binderProps = new NatsBinderConfigurationProperties();
         binderProps.setServer("nats://127.0.0.1:" + unusedPort);
@@ -301,7 +358,9 @@ class BinderTests {
                 new NatsExtendedBindingProperties());
         NatsChannelProvisioner provisioner = config.natsChannelProvisioner();
 
-        assertThat(config.natsBinder(provisioner)).isNull();
+        assertThatThrownBy(() -> config.natsBinder(provisioner))
+                .isInstanceOf(IOException.class)
+                .hasMessage("NATS binder could not establish a connection");
     }
 
     @Test
@@ -374,6 +433,35 @@ class BinderTests {
                 binder.getConnection().close();
             });
         }
+    }
+
+    @Test
+    void springContextDoesNotCreateBinderWithoutServerProperties() {
+        this.binderContextRunner.run(context -> {
+            assertThat(context).doesNotHaveBean(Connection.class);
+            assertThat(context).doesNotHaveBean(NatsChannelBinder.class);
+        });
+    }
+
+    @Test
+    void springContextDoesNotCreateBinderWithBlankServerProperties() {
+        this.binderContextRunner.withPropertyValues(
+                "nats.spring.server= ",
+                "nats.spring.cloud.stream.binder.server= ").run(context -> {
+            assertThat(context).doesNotHaveBean(Connection.class);
+            assertThat(context).doesNotHaveBean(NatsChannelBinder.class);
+        });
+    }
+
+    @Test
+    void springContextFailsExplicitlyWhenBinderServerIsUnreachable() {
+        int unusedPort = NatsBinderTestServer.nextPort();
+        this.binderContextRunner.withPropertyValues(
+                "nats.spring.cloud.stream.binder.server=nats://127.0.0.1:" + unusedPort,
+                "nats.spring.cloud.stream.binder.connectionTimeout=250ms").run(context -> {
+            assertThat(context).hasFailed();
+            assertThat(context.getStartupFailure()).hasRootCauseInstanceOf(IOException.class);
+        });
     }
 
     @Test
@@ -802,6 +890,46 @@ class BinderTests {
         MessageHandler handler = new NatsMessageHandler("handler.no.connection", null);
 
         assertThatCode(() -> handler.handleMessage(new GenericMessage<>("ignored"))).doesNotThrowAnyException();
+    }
+
+    @Test
+    void messageHandlerRejectsNullSubject() {
+        assertThatThrownBy(() -> new NatsMessageHandler(null, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("subject must not be null");
+    }
+
+    @Test
+    void messageProducerWithoutConnectionDoesNotStart() {
+        NatsMessageProducer producer = new NatsMessageProducer(new NatsConsumerDestination("producer.no.connection"), null);
+
+        assertThatCode(producer::start).doesNotThrowAnyException();
+        assertThat(producer.isRunning()).isFalse();
+        assertThatCode(producer::stop).doesNotThrowAnyException();
+    }
+
+    @Test
+    void messageProducerRejectsNullDestination() {
+        assertThatThrownBy(() -> new NatsMessageProducer(null, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("destination must not be null");
+    }
+
+    @Test
+    void messageSourceWithoutConnectionDoesNotStartOrReceive() {
+        NatsMessageSource source = new NatsMessageSource(new NatsConsumerDestination("source.no.connection"), null);
+
+        assertThatCode(source::start).doesNotThrowAnyException();
+        assertThat(source.isRunning()).isFalse();
+        assertThat(source.receive()).isNull();
+        assertThatCode(source::stop).doesNotThrowAnyException();
+    }
+
+    @Test
+    void messageSourceRejectsNullDestination() {
+        assertThatThrownBy(() -> new NatsMessageSource(null, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("destination must not be null");
     }
 
     @Test

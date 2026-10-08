@@ -27,28 +27,32 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.cloud.stream.config.BindingHandlerAdvise.MappingsProvider;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.lang.Nullable;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Objects;
 
+/**
+ * Configuration for the NATS Spring Cloud Stream binder.
+ */
 @Configuration
 @Import({NatsAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class})
 @EnableConfigurationProperties({NatsExtendedBindingProperties.class, NatsBinderConfigurationProperties.class})
-/**
- * NatsChannelBinderConfiguration is used to parametrize a new NATS binder. This configuration provides custom error and connection listeners.
- */
 public class NatsChannelBinderConfiguration {
     /**
      * A custom connection listener, otherwise a simple logging default is used.
      */
+    @Nullable
     private final ConnectionListener connectionListener;
 
     /**
      * A custom error listener, otherwise a simple logging default is used.
      */
+    @Nullable
     private final ErrorListener errorListener;
 
     /**
@@ -66,6 +70,16 @@ public class NatsChannelBinderConfiguration {
      */
     private final NatsExtendedBindingProperties natsExtendedBindingProperties;
 
+    /**
+     * Create binder configuration with optional listeners and required property objects.
+     *
+     * @param connectionListener optional custom connection listener
+     * @param errorListener optional custom error listener
+     * @param natsProperties global NATS properties; must not be {@code null}
+     * @param natsBinderConfigurationProperties binder-specific NATS properties; must not be {@code null}
+     * @param natsExtendedBindingProperties extended binding properties; must not be {@code null}
+     * @throws NullPointerException if any required property object is {@code null}
+     */
     public NatsChannelBinderConfiguration(@Nullable ConnectionListener connectionListener,
                                           @Nullable ErrorListener errorListener,
                                           NatsProperties natsProperties,
@@ -73,9 +87,11 @@ public class NatsChannelBinderConfiguration {
                                           NatsExtendedBindingProperties natsExtendedBindingProperties) {
         this.connectionListener = connectionListener;
         this.errorListener = errorListener;
-        this.natsProperties = natsProperties;
-        this.natsBinderConfigurationProperties = natsBinderConfigurationProperties;
-        this.natsExtendedBindingProperties = natsExtendedBindingProperties;
+        this.natsProperties = Objects.requireNonNull(natsProperties, "natsProperties must not be null");
+        this.natsBinderConfigurationProperties = Objects.requireNonNull(natsBinderConfigurationProperties,
+                "natsBinderConfigurationProperties must not be null");
+        this.natsExtendedBindingProperties = Objects.requireNonNull(natsExtendedBindingProperties,
+                "natsExtendedBindingProperties must not be null");
     }
 
     /**
@@ -96,31 +112,39 @@ public class NatsChannelBinderConfiguration {
         return this.natsProperties;
     }
 
-    @Bean
     /**
      * @return provisioner for NATS channels
      */
+    @Bean
     public NatsChannelProvisioner natsChannelProvisioner() {
         return new NatsChannelProvisioner();
     }
 
-    @Bean
     /**
-     * @return binder, based on the channel provisioner, using the properties associated with this configuration
+     * @param natsProvisioner provisioner for destination names; must not be {@code null}
+     * @return binder based on the channel provisioner and properties associated with this configuration
+     * @throws IOException if the binder cannot establish a NATS connection
+     * @throws InterruptedException if the NATS client is interrupted during connection setup
+     * @throws NullPointerException if {@code natsProvisioner} is {@code null}
      */
+    @Bean
+    @Conditional(NatsBinderServerConfiguredCondition.class)
     public NatsChannelBinder natsBinder(NatsChannelProvisioner natsProvisioner) throws IOException, InterruptedException {
         NatsChannelBinder binder = new NatsChannelBinder(this.natsExtendedBindingProperties,
                 this.natsBinderConfigurationProperties,
-                this.natsProperties, natsProvisioner,
+                this.natsProperties, Objects.requireNonNull(natsProvisioner, "natsProvisioner must not be null"),
                 this.connectionListener,
                 this.errorListener);
-        return binder.getConnection() != null ? binder : null;
+        if (binder.getConnection() == null) {
+            throw new IOException("NATS binder could not establish a connection");
+        }
+        return binder;
     }
 
-    @Bean
     /**
      * @return mapping between nats.spring.cloud.stream and nats.spring.cloud.stream
      */
+    @Bean
     public MappingsProvider natsExtendedPropertiesDefaultMappingsProvider() {
         return () -> Collections.singletonMap(
                 ConfigurationPropertyName.of("nats.spring.cloud.stream"),

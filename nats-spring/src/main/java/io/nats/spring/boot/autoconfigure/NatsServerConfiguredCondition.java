@@ -16,22 +16,16 @@
 
 package io.nats.spring.boot.autoconfigure;
 
-import io.nats.client.Options;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.util.StringUtils;
 
-/**
- * NatsProperties extends NatsConnectionProperties, which provides all of the
- * attributes, setters and getters. A NatsProperties configuration is used
- * during autoconfigure to initialize the underlying NATS connection.
- */
-@ConditionalOnClass({Options.class})
-@ConfigurationProperties(prefix = "nats.spring")
-public class NatsProperties extends NatsConnectionProperties {
+class NatsServerConfiguredCondition implements Condition {
+    static final String SERVER_PROPERTY = "nats.spring.server";
 
-    /**
-     * Default Constructor.
-     */
-    public NatsProperties() {
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        return StringUtils.hasText(context.getEnvironment().getProperty(SERVER_PROPERTY));
     }
 }

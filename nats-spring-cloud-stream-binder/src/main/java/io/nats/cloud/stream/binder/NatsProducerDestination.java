@@ -18,16 +18,24 @@ package io.nats.cloud.stream.binder;
 
 import org.springframework.cloud.stream.provisioning.ProducerDestination;
 
+import java.util.Objects;
+
 /**
  * NATS uses subjects for sending and receiving. While partitions are not used
- * this class can generate a patition-based name for compatibility with the binder
+ * this class can generate a partition-based name for compatibility with the binder
  * API.
  */
 public class NatsProducerDestination implements ProducerDestination {
     private String name;
 
+    /**
+     * Create a new producer destination with the provided subject name.
+     *
+     * @param name subject name; must not be {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
+     */
     public NatsProducerDestination(String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name must not be null");
     }
 
     @Override

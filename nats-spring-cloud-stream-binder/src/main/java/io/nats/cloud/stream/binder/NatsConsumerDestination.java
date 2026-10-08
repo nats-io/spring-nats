@@ -18,6 +18,8 @@ package io.nats.cloud.stream.binder;
 
 import org.springframework.cloud.stream.provisioning.ConsumerDestination;
 
+import java.util.Objects;
+
 /**
  * NatsConsumerDestinations use their name to determine the subject and queue group (if any) to listen to.
  */
@@ -27,10 +29,11 @@ public class NatsConsumerDestination implements ConsumerDestination {
     /**
      * Create a new consumer destination with the provided name.
      *
-     * @param name compound name from the provisioner containing the subject and optional queue group
+     * @param name compound name from the provisioner containing the subject and optional queue group; must not be {@code null}
+     * @throws NullPointerException if {@code name} is {@code null}
      */
     public NatsConsumerDestination(String name) {
-        this.name = name;
+        this.name = Objects.requireNonNull(name, "name must not be null");
     }
 
     @Override
