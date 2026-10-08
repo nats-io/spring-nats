@@ -3,10 +3,10 @@ name: 📦 CD · Publish Central
 on:
   workflow_call:
     inputs:
-      dry_run:
+      run_id:
         required: false
-        default: false
-        type: boolean
+        default: ''
+        type: string
       build_output_timestamp:
         required: true
         type: string
@@ -19,6 +19,16 @@ on:
         required: true
       SIGNING_PASSWORD:
         required: true
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Workflow run ID
+        required: true
+        type: string
+      build_output_timestamp:
+        description: Build output timestamp
+        required: true
+        type: string
 
 permissions: {}
 
@@ -49,13 +59,13 @@ jobs:
           : "${SIGNING_PASSWORD:?Missing required secret: SIGNING_PASSWORD}"
 
       - name: "📥 Download Build Artifact"
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: build-workspace
           path: ${{ github.workspace }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          run-id: ${{ github.run_id }}
+          run-id: ${{ inputs.run_id || github.run_id }}
 
       - name: "🔧 Restore Maven Wrapper"
         shell: sh
@@ -65,10 +75,10 @@ jobs:
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b # 3
+        uses: YunaBraska/java-info-action@085d09be3659b484e0a6d0c95aac6612687ce8d9 # 3.0.13
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
         with:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
@@ -86,17 +96,12 @@ jobs:
       - name: "🚀 Publish to Maven Central"
         shell: sh
         env:
-          DRY_RUN: ${{ inputs.dry_run }}
           BUILD_OUTPUT_TIMESTAMP: ${{ inputs.build_output_timestamp }}
-          MAVEN_CMD: ${{ steps.java_info.outputs.cmd }}
+          MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
           PUBLISH_MODULES: nats-spring,nats-spring-boot-starter,nats-spring-cloud-stream-binder
         run: |
           set -eu
-          if [ "${DRY_RUN}" = "true" ]; then
-            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests -Dgpg.skip=true -DskipPublishing=true package
-          else
-            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests deploy
-          fi
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests deploy

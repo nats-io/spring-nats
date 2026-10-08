@@ -16,6 +16,8 @@
 
 package io.nats.cloud.stream.binder;
 
+import berlin.yuna.natsserver.junit.logic.NatsServer;
+import berlin.yuna.natsserver.junit.model.annotation.JUnitNatsServer;
 import io.nats.client.Connection;
 import io.nats.client.Message;
 import io.nats.client.Nats;
@@ -46,6 +48,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+@JUnitNatsServer(name = "functional-binder", port = -1,
+        config = {"NET", "localhost", "PID", "target/nats-%PORT%.pid"})
 @ResourceLock(Resources.SYSTEM_PROPERTIES)
 class FunctionalBinderTests {
     private static final Duration FLUSH_TIMEOUT = Duration.ofSeconds(5);
@@ -53,66 +57,63 @@ class FunctionalBinderTests {
 
     @Test
     void functionalConsumerReceivesNatsMessagesForIssue29() throws Exception {
-        try (NatsBinderTestServer server = new NatsBinderTestServer()) {
-            String subject = uniqueSubject("functional.consumer.issue29");
-            try (ConfigurableApplicationContext context = runApplication(
-                    FunctionalConsumerApplication.class,
-                    server.getURI(),
-                    "spring.cloud.function.definition=input",
-                    "spring.cloud.stream.bindings.input-in-0.destination=" + subject,
-                    "spring.cloud.stream.bindings.input-in-0.binder=nats");
-                 Connection connection = Nats.connect(server.getURI())) {
+        final var server = NatsServer.getNatsServerByName("functional-binder").getNats();
+        String subject = uniqueSubject("functional.consumer.issue29");
+        try (ConfigurableApplicationContext context = runApplication(
+                FunctionalConsumerApplication.class,
+                server.url(),
+                "spring.cloud.function.definition=input",
+                "spring.cloud.stream.bindings.input-in-0.destination=" + subject,
+                "spring.cloud.stream.bindings.input-in-0.binder=nats");
+             Connection connection = Nats.connect(server.url())) {
 
-                BlockingQueue<String> receivedMessages = context.getBean("receivedMessages", BlockingQueue.class);
+            BlockingQueue<String> receivedMessages = context.getBean("receivedMessages", BlockingQueue.class);
 
-                publishUntilReceived(connection, subject, "functional consumer", receivedMessages);
-            }
+            publishUntilReceived(connection, subject, "functional consumer", receivedMessages);
         }
     }
 
     @Test
     void functionalFunctionTransformsNatsMessagesForIssue29() throws Exception {
-        try (NatsBinderTestServer server = new NatsBinderTestServer()) {
-            String inputSubject = uniqueSubject("functional.function.input.issue29");
-            String outputSubject = uniqueSubject("functional.function.output.issue29");
-            try (ConfigurableApplicationContext ignored = runApplication(
-                    FunctionalFunctionApplication.class,
-                    server.getURI(),
-                    "spring.cloud.function.definition=transform",
-                    "spring.cloud.stream.bindings.transform-in-0.destination=" + inputSubject,
-                    "spring.cloud.stream.bindings.transform-in-0.binder=nats",
-                    "spring.cloud.stream.bindings.transform-out-0.destination=" + outputSubject,
-                    "spring.cloud.stream.bindings.transform-out-0.binder=nats");
-                 Connection connection = Nats.connect(server.getURI())) {
+        final var server = NatsServer.getNatsServerByName("functional-binder").getNats();
+        String inputSubject = uniqueSubject("functional.function.input.issue29");
+        String outputSubject = uniqueSubject("functional.function.output.issue29");
+        try (ConfigurableApplicationContext ignored = runApplication(
+                FunctionalFunctionApplication.class,
+                server.url(),
+                "spring.cloud.function.definition=transform",
+                "spring.cloud.stream.bindings.transform-in-0.destination=" + inputSubject,
+                "spring.cloud.stream.bindings.transform-in-0.binder=nats",
+                "spring.cloud.stream.bindings.transform-out-0.destination=" + outputSubject,
+                "spring.cloud.stream.bindings.transform-out-0.binder=nats");
+             Connection connection = Nats.connect(server.url())) {
 
-                Subscription output = connection.subscribe(outputSubject);
-                connection.flush(FLUSH_TIMEOUT);
+            Subscription output = connection.subscribe(outputSubject);
+            connection.flush(FLUSH_TIMEOUT);
 
-                publishUntilOutput(connection, inputSubject, output, "functional function", "FUNCTIONAL FUNCTION");
-            }
+            publishUntilOutput(connection, inputSubject, output, "functional function", "FUNCTIONAL FUNCTION");
         }
     }
 
     @Test
     void streamBridgePublishesNatsMessagesForIssue29() throws Exception {
-        try (NatsBinderTestServer server = new NatsBinderTestServer()) {
-            String subject = uniqueSubject("functional.streambridge.issue29");
-            try (ConfigurableApplicationContext context = runApplication(
-                    StreamBridgeApplication.class,
-                    server.getURI(),
-                    "spring.cloud.stream.bindings.bridgeOut.destination=" + subject,
-                    "spring.cloud.stream.bindings.bridgeOut.binder=nats");
-                 Connection connection = Nats.connect(server.getURI())) {
+        final var server = NatsServer.getNatsServerByName("functional-binder").getNats();
+        String subject = uniqueSubject("functional.streambridge.issue29");
+        try (ConfigurableApplicationContext context = runApplication(
+                StreamBridgeApplication.class,
+                server.url(),
+                "spring.cloud.stream.bindings.bridgeOut.destination=" + subject,
+                "spring.cloud.stream.bindings.bridgeOut.binder=nats");
+             Connection connection = Nats.connect(server.url())) {
 
-                Subscription output = connection.subscribe(subject);
-                connection.flush(FLUSH_TIMEOUT);
-                StreamBridge streamBridge = context.getBean(StreamBridge.class);
+            Subscription output = connection.subscribe(subject);
+            connection.flush(FLUSH_TIMEOUT);
+            StreamBridge streamBridge = context.getBean(StreamBridge.class);
 
-                assertThat(streamBridge.send("bridgeOut",
-                        MessageBuilder.withPayload("functional stream bridge".getBytes(UTF_8)).build())).isTrue();
+            assertThat(streamBridge.send("bridgeOut",
+                    MessageBuilder.withPayload("functional stream bridge".getBytes(UTF_8)).build())).isTrue();
 
-                assertThat(nextText(output)).isEqualTo("functional stream bridge");
-            }
+            assertThat(nextText(output)).isEqualTo("functional stream bridge");
         }
     }
 

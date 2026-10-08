@@ -4,6 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nats-spring-parent</artifactId>
+    <name>NATS Spring Parent</name>
     <groupId>io.nats</groupId>
     <version>${revision}</version>
     <packaging>pom</packaging>
@@ -17,7 +18,7 @@
 
     <properties>
         <!-- BUILD -->
-        <revision>1.0.0-SNAPSHOT</revision>
+        <revision>1.0.0</revision>
         <java.version>17</java.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <git-commit-id-maven-plugin.version>9.2.0</git-commit-id-maven-plugin.version>
@@ -29,6 +30,8 @@
         <!-- TEST -->
         <jacoco.version>0.8.13</jacoco.version>
         <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <nats-server-junit.version>2.15.0</nats-server-junit.version>
+        <command-line-util.version>2026.9.28</command-line-util.version>
 
         <!-- PROD -->
         <spring-boot.version>3.5.14</spring-boot.version>
@@ -56,6 +59,18 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>berlin.yuna</groupId>
+                <artifactId>nats-server-junit</artifactId>
+                <version>${nats-server-junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>berlin.yuna</groupId>
+                <artifactId>command-line-util</artifactId>
+                <version>${command-line-util.version}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>io.nats</groupId>
                 <artifactId>jnats</artifactId>

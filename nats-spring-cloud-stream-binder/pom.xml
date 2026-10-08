@@ -4,6 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
+    <name>NATS Spring Cloud Stream Binder</name>
     <description>Spring Cloud Stream Binder for NATS</description>
     <organization>
         <name>CNCF</name>
@@ -22,6 +23,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>berlin.yuna</groupId>
+            <artifactId>nats-server-junit</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>jnats</artifactId>

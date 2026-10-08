@@ -2,34 +2,13 @@
 
 Status: Accepted
 
-## Rules
-
-1. The latest reachable git tag is the version source of truth.
-2. No reachable tag bootstraps from `0.0.0`.
-3. The build resolves the version, commit SHA, and commit timestamp once.
-4. Publish jobs restore the verified `build-workspace` artifact.
-5. Build artifacts expire after one day.
-6. Only the parent, core, starter, and binder coordinates are published.
-7. Dry runs never upload to Maven Central.
-8. Snapshot dry runs publish GitHub Packages and create deployments without tags or releases.
-9. Manual release dry runs also create the tag, release, and release assets.
-10. Live publishing uses only `maven-central` and `github-packages` environments.
-11. Manual releases share one concurrency slot.
-12. External actions are pinned to immutable commit SHAs.
-13. After a partial release failure, rerun failed jobs in the same workflow run. Do not dispatch a new release.
-14. Shared build and publish workflows are callable only.
-15. Central receives only its four named secrets; GitHub Packages uses the automatic repository token.
-
-## Release Assets
-
-- parent POM
-- starter POM
-- core JAR, sources JAR, and Javadoc JAR
-- binder JAR, sources JAR, and Javadoc JAR
-
-## Permissions
-
-- build: `contents: read`
-- Central: `actions: read`, `contents: read`, `deployments: write`
-- GitHub Packages: Central permissions plus `packages: write`
-- GitHub release: `actions: read`, `contents: write`
+1. Versioning uses the UTC date, not Maven POM or git tags.
+2. Pull requests and merges use YYYY.M.D-SNAPSHOT. Manual stable releases use YYYY.M.D.
+3. The build sets the version and commit-derived output timestamp once. Publish jobs restore that verified workspace.
+4. Merge snapshots publish to Maven Central and GitHub Packages without a tag or GitHub release.
+5. Stable publishing runs Central and GitHub Packages in parallel. A tag and GitHub release follow only when both succeed.
+6. Stable builds include Javadocs. Release assets are two POMs and the core and binder JAR, sources, and Javadocs.
+7. Native NATS tests use nats-server-junit, including its version selection and lifecycle. CI does not build or install NATS Server.
+8. Build artifacts expire after one day.
+9. Publishing uses the maven-central and github-packages environments.
+10. External actions are pinned by immutable commit SHA and jobs receive the minimum required permissions.

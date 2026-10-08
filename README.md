@@ -2,12 +2,10 @@
 
 # NATS Spring Support
 
-**Current Release**: 0.6.2+3.5 &nbsp; **Current Snapshot**: 0.6.3+3.5-SNAPSHOT
-
-Please note the version number is a combination of Semver and the Spring Boot Version, `<major.minor.patch>-<sbMajor.sbMinor>`
+New releases use UTC date versions, YYYY.M.D. Snapshots use YYYY.M.D-SNAPSHOT.
 
 [![License][License-Image]][License-Url]
-[![Build Status](https://travis-ci.org/nats-io/spring-nats.svg?branch=master)](http://travis-ci.org/nats-io/spring-nats?branch=master)
+[![CI](https://github.com/nats-io/spring-nats/actions/workflows/build-pr.yml/badge.svg?branch=main)](https://github.com/nats-io/spring-nats/actions/workflows/build-pr.yml)
 
 # Table of Contents
 
@@ -92,7 +90,7 @@ To include the starter, add the following dependency to your pom.xml:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
-    <version>major.minor.patch[-SNAPSHOT]</version>
+    <version>YYYY.M.D[-SNAPSHOT]</version>
 </dependency>
 ```
 
@@ -109,7 +107,7 @@ To depend on the autoconfigure module, add it as a dependency in your pom.xml:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring</artifactId>
-    <version>major.minor.patch[-SNAPSHOT]</version>
+    <version>YYYY.M.D[-SNAPSHOT]</version>
 </dependency>
 ```
 
@@ -144,7 +142,7 @@ and include a dependency on the library:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
-    <version>major.minor.patch[-SNAPSHOT]</version>
+    <version>YYYY.M.D[-SNAPSHOT]</version>
 </dependency>
 ```
 

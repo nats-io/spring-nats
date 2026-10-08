@@ -7,29 +7,38 @@ on:
         required: false
         default: ''
         type: string
-      nats_server_version:
-        required: true
-        type: string
-      release_strategy:
+      release_mode:
+        description: Build, snapshot publish, or stable release.
         required: false
-        default: none
+        default: build
         type: string
     outputs:
       resolved_version:
         description: Resolved project version for this run
         value: ${{ jobs.build.outputs.resolved_version }}
-      release_kind:
-        description: Release kind [none, snapshot, prerelease, release]
-        value: ${{ jobs.build.outputs.release_kind }}
-      should_create_release:
-        description: Whether a GitHub release should be created
-        value: ${{ jobs.build.outputs.should_create_release }}
       commit_sha:
         description: Resolved commit SHA for this build
         value: ${{ jobs.build.outputs.commit_sha }}
       build_output_timestamp:
         description: Reproducible build output timestamp
         value: ${{ jobs.build.outputs.build_output_timestamp }}
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build
+        required: false
+        default: ''
+        type: string
+      release_mode:
+        description: Release mode
+        required: true
+        default: build
+        type: choice
+        options:
+          - build
+          - snapshot
+          - release
+
 permissions: {}
 
 jobs:
@@ -40,15 +49,12 @@ jobs:
       contents: read
     outputs:
       resolved_version: ${{ steps.resolve_version.outputs.resolved_version }}
-      release_kind: ${{ steps.resolve_version.outputs.release_kind }}
-      should_create_release: ${{ steps.resolve_version.outputs.should_create_release }}
       commit_sha: ${{ steps.commit_info.outputs.commit_sha }}
       build_output_timestamp: ${{ steps.commit_info.outputs.build_output_timestamp }}
     steps:
       - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0
           ref: ${{ inputs.ref || github.sha }}
 
       - name: "🧾 Read Commit Info"
@@ -63,239 +69,74 @@ jobs:
 
       - name: "🔍 Read Java Info"
         id: java_info
-        uses: YunaBraska/java-info-action@11a434ffbf6bb3357363d1933be71a4076a90a6b # 3
+        uses: YunaBraska/java-info-action@085d09be3659b484e0a6d0c95aac6612687ce8d9 # 3.0.13
 
-      - name: "🏷️ Read Version Source"
-        id: version_source
-        shell: sh
-        run: |
-          set -eu
-          latest_tag=$(python3 -c '
-          import re
-          import subprocess
-
-          semver_pattern = re.compile(
-              r"^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$"
-          )
-
-          def parse_identifier(identifier):
-              return (0, int(identifier)) if identifier.isdigit() else (1, identifier)
-
-          def parse_prerelease(prerelease):
-              if prerelease is None:
-                  return (1, ())
-              return (0, tuple(parse_identifier(part) for part in prerelease.split(".")))
-
-          best_tag = None
-          best_key = None
-          tags = subprocess.check_output(["git", "tag", "--merged", "HEAD"], text=True).splitlines()
-
-          for tag in tags:
-              match = semver_pattern.fullmatch(tag.strip())
-              if match is None:
-                  continue
-              major, minor, patch, prerelease, _build = match.groups()
-              key = (
-                  int(major),
-                  int(minor),
-                  int(patch),
-                  parse_prerelease(prerelease),
-                  tag,
-              )
-              if best_key is None or key > best_key:
-                  best_key = key
-                  best_tag = tag
-
-          print(best_tag or "")
-          ')
-          if [ -z "${latest_tag}" ]; then
-            {
-              printf 'latest_tag=%s\n' '0.0.0'
-              printf 'display_tag=%s\n' '0.0.0 (bootstrap)'
-            } | tee -a "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-          {
-            printf 'latest_tag=%s\n' "${latest_tag}"
-            printf 'display_tag=%s\n' "${latest_tag}"
-          } | tee -a "${GITHUB_OUTPUT}"
-
-      - name: "🔢 Read Semver Info [${{ steps.version_source.outputs.display_tag }}]"
-        id: semver_info
-        uses: YunaBraska/semver-info-action@180ebf79b3c81785c50cf1f198ee236fc5591504 # 3
-        with:
-          semver-a: ${{ steps.version_source.outputs.latest_tag }}
-
-      - name: "🧮 Resolve Version [${{ inputs.release_strategy }}]"
+      - name: "🧮 Resolve Version [${{ inputs.release_mode }}]"
         id: resolve_version
         env:
-          LATEST_TAG: ${{ steps.version_source.outputs.latest_tag }}
-          NEXT_MAJOR: ${{ steps.semver_info.outputs.next_major }}
-          NEXT_MINOR: ${{ steps.semver_info.outputs.next_minor }}
-          NEXT_PATCH: ${{ steps.semver_info.outputs.next_patch }}
-          NEXT_RC: ${{ steps.semver_info.outputs.next_rc }}
-          NEXT_SNAPSHOT: ${{ steps.semver_info.outputs.next_snapshot }}
-          RELEASE_STRATEGY: ${{ inputs.release_strategy }}
+          RELEASE_MODE: ${{ inputs.release_mode }}
         shell: sh
         run: |
           set -eu
+          year=$(date -u '+%Y')
+          month=$(date -u '+%m' | sed 's/^0//')
+          day=$(date -u '+%d' | sed 's/^0//')
+          version_date="${year}.${month}.${day}"
 
-          release_strategy=${RELEASE_STRATEGY}
-          latest_tag=${LATEST_TAG}
-
-          case "${release_strategy}" in
-            none)
-              resolved_version=${NEXT_SNAPSHOT}
-              release_kind=none
-              should_publish=false
-              should_create_release=false
+          case "${RELEASE_MODE}" in
+            build|snapshot)
+              resolved_version="${version_date}-SNAPSHOT"
               ;;
-            snapshot)
-              resolved_version=${NEXT_SNAPSHOT}
-              release_kind=snapshot
-              should_publish=true
-              should_create_release=false
-              ;;
-            rc)
-              resolved_version=${NEXT_RC}
-              release_kind=prerelease
-              should_publish=true
-              should_create_release=true
-              ;;
-            patch)
-              resolved_version=${NEXT_PATCH}
-              release_kind=release
-              should_publish=true
-              should_create_release=true
-              ;;
-            minor)
-              resolved_version=${NEXT_MINOR}
-              release_kind=release
-              should_publish=true
-              should_create_release=true
-              ;;
-            major)
-              resolved_version=${NEXT_MAJOR}
-              release_kind=release
-              should_publish=true
-              should_create_release=true
+            release)
+              resolved_version="${version_date}"
               ;;
             *)
-              echo "Unsupported release_strategy: ${release_strategy}" >&2
+              echo "Unsupported release mode: ${RELEASE_MODE}" >&2
               exit 1
               ;;
           esac
 
-          if [ -z "${resolved_version}" ]; then
-            echo "Unable to resolve version from latest tag ${latest_tag} with strategy ${release_strategy}" >&2
-            exit 1
-          fi
-
-          {
-            printf 'resolved_version=%s\n' "${resolved_version}"
-            printf 'release_kind=%s\n' "${release_kind}"
-            printf 'should_publish=%s\n' "${should_publish}"
-            printf 'should_create_release=%s\n' "${should_create_release}"
-          } | tee -a "${GITHUB_OUTPUT}"
+          printf 'release_mode=%s\n' "${RELEASE_MODE}"
+          printf 'version_date=%s\n' "${version_date}"
+          printf 'resolved_version=%s\n' "${resolved_version}"
+          printf 'resolved_version=%s\n' "${resolved_version}" >> "${GITHUB_OUTPUT}"
 
       - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
         with:
           distribution: temurin
           java-version: ${{ steps.java_info.outputs.java_version }}
           cache: maven
 
       - name: "🏷️ Set Project Version [${{ steps.resolve_version.outputs.resolved_version }}]"
+        shell: sh
         env:
-          MAVEN_CMD: ${{ steps.java_info.outputs.cmd }}
-          RELEASE_VERSION: ${{ steps.resolve_version.outputs.resolved_version }}
           BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
-        run: '"${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" versions:set -DnewVersion="${RELEASE_VERSION}" -DgenerateBackupPoms=false'
-
-      - name: "📦 Clone NATS Server [${{ inputs.nats_server_version }}]"
-        env:
-          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
-        shell: sh
+          MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
+          RELEASE_VERSION: ${{ steps.resolve_version.outputs.resolved_version }}
         run: |
           set -eu
-          git clone --depth 1 --branch "${NATS_SERVER_VERSION}" \
-            https://github.com/nats-io/nats-server.git "${RUNNER_TEMP}/nats-server-src"
-
-      - name: "🔍 Read Go Info"
-        id: go_info
-        shell: sh
-        run: |
-          set -eu
-          go_version=$(awk '/^toolchain / { print $2; exit } /^go / { print $2; exit }' \
-            "${RUNNER_TEMP}/nats-server-src/go.mod")
-          case "${go_version}" in
-            go*)
-              go_version=${go_version#go}
-              ;;
-          esac
-          if [ -z "${go_version}" ]; then
-            echo "Unable to determine Go version from NATS go.mod" >&2
-            exit 1
-          fi
-          printf 'go_version=%s\n' "${go_version}" | tee -a "${GITHUB_OUTPUT}"
-
-      - name: "🐹 Setup Go [${{ steps.go_info.outputs.go_version }}]"
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
-        with:
-          go-version: ${{ steps.go_info.outputs.go_version }}
-          cache: false
-
-      - name: "📁 Prepare NATS Server Cache Directory"
-        env:
-          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
-        shell: sh
-        run: |
-          set -eu
-          mkdir -p "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}"
-
-      - name: "♻️ Cache NATS Server [${{ inputs.nats_server_version }}]"
-        id: nats_cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ${{ github.workspace }}/.cache/nats-server/${{ inputs.nats_server_version }}
-          key: nats-server-${{ runner.os }}-${{ runner.arch }}-${{ inputs.nats_server_version }}
-
-      - name: "🔨 Build NATS Server [${{ inputs.nats_server_version }}]"
-        if: steps.nats_cache.outputs.cache-hit != 'true'
-        env:
-          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
-        shell: sh
-        run: |
-          set -eu
-          cd "${RUNNER_TEMP}/nats-server-src"
-          go build -o "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}/nats-server" ./main.go
-
-      - name: "📍 Expose NATS Server"
-        env:
-          NATS_SERVER_VERSION: ${{ inputs.nats_server_version }}
-        shell: sh
-        run: |
-          set -eu
-          chmod +x "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}/nats-server"
-          printf '%s\n' "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}" >> "${GITHUB_PATH}"
-          "${GITHUB_WORKSPACE}/.cache/nats-server/${NATS_SERVER_VERSION}/nats-server" -v
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" versions:set -DnewVersion="${RELEASE_VERSION}" -DgenerateBackupPoms=false
 
       - name: "🧪 Build and Verify"
-        env:
-          MAVEN_CMD: ${{ steps.java_info.outputs.cmd }}
-          SHOULD_PUBLISH: ${{ steps.resolve_version.outputs.should_publish }}
-          BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
         shell: sh
+        env:
+          BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
+          MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
+          RELEASE_MODE: ${{ inputs.release_mode }}
         run: |
           set -eu
-          if [ "${SHOULD_PUBLISH}" = "true" ]; then
-            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify -Dmaven.javadoc.skip=false
-          else
-            "${MAVEN_CMD}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify
-          fi
+          case "${RELEASE_MODE}" in
+            release)
+              "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Dmaven.javadoc.skip=false verify
+              ;;
+            *)
+              "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify
+              ;;
+          esac
 
       - name: "📦 Upload Build Artifact"
-        if: steps.resolve_version.outputs.should_publish == 'true'
+        if: inputs.release_mode != 'build'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: build-workspace

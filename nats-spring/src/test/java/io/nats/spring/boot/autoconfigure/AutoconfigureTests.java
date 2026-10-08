@@ -16,6 +16,7 @@
 
 package io.nats.spring.boot.autoconfigure;
 
+import berlin.yuna.natsserver.config.NatsOptionsBuilder;
 import io.nats.client.Connection;
 import io.nats.client.ConnectionListener;
 import io.nats.client.ErrorListener;
@@ -28,18 +29,15 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static berlin.yuna.natsserver.config.NatsConfig.NET;
+import static berlin.yuna.natsserver.config.NatsConfig.PID;
+import static berlin.yuna.natsserver.config.NatsOptions.natsBuilder;
+import static berlin.yuna.natsserver.logic.NatsUtils.getNextFreePort;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @ResourceLock(Resources.SYSTEM_PROPERTIES)
 class AutoconfigureTests {
@@ -48,13 +46,13 @@ class AutoconfigureTests {
 
     @Test
     void testDefaultConnection() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI(),
+        try (var ts = server().nats()) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.url(),
                     "nats.spring.connectionTimeout=15s").run(context -> {
                 Connection conn = context.getBean(Connection.class);
                 assertThat(conn).isNotNull();
                 assertThat(conn.getStatus()).isSameAs(Connection.Status.CONNECTED);
-                assertThat(conn.getConnectedUrl()).isEqualTo(ts.getURI());
+                assertThat(conn.getConnectedUrl()).isEqualTo(ts.url());
                 assertThat(conn.getOptions().getConnectionTimeout()).isEqualTo(Duration.ofSeconds(15));
             });
         }
@@ -62,8 +60,8 @@ class AutoconfigureTests {
 
     @Test
     void connectionCanPublishAndSubscribeWithRealServer() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI()).run(context -> {
+        try (var ts = server().nats()) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.url()).run(context -> {
                 Connection conn = context.getBean(Connection.class);
                 String subject = "spring.autoconfig.e2e";
                 String payload = "hello spring nats";
@@ -93,9 +91,9 @@ class AutoconfigureTests {
 
     @Test
     void directConnectionFactoryUsesProgrammaticProperties() throws Exception {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (var ts = server().nats()) {
             NatsProperties properties = new NatsProperties();
-            properties.setServer(ts.getURI());
+            properties.setServer(ts.url());
             properties.setConnectionTimeout(Duration.ofSeconds(15));
             NatsAutoConfiguration configuration = new NatsAutoConfiguration();
 
@@ -105,7 +103,7 @@ class AutoconfigureTests {
                     configuration.defaultErrorListener())) {
                 assertThat(conn).isNotNull();
                 assertThat(conn.getStatus()).isSameAs(Connection.Status.CONNECTED);
-                assertThat(conn.getConnectedUrl()).isEqualTo(ts.getURI());
+                assertThat(conn.getConnectedUrl()).isEqualTo(ts.url());
                 assertThat(conn.getOptions().getConnectionTimeout()).isEqualTo(Duration.ofSeconds(15));
             }
         }
@@ -113,36 +111,36 @@ class AutoconfigureTests {
 
     @Test
     void connectionCanUseTokenAuthWithRealServer() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer(new String[]{"--auth", "secret"}, false)) {
+        try (var ts = server().customArgs("--auth", "secret").nats()) {
             this.contextRunner.withPropertyValues(
-                    "nats.spring.server=" + ts.getURI(),
+                    "nats.spring.server=" + ts.url(),
                     "nats.spring.token=secret").run(context -> {
                 Connection conn = context.getBean(Connection.class);
                 assertThat(conn.getStatus()).isSameAs(Connection.Status.CONNECTED);
-                assertThat(conn.getConnectedUrl()).isEqualTo(ts.getURI());
+                assertThat(conn.getConnectedUrl()).isEqualTo(ts.url());
             });
         }
     }
 
     @Test
     void connectionCanUseUserPasswordAuthWithRealServer() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer(new String[]{"--user", "spring", "--pass", "nats"}, false)) {
+        try (var ts = server().customArgs("--user", "spring", "--pass", "nats").nats()) {
             this.contextRunner.withPropertyValues(
-                    "nats.spring.server=" + ts.getURI(),
+                    "nats.spring.server=" + ts.url(),
                     "nats.spring.username=spring",
                     "nats.spring.password=nats").run(context -> {
                 Connection conn = context.getBean(Connection.class);
                 assertThat(conn.getStatus()).isSameAs(Connection.Status.CONNECTED);
-                assertThat(conn.getConnectedUrl()).isEqualTo(ts.getURI());
+                assertThat(conn.getConnectedUrl()).isEqualTo(ts.url());
             });
         }
     }
 
     @Test
     void noEchoPreventsConnectionFromReceivingItsOwnPublish() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (var ts = server().nats()) {
             this.contextRunner.withPropertyValues(
-                    "nats.spring.server=" + ts.getURI(),
+                    "nats.spring.server=" + ts.url(),
                     "nats.spring.noEcho=true").run(context -> {
                 Connection conn = context.getBean(Connection.class);
                 Subscription sub = conn.subscribe("spring.noecho");
@@ -158,9 +156,9 @@ class AutoconfigureTests {
 
     @Test
     void noNoRespondersBindsToRealConnectionOptions() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (var ts = server().nats()) {
             this.contextRunner.withPropertyValues(
-                    "nats.spring.server=" + ts.getURI(),
+                    "nats.spring.server=" + ts.url(),
                     "nats.spring.no-no-responders=true").run(context -> {
                 Connection conn = context.getBean(Connection.class);
 
@@ -172,9 +170,9 @@ class AutoconfigureTests {
 
     @Test
     void utf8SubjectsCanRoundTripThroughRealServer() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer()) {
+        try (var ts = server().nats()) {
             this.contextRunner.withPropertyValues(
-                    "nats.spring.server=" + ts.getURI(),
+                    "nats.spring.server=" + ts.url(),
                     "nats.spring.utf8Support=true").run(context -> {
                 Connection conn = context.getBean(Connection.class);
                 String subject = "spring.über";
@@ -194,8 +192,11 @@ class AutoconfigureTests {
 
     @Test
     void testSSLConnection() throws IOException, InterruptedException {
-        try (NatsTestServer ts = new NatsTestServer("src/test/resources/tls.conf", false)) {
-            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.getURI(),
+        try (var ts = server().customArgs("--tls",
+                "--tlscert", "src/test/resources/certs/server-cert.pem",
+                "--tlskey", "src/test/resources/certs/server-key.pem",
+                "--tlscacert", "src/test/resources/certs/ca.pem").nats()) {
+            this.contextRunner.withPropertyValues("nats.spring.server=" + ts.url(),
                     "nats.spring.connectionTimeout=15s",
                     "nats.spring.keystorepath=src/test/resources/keystore.jks",
                     "nats.spring.keystorepassword=password",
@@ -207,7 +208,7 @@ class AutoconfigureTests {
                 Connection conn = context.getBean(Connection.class);
                 assertThat(conn).isNotNull();
                 assertThat(conn.getStatus()).isSameAs(Connection.Status.CONNECTED);
-                assertThat(conn.getConnectedUrl()).isEqualTo(ts.getURI());
+                assertThat(conn.getConnectedUrl()).isEqualTo(ts.url());
                 assertThat(conn.getOptions().getConnectionTimeout()).isEqualTo(Duration.ofSeconds(15));
             });
         }
@@ -239,33 +240,8 @@ class AutoconfigureTests {
     }
 
     @Test
-    void testServerStartFailsWhenPortIsOwnedByNonNatsListener() throws IOException {
-        try (ServerSocket listener = new ServerSocket(0)) {
-            assertThatThrownBy(() -> new NatsTestServer(listener.getLocalPort(), false))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("nats-server");
-        }
-    }
-
-    @Test
-    void configBackedServerStartFailureDeletesGeneratedConfig() throws IOException {
-        String previousServerPath = System.getProperty("nats_server_path");
-        Set<Path> before = tempNatsConfigs();
-        System.setProperty("nats_server_path", missingExecutablePath());
-
-        try {
-            assertThatThrownBy(() -> new NatsTestServer("src/test/resources/tls.conf", false))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Failed to run");
-            assertThat(tempNatsConfigs()).isEqualTo(before);
-        } finally {
-            restoreServerPath(previousServerPath);
-        }
-    }
-
-    @Test
     void testNoServer() {
-        int unusedPort = NatsTestServer.nextPort();
+        int unusedPort = getNextFreePort(4222);
         this.contextRunner.withPropertyValues(
                 "nats.spring.server=nats://127.0.0.1:" + unusedPort,
                 "nats.spring.connectionTimeout=250ms").run(context -> {
@@ -274,25 +250,7 @@ class AutoconfigureTests {
         });
     }
 
-    private static Set<Path> tempNatsConfigs() throws IOException {
-        Path tempDirectory = Path.of(System.getProperty("java.io.tmpdir"));
-        try (Stream<Path> files = Files.list(tempDirectory)) {
-            return files
-                    .filter(path -> path.getFileName().toString().startsWith("spring_nats_test"))
-                    .filter(path -> path.getFileName().toString().endsWith(".conf"))
-                    .collect(Collectors.toSet());
-        }
-    }
-
-    private static String missingExecutablePath() {
-        return Path.of(System.getProperty("java.io.tmpdir"), "missing-nats-server-" + System.nanoTime()).toString();
-    }
-
-    private static void restoreServerPath(String previousServerPath) {
-        if (previousServerPath == null) {
-            System.clearProperty("nats_server_path");
-        } else {
-            System.setProperty("nats_server_path", previousServerPath);
-        }
+    private static NatsOptionsBuilder server() {
+        return natsBuilder().port(-1).config(NET, "localhost").config(PID, "target/nats-%PORT%.pid");
     }
 }
