@@ -22,7 +22,7 @@ The build resolves the version once and writes it into the workspace before veri
 - a manual release from main or master builds and publishes YYYY.M.D
 - the checked-in 1.0.0 is only a build placeholder
 
-Snapshots never create a tag or GitHub release. A stable release creates both only after Maven Central and GitHub Packages succeed.
+Snapshots never create a tag or GitHub release. Maven Central validates uploads during the workflow and publishes them asynchronously. A stable release creates its tag and GitHub release after Central validation and GitHub Packages succeed.
 
 ## Build and test
 
@@ -39,7 +39,7 @@ Only these Maven coordinates are published:
 - io.nats:nats-spring-boot-starter
 - io.nats:nats-spring-cloud-stream-binder
 
-Samples are verified but never published. Central and GitHub Packages run in parallel, each with its own environment. The release assets are the parent and starter POMs, plus JAR, sources, and Javadocs for the core and binder modules.
+Samples are verified but never published. Central and GitHub Packages run in parallel, each with its own environment. Central auto-publishes after validation. The release assets are the parent and starter POMs, plus JAR, sources, and Javadocs for the core and binder modules.
 
 ## Permissions
 

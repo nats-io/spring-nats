@@ -301,34 +301,6 @@ This project is built with maven. The `mvnw` helper is included in the root fold
 
 Internally there are multiple pom files, one parent for the project, one parent for the samples, one for the autoconfigure code, one for the binder, and one each for the samples. When built, each will have its own artifacts.
 
-Signing and deploying requires that you set up your settings.xml file for maven:
-
-```xml
-<settings>
-    <servers>
-        <server>
-            <id>ossrh</id>
-            <username>xxx</username>
-            <password>xxxxx</password>
-        </server>
-    </servers>
-    <profiles>
-        <profile>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <gpg.keyid>xxx</gpg.keyid>
-                <gpg.passphrase>xxxxx</gpg.passphrase>
-                <gpg.secretkeyring>xxxxx</gpg.secretkeyring>
-            </properties>
-        </profile>
-    </profiles>
-</settings>
-```
-
-**Sonatype will accept and close a non-staging repository, but you must manually release it.**
-
 ### Adding New Configuration Properties
 
 All the configuration properties are injected into the NatsProperties class in the autoconfigure module. This class provides a `toOptions()` method that spits out a valid options configuration from the NATS client library. 
