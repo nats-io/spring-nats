@@ -16,8 +16,8 @@
 
 package io.nats.spring;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.integration.support.MessageBuilder;
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 @EnableScheduling
 public class TimedSource {
-    private static final Log logger = LogFactory.getLog(TimedSource.class);
+    private static final Logger logger = LoggerFactory.getLogger(TimedSource.class);
     private AtomicLong counter = new AtomicLong(0);
 
     @Autowired
@@ -42,11 +42,11 @@ public class TimedSource {
         String msg = "message " + counter.incrementAndGet();
 
         if (streamBridge == null) {
-            logger.info("no output to send to - " + msg);
+            logger.info("no output to send to - {}", msg);
             return;
         }
 
-        logger.info("sending - " + msg);
+        logger.info("sending - {}", msg);
         streamBridge.send("timedchannel", MessageBuilder.withPayload(msg.getBytes(StandardCharsets.UTF_8)).build());
     }
 }

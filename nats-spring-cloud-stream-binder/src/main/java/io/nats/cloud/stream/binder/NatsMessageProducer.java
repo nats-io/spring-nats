@@ -21,8 +21,8 @@ import io.nats.client.ConsumerContext;
 import io.nats.client.Dispatcher;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.Message;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.lang.Nullable;
@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * MessageProducer for NATS connections.
  */
 public class NatsMessageProducer implements MessageProducer, Lifecycle {
-    private static final Log logger = LogFactory.getLog(NatsMessageProducer.class);
+    private static final Logger logger = LoggerFactory.getLogger(NatsMessageProducer.class);
 
     /**
      * The NATS subject for incoming message is stored in the SUBJECT header.
@@ -137,8 +137,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 
         Connection nc = this.connection;
         if (nc == null) {
-            logger.warn("cannot start NATS message producer, no connection available for "
-                    + this.destination.getName());
+            logger.warn("cannot start NATS message producer, no connection available for {}", this.destination.getName());
             return;
         }
 
@@ -190,7 +189,7 @@ public class NatsMessageProducer implements MessageProducer, Lifecycle {
 
     private void handleIncomingMessage(Message msg) {
         if (this.output == null) {
-            logger.warn("skipping message, no output channel set for " + this.destination.getName());
+            logger.warn("skipping message, no output channel set for {}", this.destination.getName());
             if (this.jetStream) {
                 msg.nak();
             }

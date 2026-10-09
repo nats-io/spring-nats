@@ -18,15 +18,15 @@ package io.nats.spring;
 
 import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 @Component
 public class Listener implements CommandLineRunner {
-    private static final Log logger = LogFactory.getLog(Listener.class);
+    private static final Logger logger = LoggerFactory.getLogger(Listener.class);
 
     @Autowired
     Connection nc;
@@ -35,10 +35,10 @@ public class Listener implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        logger.info("starting autoconfigure listener with connection " + this.nc);
+        logger.info("starting autoconfigure listener with connection {}", this.nc);
 
         this.dispatcher = this.nc.createDispatcher(m -> {
-            logger.info("received message on " + m.getSubject() + " with reply to " + m.getReplyTo());
+            logger.info("received message on {} with reply to {}", m.getSubject(), m.getReplyTo());
             if (m.getReplyTo() != null) {
                 nc.publish(m.getReplyTo(), m.getData());
             }
@@ -50,7 +50,7 @@ public class Listener implements CommandLineRunner {
             subject = args[0];
         }
 
-        logger.info("subscribing to " + subject);
+        logger.info("subscribing to {}", subject);
         this.dispatcher.subscribe(subject);
     }
 }
