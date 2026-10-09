@@ -20,7 +20,6 @@
         <!-- BUILD -->
         <revision>1.0.0</revision>
         <java.version>17</java.version>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
         <git-commit-id-maven-plugin.version>9.2.0</git-commit-id-maven-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
@@ -218,8 +217,6 @@
                 <configuration combine.self="override">
                     <source>${java.version}</source>
                     <doclint>none</doclint>
-                    <failOnError>false</failOnError>
-                    <skip>${maven.javadoc.skip}</skip>
                 </configuration>
             </plugin>
             <plugin>
@@ -248,9 +245,6 @@
     <profiles>
         <profile>
             <id>publish</id>
-            <properties>
-                <maven.javadoc.skip>false</maven.javadoc.skip>
-            </properties>
             <build>
                 <plugins>
                     <plugin>

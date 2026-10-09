@@ -77,4 +77,4 @@ jobs:
         run: |
           set -eu
           repository="github::https://maven.pkg.github.com/${GITHUB_PACKAGES_REPOSITORY}"
-          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -pl "${PUBLISH_MODULES}" -am -DskipTests -Dmaven.javadoc.skip=false -DaltDeploymentRepository="${repository}" deploy
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -pl "${PUBLISH_MODULES}" -am -DskipTests -DaltDeploymentRepository="${repository}" deploy

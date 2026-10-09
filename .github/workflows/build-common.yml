@@ -123,17 +123,9 @@ jobs:
         env:
           BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
           MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
-          RELEASE_MODE: ${{ inputs.release_mode }}
         run: |
           set -eu
-          case "${RELEASE_MODE}" in
-            release)
-              "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Dmaven.javadoc.skip=false verify
-              ;;
-            *)
-              "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify
-              ;;
-          esac
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify
 
       - name: "📦 Upload Build Artifact"
         if: inputs.release_mode != 'build'

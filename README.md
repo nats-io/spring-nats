@@ -1,8 +1,10 @@
 ![NATS](images/large-logo.png)
 
-# NATS Spring Support
+# NATS Spring Support for Spring Boot 3
 
-New releases use UTC date versions, YYYY.M.D. Snapshots use YYYY.M.D-SNAPSHOT.
+This repository supports Spring Boot 3. For Spring Boot 4, use [spring-boot-4-nats](https://github.com/nats-io/spring-boot-4-nats).
+
+Releases use UTC date versions, YYYY.M.D. Snapshots use YYYY.M.D-SNAPSHOT.
 
 [![License][License-Image]][License-Url]
 [![CI](https://github.com/nats-io/spring-nats/actions/workflows/build-pr.yml/badge.svg?branch=main)](https://github.com/nats-io/spring-nats/actions/workflows/build-pr.yml)
@@ -84,7 +86,7 @@ and ultimately at maven central.
 
 A spring boot starter is provided that will bring in the autoconfigure module.
 
-To include the starter, add the following dependency to your pom.xml:
+Use the version published in Maven Central. To include the starter, add the following dependency to your pom.xml:
 
 ```xml
 <dependency>
@@ -96,14 +98,9 @@ To include the starter, add the following dependency to your pom.xml:
 
 ## Using the NATS Modules <a name="using"></a>
 
-To depend on the autoconfigure module, add it as a dependency in your pom.xml:
+To depend on the autoconfigure module, add it as a dependency in your pom.xml. It brings in the NATS Java client.
 
 ```xml
-<dependency>
-    <groupId>io.nats</groupId>
-    <artifactId>jnats</artifactId>
-    <version>2.21.1</version>
-</dependency>
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring</artifactId>
