@@ -10,13 +10,22 @@
     </parent>
     <groupId>io.nats</groupId>
     <artifactId>demo</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${demo.version}</version>
     <name>demo</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
+        <!-- BUILD -->
         <java.version>17</java.version>
+        <demo.version>0.0.1-SNAPSHOT</demo.version>
+
+        <!-- TEST -->
+
+        <!-- PROD -->
+        <spring-boot.version>3.5.14</spring-boot.version>
         <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
+        <nats-spring.version>${revision}</nats-spring.version>
+        <revision>1.0.0-SNAPSHOT</revision>
     </properties>
 
     <dependencyManagement>
@@ -33,12 +42,12 @@
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>nats-spring-cloud-stream-binder</artifactId>
-            <version>0.6.3+3.5-SNAPSHOT</version>
+            <version>${nats-spring.version}</version>
         </dependency>
         <dependency>
             <groupId>io.nats</groupId>
             <artifactId>nats-spring</artifactId>
-            <version>0.6.3+3.5-SNAPSHOT</version>
+            <version>${nats-spring.version}</version>
         </dependency>
 
         <dependency>

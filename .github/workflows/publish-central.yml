@@ -1,0 +1,107 @@
+name: 📦 CD · Publish Central
+
+on:
+  workflow_call:
+    inputs:
+      run_id:
+        required: false
+        default: ''
+        type: string
+      build_output_timestamp:
+        required: true
+        type: string
+    secrets:
+      OSSRH_USERNAME:
+        required: true
+      OSSRH_TOKEN:
+        required: true
+      SIGNING_KEY:
+        required: true
+      SIGNING_PASSWORD:
+        required: true
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Workflow run ID
+        required: true
+        type: string
+      build_output_timestamp:
+        description: Build output timestamp
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+    environment:
+      name: maven-central
+      url: https://central.sonatype.com
+    steps:
+      - name: "🔐 Check Publish Secrets"
+        shell: sh
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: |
+          set -eu
+          : "${OSSRH_USERNAME:?Missing required secret: OSSRH_USERNAME}"
+          : "${OSSRH_TOKEN:?Missing required secret: OSSRH_TOKEN}"
+          : "${SIGNING_KEY:?Missing required secret: SIGNING_KEY}"
+          : "${SIGNING_PASSWORD:?Missing required secret: SIGNING_PASSWORD}"
+
+      - name: "📥 Download Build Artifact"
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-workspace
+          path: ${{ github.workspace }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.run_id || github.run_id }}
+
+      - name: "🔧 Restore Maven Wrapper"
+        shell: sh
+        run: |
+          set -eu
+          chmod +x "${GITHUB_WORKSPACE}/mvnw"
+
+      - name: "🔍 Read Java Info"
+        id: java_info
+        uses: YunaBraska/java-info-action@085d09be3659b484e0a6d0c95aac6612687ce8d9 # 3.0.13
+
+      - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java_info.outputs.java_version }}
+          cache: maven
+          server-id: central
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_TOKEN
+          gpg-private-key: ${{ secrets.SIGNING_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+
+      - name: "🚀 Publish to Maven Central"
+        shell: sh
+        env:
+          BUILD_OUTPUT_TIMESTAMP: ${{ inputs.build_output_timestamp }}
+          MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.SIGNING_PASSWORD }}
+          PUBLISH_MODULES: nats-spring,nats-spring-boot-starter,nats-spring-cloud-stream-binder
+        run: |
+          set -eu
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -Ppublish -pl "${PUBLISH_MODULES}" -am -DskipTests deploy

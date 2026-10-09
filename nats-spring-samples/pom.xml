@@ -5,19 +5,14 @@
 
     <groupId>io.nats.nats-spring-samples</groupId>
     <artifactId>nats-spring-samples-parent</artifactId>
-    <version>0.6.3+3.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <parent>
         <groupId>io.nats</groupId>
         <artifactId>nats-spring-parent</artifactId>
-        <version>0.6.3+3.5-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <properties>
-        <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
-    </properties>
 
     <modules>
         <module>processor-sample</module>
@@ -29,10 +24,6 @@
         <module>autoconfigure-sample</module>
         <module>connect-error-sample</module>
     </modules>
-
-    <dependencyManagement>
-    </dependencyManagement>
-
     <build>
         <plugins>
             <plugin>

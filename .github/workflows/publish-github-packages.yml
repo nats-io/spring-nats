@@ -1,0 +1,80 @@
+name: 📦 CD · Publish GitHub Packages
+
+on:
+  workflow_call:
+    inputs:
+      run_id:
+        required: false
+        default: ''
+        type: string
+      build_output_timestamp:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Workflow run ID
+        required: true
+        type: string
+      build_output_timestamp:
+        description: Build output timestamp
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+      packages: write
+    environment:
+      name: github-packages
+      url: ${{ format('https://github.com/{0}/packages', github.repository) }}
+    steps:
+      - name: "📥 Download Build Artifact"
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-workspace
+          path: ${{ github.workspace }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.run_id || github.run_id }}
+
+      - name: "🔧 Restore Maven Wrapper"
+        shell: sh
+        run: |
+          set -eu
+          chmod +x "${GITHUB_WORKSPACE}/mvnw"
+
+      - name: "🔍 Read Java Info"
+        id: java_info
+        uses: YunaBraska/java-info-action@085d09be3659b484e0a6d0c95aac6612687ce8d9 # 3.0.13
+
+      - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java_info.outputs.java_version }}
+          cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+
+      - name: "🚀 Publish to GitHub Packages"
+        shell: sh
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_PACKAGES_REPOSITORY: ${{ github.repository }}
+          BUILD_OUTPUT_TIMESTAMP: ${{ inputs.build_output_timestamp }}
+          MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
+          PUBLISH_MODULES: nats-spring,nats-spring-boot-starter,nats-spring-cloud-stream-binder
+        run: |
+          set -eu
+          repository="github::https://maven.pkg.github.com/${GITHUB_PACKAGES_REPOSITORY}"
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" -pl "${PUBLISH_MODULES}" -am -DskipTests -DaltDeploymentRepository="${repository}" deploy

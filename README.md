@@ -1,13 +1,13 @@
 ![NATS](images/large-logo.png)
 
-# NATS Spring Support
+# NATS Spring Support for Spring Boot 3
 
-**Current Release**: 0.6.2+3.5 &nbsp; **Current Snapshot**: 0.6.3+3.5-SNAPSHOT
+This repository supports Spring Boot 3. For Spring Boot 4, use [spring-boot-4-nats](https://github.com/nats-io/spring-boot-4-nats).
 
-Please note the version number is a combination of Semver and the Spring Boot Version, `<major.minor.patch>-<sbMajor.sbMinor>`
+Releases use UTC date versions, YYYY.M.D. Snapshots use YYYY.M.D-SNAPSHOT.
 
 [![License][License-Image]][License-Url]
-[![Build Status](https://travis-ci.org/nats-io/spring-nats.svg?branch=master)](http://travis-ci.org/nats-io/spring-nats?branch=master)
+[![CI](https://github.com/nats-io/spring-nats/actions/workflows/build-pr.yml/badge.svg?branch=main)](https://github.com/nats-io/spring-nats/actions/workflows/build-pr.yml)
 
 # Table of Contents
 
@@ -86,30 +86,25 @@ and ultimately at maven central.
 
 A spring boot starter is provided that will bring in the autoconfigure module.
 
-To include the starter, add the following dependency to your pom.xml:
+Use the version published in Maven Central. To include the starter, add the following dependency to your pom.xml:
 
 ```xml
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-boot-starter</artifactId>
-    <version>major.minor.patch[-SNAPSHOT]</version>
+    <version>YYYY.M.D[-SNAPSHOT]</version>
 </dependency>
 ```
 
 ## Using the NATS Modules <a name="using"></a>
 
-To depend on the autoconfigure module, add it as a dependency in your pom.xml:
+To depend on the autoconfigure module, add it as a dependency in your pom.xml. It brings in the NATS Java client.
 
 ```xml
 <dependency>
     <groupId>io.nats</groupId>
-    <artifactId>jnats</artifactId>
-    <version>2.21.1</version>
-</dependency>
-<dependency>
-    <groupId>io.nats</groupId>
     <artifactId>nats-spring</artifactId>
-    <version>major.minor.patch[-SNAPSHOT]</version>
+    <version>YYYY.M.D[-SNAPSHOT]</version>
 </dependency>
 ```
 
@@ -144,7 +139,7 @@ and include a dependency on the library:
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>nats-spring-cloud-stream-binder</artifactId>
-    <version>major.minor.patch[-SNAPSHOT]</version>
+    <version>YYYY.M.D[-SNAPSHOT]</version>
 </dependency>
 ```
 
@@ -302,34 +297,6 @@ Listening on [>]
 This project is built with maven. The `mvnw` helper is included in the root folder and its implementation is included in the `.mvn` folder. You should be able to compile using `./mvnw clean compile`, or package the jars with `./mvnw clean package`.
 
 Internally there are multiple pom files, one parent for the project, one parent for the samples, one for the autoconfigure code, one for the binder, and one each for the samples. When built, each will have its own artifacts.
-
-Signing and deploying requires that you set up your settings.xml file for maven:
-
-```xml
-<settings>
-    <servers>
-        <server>
-            <id>ossrh</id>
-            <username>xxx</username>
-            <password>xxxxx</password>
-        </server>
-    </servers>
-    <profiles>
-        <profile>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <gpg.keyid>xxx</gpg.keyid>
-                <gpg.passphrase>xxxxx</gpg.passphrase>
-                <gpg.secretkeyring>xxxxx</gpg.secretkeyring>
-            </properties>
-        </profile>
-    </profiles>
-</settings>
-```
-
-**Sonatype will accept and close a non-staging repository, but you must manually release it.**
 
 ### Adding New Configuration Properties
 

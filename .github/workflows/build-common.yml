@@ -1,0 +1,158 @@
+name: 🧩 CI · Common Build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        default: ''
+        type: string
+      release_mode:
+        description: Build, snapshot publish, or stable release.
+        required: false
+        default: build
+        type: string
+    outputs:
+      resolved_version:
+        description: Resolved project version for this run
+        value: ${{ jobs.build.outputs.resolved_version }}
+      commit_sha:
+        description: Resolved commit SHA for this build
+        value: ${{ jobs.build.outputs.commit_sha }}
+      build_output_timestamp:
+        description: Reproducible build output timestamp
+        value: ${{ jobs.build.outputs.build_output_timestamp }}
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build
+        required: false
+        default: ''
+        type: string
+      release_mode:
+        description: Release mode
+        required: true
+        default: build
+        type: choice
+        options:
+          - build
+          - snapshot
+          - release
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      resolved_version: ${{ steps.resolve_version.outputs.resolved_version }}
+      commit_sha: ${{ steps.commit_info.outputs.commit_sha }}
+      build_output_timestamp: ${{ steps.commit_info.outputs.build_output_timestamp }}
+    steps:
+      - name: "🧑‍💻 Checkout [${{ inputs.ref }}]"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: "🧾 Read Commit Info"
+        id: commit_info
+        shell: sh
+        run: |
+          set -eu
+          {
+            printf 'commit_sha=%s\n' "$(git rev-parse HEAD)"
+            printf 'build_output_timestamp=%s\n' "$(git log -1 --format=%cI HEAD)"
+          } | tee -a "${GITHUB_OUTPUT}"
+
+      - name: "🔍 Read Java Info"
+        id: java_info
+        uses: YunaBraska/java-info-action@085d09be3659b484e0a6d0c95aac6612687ce8d9 # 3.0.13
+
+      - name: "🧮 Resolve Version [${{ inputs.release_mode }}]"
+        id: resolve_version
+        env:
+          RELEASE_MODE: ${{ inputs.release_mode }}
+        shell: sh
+        run: |
+          set -eu
+          year=$(date -u '+%Y')
+          month=$(date -u '+%m' | sed 's/^0//')
+          day=$(date -u '+%d' | sed 's/^0//')
+          version_date="${year}.${month}.${day}"
+
+          case "${RELEASE_MODE}" in
+            build|snapshot)
+              resolved_version="${version_date}-SNAPSHOT"
+              ;;
+            release)
+              resolved_version="${version_date}"
+              ;;
+            *)
+              echo "Unsupported release mode: ${RELEASE_MODE}" >&2
+              exit 1
+              ;;
+          esac
+
+          printf 'release_mode=%s\n' "${RELEASE_MODE}"
+          printf 'version_date=%s\n' "${version_date}"
+          printf 'resolved_version=%s\n' "${resolved_version}"
+          printf 'resolved_version=%s\n' "${resolved_version}" >> "${GITHUB_OUTPUT}"
+
+      - name: "☕ Setup Java [${{ steps.java_info.outputs.java_version }}]"
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v5
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java_info.outputs.java_version }}
+          cache: maven
+
+      - name: "🏷️ Set Project Version [${{ steps.resolve_version.outputs.resolved_version }}]"
+        shell: sh
+        env:
+          BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
+          MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
+          RELEASE_VERSION: ${{ steps.resolve_version.outputs.resolved_version }}
+        run: |
+          set -eu
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" versions:set -DnewVersion="${RELEASE_VERSION}" -DgenerateBackupPoms=false
+
+      - name: "🧪 Build and Verify"
+        shell: sh
+        env:
+          BUILD_OUTPUT_TIMESTAMP: ${{ steps.commit_info.outputs.build_output_timestamp }}
+          MAVEN_COMMAND: ${{ steps.java_info.outputs.cmd }}
+        run: |
+          set -eu
+          "${MAVEN_COMMAND}" -B -Dproject.build.outputTimestamp="${BUILD_OUTPUT_TIMESTAMP}" verify
+
+      - name: "📦 Upload Build Artifact"
+        if: inputs.release_mode != 'build'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: build-workspace
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+          path: |
+            .mvn
+            mvnw
+            mvnw.cmd
+            pom.xml
+            nats-spring
+            nats-spring-boot-starter
+            nats-spring-cloud-stream-binder
+            nats-spring-samples
+            !**/target/site
+            !**/target/site/**
+            !**/target/apidocs
+            !**/target/apidocs/**
+            !**/target/javadoc-bundle-options
+            !**/target/javadoc-bundle-options/**
+            !**/target/maven-javadoc-plugin-stale-data.txt
+            !**/target/jacoco.exec
+            !**/target/surefire-reports
+            !**/target/surefire-reports/**
+            !**/target/failsafe-reports
+            !**/target/failsafe-reports/**
