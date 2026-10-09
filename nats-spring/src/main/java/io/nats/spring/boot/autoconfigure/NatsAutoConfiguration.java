@@ -22,8 +22,8 @@ import io.nats.client.Consumer;
 import io.nats.client.ErrorListener;
 import io.nats.client.Nats;
 import io.nats.client.Options;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -47,7 +47,7 @@ import java.security.GeneralSecurityException;
 @ConditionalOnClass({Connection.class})
 @EnableConfigurationProperties(NatsProperties.class)
 public class NatsAutoConfiguration {
-    private static final Log logger = LogFactory.getLog(NatsAutoConfiguration.class);
+    private static final Logger logger = LoggerFactory.getLogger(NatsAutoConfiguration.class);
 
     /**
      * @param properties         NATS connection properties, or {@code null} when called directly without bound properties
@@ -72,7 +72,7 @@ public class NatsAutoConfiguration {
         }
 
         try {
-            logger.info("autoconnecting to NATS with properties - " + properties);
+            logger.info("autoconnecting to NATS with properties - {}", properties);
             Options.Builder builder = properties.toOptionsBuilder();
 
             builder = builder.connectionListener(connectionListener);
@@ -91,7 +91,7 @@ public class NatsAutoConfiguration {
     public ConnectionListener defaultConnectionListener() {
         return new ConnectionListener() {
             public void connectionEvent(@Nullable Connection conn, Events type) {
-                logger.info("NATS connection status changed " + type);
+                logger.info("NATS connection status changed {}", type);
             }
         };
     }
@@ -112,7 +112,7 @@ public class NatsAutoConfiguration {
 
             @Override
             public void errorOccurred(@Nullable Connection conn, String error) {
-                logger.info("NATS connection error occurred " + error);
+                logger.info("NATS connection error occurred {}", error);
             }
         };
     }

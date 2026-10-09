@@ -16,8 +16,8 @@
 
 package io.nats.spring;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
@@ -25,12 +25,12 @@ import java.util.function.Consumer;
 
 @Component
 public class Listener {
-    private static final Log logger = LogFactory.getLog(Listener.class);
+    private static final Logger logger = LoggerFactory.getLogger(Listener.class);
 
     @Bean
     public Consumer<Object> input() {
         return message -> {
-            logger.info("received message : " + new String((byte[]) message));
+            logger.info("received message : {}", new String((byte[]) message));
         };
     }
 }
