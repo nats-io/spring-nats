@@ -16,8 +16,8 @@
 
 package io.nats.spring;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -34,7 +34,7 @@ import java.util.concurrent.Executors;
 public class PollingSample {
 
     public static final ExecutorService exec = Executors.newSingleThreadExecutor();
-    private static final Log logger = LogFactory.getLog(PollingSample.class);
+    private static final Logger logger = LoggerFactory.getLogger(PollingSample.class);
 
     public static void main(String[] args) {
         SpringApplication.run(PollingSample.class, args);
@@ -49,7 +49,7 @@ public class PollingSample {
                     input.poll(message -> {
                         byte[] bytes = (byte[]) message.getPayload();
                         String val = new String(bytes, StandardCharsets.UTF_8);
-                        logger.info("received message " + val);
+                        logger.info("received message {}", val);
                     });
                 }
             });

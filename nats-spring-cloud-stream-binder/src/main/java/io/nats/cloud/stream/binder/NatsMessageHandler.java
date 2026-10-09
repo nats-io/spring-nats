@@ -21,8 +21,8 @@ import io.nats.client.JetStream;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.PublishOptions;
 import io.nats.client.impl.Headers;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.integration.handler.AbstractMessageHandler;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
@@ -39,7 +39,7 @@ import java.util.Objects;
  * Strings are treated as UTF8 bytes.
  */
 public class NatsMessageHandler extends AbstractMessageHandler {
-    private static final Log logger = LogFactory.getLog(NatsMessageHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(NatsMessageHandler.class);
 
     private String subject;
     @Nullable

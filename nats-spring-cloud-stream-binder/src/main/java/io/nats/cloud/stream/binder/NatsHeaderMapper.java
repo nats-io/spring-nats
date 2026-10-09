@@ -18,8 +18,8 @@ package io.nats.cloud.stream.binder;
 
 import io.nats.client.Message;
 import io.nats.client.impl.Headers;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.stream.binder.BinderHeaders;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.messaging.MessageHeaders;
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 
 class NatsHeaderMapper {
-    private static final Log logger = LogFactory.getLog(NatsHeaderMapper.class);
+    private static final Logger logger = LoggerFactory.getLogger(NatsHeaderMapper.class);
 
     private static final Set<String> RESERVED_HEADERS = Set.of(
             MessageHeaders.ID.toLowerCase(Locale.ROOT),
@@ -100,9 +100,7 @@ class NatsHeaderMapper {
         try {
             natsHeaders.add(name, value);
         } catch (IllegalArgumentException exp) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Skipping Spring header '" + name + "' because it cannot be represented as a NATS protocol header");
-            }
+            logger.debug("Skipping Spring header '{}' because it cannot be represented as a NATS protocol header", name);
         }
     }
 

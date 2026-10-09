@@ -24,8 +24,8 @@ import io.nats.client.JetStreamApiException;
 import io.nats.client.JetStreamStatusCheckedException;
 import io.nats.client.Message;
 import io.nats.client.Subscription;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.Lifecycle;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
 import org.springframework.integration.acks.AcknowledgmentCallback;
@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Message source for NATS connections, allowing synchronous polling.
  */
 public class NatsMessageSource extends AbstractMessageSource<Object> implements Lifecycle {
-    private static final Log logger = LogFactory.getLog(NatsMessageSource.class);
+    private static final Logger logger = LoggerFactory.getLogger(NatsMessageSource.class);
 
     private NatsConsumerDestination destination;
     @Nullable
@@ -173,8 +173,7 @@ public class NatsMessageSource extends AbstractMessageSource<Object> implements 
 
         Connection nc = this.connection;
         if (nc == null) {
-            logger.warn("cannot start NATS message source, no connection available for "
-                    + this.destination.getName());
+            logger.warn("cannot start NATS message source, no connection available for {}", this.destination.getName());
             return;
         }
 
