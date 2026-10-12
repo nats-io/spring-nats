@@ -12,7 +12,7 @@
     <parent>
         <groupId>org.springframework.cloud</groupId>
         <artifactId>spring-cloud-build</artifactId>
-        <version>3.1.8</version>
+        <version>5.0.3</version>
         <relativePath/>
     </parent>
 
@@ -20,22 +20,22 @@
         <!-- BUILD -->
         <revision>1.0.0</revision>
         <java.version>17</java.version>
-        <git-commit-id-maven-plugin.version>9.2.0</git-commit-id-maven-plugin.version>
+        <git-commit-id-maven-plugin.version>10.0.1</git-commit-id-maven-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
-        <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
+        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
         <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
         <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
 
         <!-- TEST -->
-        <jacoco.version>0.8.13</jacoco.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <jacoco.version>0.8.15</jacoco.version>
+        <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
         <nats-server-junit.version>2.15.0</nats-server-junit.version>
         <command-line-util.version>2026.9.28</command-line-util.version>
 
         <!-- PROD -->
-        <spring-boot.version>3.5.14</spring-boot.version>
+        <spring-boot.version>4.1.1</spring-boot.version>
         <spring-cloud-stream.version>4.2.1</spring-cloud-stream.version>
-        <jnats.version>2.21.1</jnats.version>
+        <jnats.version>2.26.4</jnats.version>
     </properties>
 
     <modules>
